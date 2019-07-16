@@ -22,7 +22,7 @@ class Keyring {
       asymEncryptionKey: nacl.box.keyPair.fromSecretKey(new Uint8Array(
         Buffer.from(rootNode.derivePath("2").privateKey.slice(2), 'hex')
       )),
-      symEncryptionKey: new Uint8Array(Buffer.from(rootNode.derivePath("3").privateKey.slice(2), 'hex'))
+      symEncryptionKey: Keyring.hexToUint8Array(rootNode.derivePath("3").privateKey.slice(2))
     }
     this._spaceKeys = {}
   }
@@ -41,7 +41,7 @@ class Keyring {
       asymEncryptionKey: nacl.box.keyPair.fromSecretKey(new Uint8Array(
         Buffer.from(spaceNode.derivePath("2").privateKey.slice(2), 'hex')
       )),
-      symEncryptionKey: new Uint8Array(Buffer.from(spaceNode.derivePath("3").privateKey.slice(2), 'hex'))
+      symEncryptionKey: Keyring.hexToUint8Array(spaceNode.derivePath("3").privateKey.slice(2))
     }
   }
 
@@ -55,7 +55,7 @@ class Keyring {
   }
 
   asymEncrypt (msg, toPublic, { space, nonce } = {}) {
-    nonce = nonce || randomNonce()
+    nonce = nonce || Keyring.randomNonce()
     toPublic = nacl.util.decodeBase64(toPublic)
     if (typeof msg === 'string') {
       msg = nacl.util.decodeUTF8(msg)
@@ -79,11 +79,11 @@ class Keyring {
   }
 
   symEncrypt (msg, { space, nonce } = {}) {
-    return symEncryptBase(msg, this._getKeys(space).symEncryptionKey, nonce)
+    return Keyring.symEncryptBase(msg, this._getKeys(space).symEncryptionKey, nonce)
   }
 
   symDecrypt (ciphertext, nonce, { space, toBuffer } = {}) {
-    return symDecryptBase(ciphertext, this._getKeys(space).symEncryptionKey, nonce, toBuffer)
+    return Keyring.symDecryptBase(ciphertext, this._getKeys(space).symEncryptionKey, nonce, toBuffer)
   }
 
   getJWTSigner (space) {
@@ -97,10 +97,9 @@ class Keyring {
   getPublicKeys ({ space, uncompressed } = {}) {
     const keys = this._getKeys(space)
     let signingKey = keys.signingKey.publicKey.slice(2)
-    let managementKey = keys.managementKey ? keys.managementKey.publicKey.slice(2) : null
+    let managementKey = keys.managementKey.address
     if (uncompressed) {
       signingKey = ec.keyFromPublic(Buffer.from(signingKey, 'hex')).getPublic(false, 'hex')
-      managementKey = managementKey ? ec.keyFromPublic(Buffer.from(managementKey, 'hex')).getPublic(false, 'hex') : null
     }
     return {
       signingKey,
@@ -112,32 +111,40 @@ class Keyring {
   serialize () {
     return this._seed
   }
-}
 
-const randomNonce = () => {
-  return nacl.randomBytes(24)
-}
+  static hexToUint8Array (str) {
+    return new Uint8Array(Buffer.from(str, 'hex'))
+  }
 
-const symEncryptBase = (msg, symKey, nonce) => {
-  nonce = nonce || randomNonce()
-  if (typeof msg === 'string') {
-    msg = nacl.util.decodeUTF8(msg)
+  static symEncryptBase (msg, symKey, nonce) {
+    nonce = nonce || Keyring.randomNonce()
+    if (typeof msg === 'string') {
+      msg = nacl.util.decodeUTF8(msg)
+    }
+    const ciphertext = nacl.secretbox(msg, nonce, symKey)
+    return {
+      nonce: nacl.util.encodeBase64(nonce),
+      ciphertext: nacl.util.encodeBase64(ciphertext)
+    }
   }
-  const ciphertext = nacl.secretbox(msg, nonce, symKey)
-  return {
-    nonce: nacl.util.encodeBase64(nonce),
-    ciphertext: nacl.util.encodeBase64(ciphertext)
-  }
-}
 
-const symDecryptBase = (ciphertext, symKey, nonce, toBuffer) => {
-  ciphertext = nacl.util.decodeBase64(ciphertext)
-  nonce = nacl.util.decodeBase64(nonce)
-  const cleartext = nacl.secretbox.open(ciphertext, nonce, symKey)
-  if (toBuffer) {
-    return cleartext ? Buffer.from(cleartext) : null
+  static symDecryptBase (ciphertext, symKey, nonce, toBuffer) {
+    ciphertext = nacl.util.decodeBase64(ciphertext)
+    nonce = nacl.util.decodeBase64(nonce)
+    const cleartext = nacl.secretbox.open(ciphertext, nonce, symKey)
+    if (toBuffer) {
+      return cleartext ? Buffer.from(cleartext) : null
+    }
+    return cleartext ? nacl.util.encodeUTF8(cleartext) : null
   }
-  return cleartext ? nacl.util.encodeUTF8(cleartext) : null
+
+  static naclRandom (length) {
+    return nacl.randomBytes(length)
+  }
+
+  static randomNonce () {
+    return Keyring.naclRandom(24)
+  }
 }
 
 module.exports = Keyring

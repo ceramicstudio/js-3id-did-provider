@@ -1,76 +1,80 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
-exports[`IdentityWallet authenticate works correctly 1`] = `
+exports[`IdentityWallet addAuthMethod should throw before authenticate 1`] = `[Error: This method can only be called after authenticate has been called]`;
+
+exports[`IdentityWallet authenticate should throw if no valid authSecrets 1`] = `[Error: No valid auth-secret for this identity]`;
+
+exports[`IdentityWallet authenticate works correctly w/ seed only wallet 1`] = `
 Object {
   "main": Object {
     "encryptionKey": "jRKRy3oPhXpUBrFJefO2CJnWw/IoalOPuepAwvTqrEk=",
-    "managementKey": "0350966498e802a007513d518dc12a0a0ab1e48addcec1beaa989c6ff5f5ed226c",
+    "managementKey": "0xa7b76379659b6c19E4DFf46e0DfEa48AFEBA8fe3",
     "signingKey": "027ab5238257532f486cbeeac59a5721bbfec2f13c3d26516ca9d4c5f0ec1aa229",
   },
   "spaces": Object {},
 }
 `;
 
-exports[`IdentityWallet authenticate works correctly 2`] = `
+exports[`IdentityWallet authenticate works correctly w/ seed only wallet 2`] = `
 Object {
   "main": Object {
     "encryptionKey": "jRKRy3oPhXpUBrFJefO2CJnWw/IoalOPuepAwvTqrEk=",
-    "managementKey": "0350966498e802a007513d518dc12a0a0ab1e48addcec1beaa989c6ff5f5ed226c",
+    "managementKey": "0xa7b76379659b6c19E4DFf46e0DfEa48AFEBA8fe3",
     "signingKey": "027ab5238257532f486cbeeac59a5721bbfec2f13c3d26516ca9d4c5f0ec1aa229",
   },
   "spaces": Object {
     "space1": Object {
       "encryptionKey": "jRKRy3oPhXpUBrFJefO2CJnWw/IoalOPuepAwvTqrEk=",
-      "managementKey": "0350966498e802a007513d518dc12a0a0ab1e48addcec1beaa989c6ff5f5ed226c",
+      "managementKey": "0xa7b76379659b6c19E4DFf46e0DfEa48AFEBA8fe3",
       "signingKey": "027ab5238257532f486cbeeac59a5721bbfec2f13c3d26516ca9d4c5f0ec1aa229",
     },
     "space2": Object {
       "encryptionKey": "jRKRy3oPhXpUBrFJefO2CJnWw/IoalOPuepAwvTqrEk=",
-      "managementKey": "0350966498e802a007513d518dc12a0a0ab1e48addcec1beaa989c6ff5f5ed226c",
+      "managementKey": "0xa7b76379659b6c19E4DFf46e0DfEa48AFEBA8fe3",
       "signingKey": "027ab5238257532f486cbeeac59a5721bbfec2f13c3d26516ca9d4c5f0ec1aa229",
     },
   },
 }
 `;
 
-exports[`IdentityWallet authenticate works correctly 3`] = `
+exports[`IdentityWallet authenticate works correctly w/ seed only wallet 3`] = `
 Object {
   "main": Object {
     "encryptionKey": "jRKRy3oPhXpUBrFJefO2CJnWw/IoalOPuepAwvTqrEk=",
-    "managementKey": "0350966498e802a007513d518dc12a0a0ab1e48addcec1beaa989c6ff5f5ed226c",
+    "managementKey": "0xa7b76379659b6c19E4DFf46e0DfEa48AFEBA8fe3",
     "signingKey": "027ab5238257532f486cbeeac59a5721bbfec2f13c3d26516ca9d4c5f0ec1aa229",
   },
   "spaces": Object {
     "space3": Object {
       "encryptionKey": "jRKRy3oPhXpUBrFJefO2CJnWw/IoalOPuepAwvTqrEk=",
-      "managementKey": "0350966498e802a007513d518dc12a0a0ab1e48addcec1beaa989c6ff5f5ed226c",
+      "managementKey": "0xa7b76379659b6c19E4DFf46e0DfEa48AFEBA8fe3",
       "signingKey": "027ab5238257532f486cbeeac59a5721bbfec2f13c3d26516ca9d4c5f0ec1aa229",
     },
     "space4": Object {
       "encryptionKey": "jRKRy3oPhXpUBrFJefO2CJnWw/IoalOPuepAwvTqrEk=",
-      "managementKey": "0350966498e802a007513d518dc12a0a0ab1e48addcec1beaa989c6ff5f5ed226c",
+      "managementKey": "0xa7b76379659b6c19E4DFf46e0DfEa48AFEBA8fe3",
       "signingKey": "027ab5238257532f486cbeeac59a5721bbfec2f13c3d26516ca9d4c5f0ec1aa229",
     },
   },
 }
 `;
 
-exports[`IdentityWallet authenticate works correctly 4`] = `
+exports[`IdentityWallet authenticate works correctly w/ seed only wallet 4`] = `
 Object {
   "main": Object {
     "encryptionKey": "jRKRy3oPhXpUBrFJefO2CJnWw/IoalOPuepAwvTqrEk=",
-    "managementKey": "0350966498e802a007513d518dc12a0a0ab1e48addcec1beaa989c6ff5f5ed226c",
+    "managementKey": "0xa7b76379659b6c19E4DFf46e0DfEa48AFEBA8fe3",
     "signingKey": "027ab5238257532f486cbeeac59a5721bbfec2f13c3d26516ca9d4c5f0ec1aa229",
   },
   "spaces": Object {
     "space2": Object {
       "encryptionKey": "jRKRy3oPhXpUBrFJefO2CJnWw/IoalOPuepAwvTqrEk=",
-      "managementKey": "0350966498e802a007513d518dc12a0a0ab1e48addcec1beaa989c6ff5f5ed226c",
+      "managementKey": "0xa7b76379659b6c19E4DFf46e0DfEa48AFEBA8fe3",
       "signingKey": "027ab5238257532f486cbeeac59a5721bbfec2f13c3d26516ca9d4c5f0ec1aa229",
     },
     "space3": Object {
       "encryptionKey": "jRKRy3oPhXpUBrFJefO2CJnWw/IoalOPuepAwvTqrEk=",
-      "managementKey": "0350966498e802a007513d518dc12a0a0ab1e48addcec1beaa989c6ff5f5ed226c",
+      "managementKey": "0xa7b76379659b6c19E4DFf46e0DfEa48AFEBA8fe3",
       "signingKey": "027ab5238257532f486cbeeac59a5721bbfec2f13c3d26516ca9d4c5f0ec1aa229",
     },
   },
