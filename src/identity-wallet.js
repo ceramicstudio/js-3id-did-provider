@@ -78,6 +78,16 @@ class IdentityWallet {
   }
 
   /**
+   * Check if authenticated to given spaces
+   *
+   * @param     {Array<String>}     spaces          The desired spaces
+   * @return    {Boolean}                           True if authenticated
+   */
+  async isAuthenticated (spaces = []) {
+    return true
+  }
+
+  /**
    * Add a new authentication method for this identity
    *
    * @param     {String}    authSecret              A 32 byte hex string used as authentication secret
