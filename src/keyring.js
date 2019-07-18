@@ -3,9 +3,7 @@ import naclutil from 'tweetnacl-util'
 nacl.util = naclutil
 import { HDNode } from 'ethers/utils'
 import { SimpleSigner } from 'did-jwt'
-import crypto from 'crypto'
-
-const sha256 = msg => crypto.createHash('sha256').update(msg).digest('hex')
+import { sha256 } from './utils'
 
 const BASE_PATH = "m/51073068'/0'"
 const ROOT_STORE_PATH = "0'/0'/0'/0'/0'/0'/0'/0'"

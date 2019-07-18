@@ -1,15 +1,7 @@
 import EventEmitter from 'events'
 import Keyring from './keyring'
 import didJWT from 'did-jwt'
-
-const ENC_BLOCK_SIZE = 24
-
-const pad = (val, blockSize = ENC_BLOCK_SIZE) => {
-  const blockDiff = (blockSize - (val.length % blockSize)) % blockSize
-  return `${val}${'\0'.repeat(blockDiff)}`
-}
-
-const unpad = padded => padded.replace(/\0+$/, '')
+import { sha256Multihash, pad, unpad } from './utils'
 
 
 class IdentityWallet {
@@ -154,6 +146,11 @@ class IdentityWallet {
     const paddedMsg = this._keyring.symDecrypt(encObj.ciphertext, encObj.nonce, { space })
     if (!paddedMsg) throw new Error('IdentityWallet: Could not decrypt message')
     return unpad(paddedMsg)
+  }
+
+  async hashDBKey(key, space) {
+    const salt = this._keyring.getDBSalt(space)
+    sha256Multihash(salt + kesalt  + keyy)
   }
 }
 

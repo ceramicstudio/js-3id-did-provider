@@ -37,6 +37,7 @@ Import using the dist build in your html code
 * [IdentityWallet](#IdentityWallet)
     * [new IdentityWallet(config)](#new_IdentityWallet_new)
     * [.authenticate(spaces, opts)](#IdentityWallet+authenticate) ⇒ <code>Object</code>
+    * [.isAuthenticated(spaces)](#IdentityWallet+isAuthenticated) ⇒ <code>Boolean</code>
     * [.addAuthMethod(authSecret)](#IdentityWallet+addAuthMethod)
     * [.signClaim(payload, opts)](#IdentityWallet+signClaim) ⇒ <code>String</code>
     * [.encrypt(message, space, opts)](#IdentityWallet+encrypt) ⇒ <code>Object</code>
@@ -69,6 +70,18 @@ Authenticate to given spaces
 | spaces | <code>Array.&lt;String&gt;</code> | The desired spaces |
 | opts | <code>Object</code> | Optional parameters |
 | opts.authData | <code>Array.&lt;Object&gt;</code> | The authData for this identity |
+
+<a name="IdentityWallet+isAuthenticated"></a>
+
+#### identityWallet.isAuthenticated(spaces) ⇒ <code>Boolean</code>
+Check if authenticated to given spaces
+
+**Kind**: instance method of [<code>IdentityWallet</code>](#IdentityWallet)  
+**Returns**: <code>Boolean</code> - True if authenticated  
+
+| Param | Type | Description |
+| --- | --- | --- |
+| spaces | <code>Array.&lt;String&gt;</code> | The desired spaces |
 
 <a name="IdentityWallet+addAuthMethod"></a>
 
