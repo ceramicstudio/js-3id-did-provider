@@ -29,3 +29,100 @@ Import using the dist build in your html code
 ```
 
 ## <a name="api"></a> API Documentation
+<a name="IdentityWallet"></a>
+
+### IdentityWallet
+**Kind**: global class  
+
+* [IdentityWallet](#IdentityWallet)
+    * [new IdentityWallet(config)](#new_IdentityWallet_new)
+    * [.authenticate(spaces, opts)](#IdentityWallet+authenticate) ⇒ <code>Object</code>
+    * [.addAuthMethod(authSecret)](#IdentityWallet+addAuthMethod)
+    * [.signClaim(payload, opts)](#IdentityWallet+signClaim) ⇒ <code>String</code>
+    * [.encrypt(message, space, opts)](#IdentityWallet+encrypt) ⇒ <code>Object</code>
+    * [.decrypt(encryptedObject, space)](#IdentityWallet+decrypt) ⇒ <code>String</code>
+
+<a name="new_IdentityWallet_new"></a>
+
+#### new IdentityWallet(config)
+Creates an instance of IdentityWallet
+
+**Returns**: <code>this</code> - An IdentityWallet instance  
+
+| Param | Type | Description |
+| --- | --- | --- |
+| config | <code>Object</code> | The configuration to be used |
+| config.seed | <code>String</code> | The seed of the identity, 32 hex string |
+| config.authSecret | <code>String</code> | The authSecret to use, 32 hex string |
+| config.ethereumAddress | <code>String</code> | The ethereumAddress of the identity |
+
+<a name="IdentityWallet+authenticate"></a>
+
+#### identityWallet.authenticate(spaces, opts) ⇒ <code>Object</code>
+Authenticate to given spaces
+
+**Kind**: instance method of [<code>IdentityWallet</code>](#IdentityWallet)  
+**Returns**: <code>Object</code> - The public keys for the requested spaces of this identity  
+
+| Param | Type | Description |
+| --- | --- | --- |
+| spaces | <code>Array.&lt;String&gt;</code> | The desired spaces |
+| opts | <code>Object</code> | Optional parameters |
+| opts.authData | <code>Array.&lt;Object&gt;</code> | The authData for this identity |
+
+<a name="IdentityWallet+addAuthMethod"></a>
+
+#### identityWallet.addAuthMethod(authSecret)
+Add a new authentication method for this identity
+
+**Kind**: instance method of [<code>IdentityWallet</code>](#IdentityWallet)  
+
+| Param | Type | Description |
+| --- | --- | --- |
+| authSecret | <code>String</code> | A 32 byte hex string used as authentication secret |
+
+<a name="IdentityWallet+signClaim"></a>
+
+#### identityWallet.signClaim(payload, opts) ⇒ <code>String</code>
+Sign a verifiable credential. The format of the credential is [did-jwt](https://github.com/uport-project/did-jwt).
+
+**Kind**: instance method of [<code>IdentityWallet</code>](#IdentityWallet)  
+**Returns**: <code>String</code> - The signed claim encoded as a JWT  
+
+| Param | Type | Description |
+| --- | --- | --- |
+| payload | <code>Object</code> | The payload of the claim |
+| opts | <code>Object</code> | Optional parameters |
+| opts.DID | <code>String</code> | The DID used as the issuer of this claim |
+| opts.space | <code>String</code> | The space used to sign the claim |
+| opts.expiresIn | <code>String</code> | Set an expiry date for the claim as unix timestamp |
+
+<a name="IdentityWallet+encrypt"></a>
+
+#### identityWallet.encrypt(message, space, opts) ⇒ <code>Object</code>
+Encrypt a message
+
+**Kind**: instance method of [<code>IdentityWallet</code>](#IdentityWallet)  
+**Returns**: <code>Object</code> - The encrypted object (ciphertext and nonce)  
+
+| Param | Type | Description |
+| --- | --- | --- |
+| message | <code>String</code> | The message to be encrypted |
+| space | <code>String</code> | The space used for encryption |
+| opts | <code>Object</code> | Optional parameters |
+| opts.nonce | <code>String</code> | The nonce used to encrypt the message |
+| opts.blockSize | <code>String</code> | The blockSize used for padding (default 24) |
+
+<a name="IdentityWallet+decrypt"></a>
+
+#### identityWallet.decrypt(encryptedObject, space) ⇒ <code>String</code>
+Decrypt a message
+
+**Kind**: instance method of [<code>IdentityWallet</code>](#IdentityWallet)  
+**Returns**: <code>String</code> - The decrypted message  
+
+| Param | Type | Description |
+| --- | --- | --- |
+| encryptedObject | <code>Object</code> | The encrypted object (ciphertext and nonce) |
+| space | <code>String</code> | The space used for encryption |
+
