@@ -64,7 +64,7 @@ class IdentityWallet {
     }
     if (this._ethereumAddress) result.main.managementKey = this._ethereumAddress
     spaces.map(space => {
-      result.spaces[space] = this._keyring.getPublicKeys(space)
+      result.spaces[space] = this._keyring.getPublicKeys({ space, uncompressed: true })
     })
     return result
   }

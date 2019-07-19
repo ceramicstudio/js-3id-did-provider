@@ -4,6 +4,8 @@ nacl.util = naclutil
 import { HDNode } from 'ethers/utils'
 import { SimpleSigner } from 'did-jwt'
 import { sha256 } from './utils'
+import { ec as EC } from 'elliptic'
+const ec = new EC('secp256k1')
 
 const BASE_PATH = "m/51073068'/0'"
 const ROOT_STORE_PATH = "0'/0'/0'/0'/0'/0'/0'/0'"
@@ -95,7 +97,7 @@ class Keyring {
   getPublicKeys ({ space, uncompressed } = {}) {
     const keys = this._getKeys(space)
     let signingKey = keys.signingKey.publicKey.slice(2)
-    let managementKey = keys.managementKey.address
+    const managementKey = space ? null : keys.managementKey.address
     if (uncompressed) {
       signingKey = ec.keyFromPublic(Buffer.from(signingKey, 'hex')).getPublic(false, 'hex')
     }
