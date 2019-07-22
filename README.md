@@ -7,8 +7,10 @@
 [![Greenkeeper badge](https://badges.greenkeeper.io/3box/identity-wallet.svg)](https://greenkeeper.io/)
 
 # Identity Wallet
+🆔-wallet
 
-The Identity Wallet SDK allows developers to easily create a wallet that let's users control their own data. An identity can be tied to an ethereum account, ethereum smart contract, or simply exist by itself. The Identity Wallet can be used together with [3Box](https://github.com/3box/3box-js) to sync, update, and store user data. It provides APIs for encrypting/decrypting data, and signing claims.
+3Box `identity-wallet-js` is a JavaScript SDK that allows Ethereum JavaScript wallet developers to natively support 3Box identity and authentication functionalities, including: creating 3Box accounts, adding authentication methods (Ethereum keys), and responding to authentication requests for 3Box accounts as well as spaces.
+
 
 ## Getting Started
 ### <a name="install"></a>Installation

@@ -76,7 +76,7 @@ class IdentityWallet {
    * @return    {Boolean}                           True if authenticated
    */
   async isAuthenticated (spaces = []) {
-    return true
+    return Boolean(this._keyring)
   }
 
   /**
