@@ -37,7 +37,7 @@ describe('Keyring', () => {
     const testMsg = "Very secret test message"
     let box = keyring1.asymEncrypt(testMsg, keyring2.getPublicKeys().encryptionKey)
 
-    let cleartext = keyring2.asymDecrypt(box.ciphertext, keyring1.getPublicKeys().encryptionKey, { noncebox.nonce)
+    let cleartext = keyring2.asymDecrypt(box.ciphertext, keyring1.getPublicKeys().encryptionKey, box.nonce)
     expect(cleartext).toEqual(testMsg)
   })
 

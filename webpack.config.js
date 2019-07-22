@@ -1,7 +1,7 @@
 const path = require('path');
 
 module.exports = {
-  entry: './src/index.js',
+  entry: './src/identity-wallet.js',
   output: {
     filename: 'identity-wallet.js',
     path: path.resolve(__dirname, 'dist'),
