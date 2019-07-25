@@ -24,14 +24,14 @@ Object {
   },
   "spaces": Object {
     "space1": Object {
-      "encryptionKey": "jRKRy3oPhXpUBrFJefO2CJnWw/IoalOPuepAwvTqrEk=",
-      "managementKey": "0xa7b76379659b6c19E4DFf46e0DfEa48AFEBA8fe3",
-      "signingKey": "027ab5238257532f486cbeeac59a5721bbfec2f13c3d26516ca9d4c5f0ec1aa229",
+      "encryptionKey": "aA5XCwjYEv6RhS11GzYb902nsdZns66orubcWGxnm2c=",
+      "managementKey": null,
+      "signingKey": "0483441873077702f08a9e84d0ff869b5d08cb37361d77c7e5c57777e953670a0debc728f18dc49203596a0b2392d8675bc28d8da62262350123c2c8ca4e709568",
     },
     "space2": Object {
-      "encryptionKey": "jRKRy3oPhXpUBrFJefO2CJnWw/IoalOPuepAwvTqrEk=",
-      "managementKey": "0xa7b76379659b6c19E4DFf46e0DfEa48AFEBA8fe3",
-      "signingKey": "027ab5238257532f486cbeeac59a5721bbfec2f13c3d26516ca9d4c5f0ec1aa229",
+      "encryptionKey": "G/pdGl6OtWv1Vz5LplLZIJxOhH2AmXnF+2BYF5e1TUc=",
+      "managementKey": null,
+      "signingKey": "04836712d05ad740972438b48b8c88571fa387c856f1c73a9abed17586de49c5dd9c681bc296087f2f5831813b93b15311c2fe483c284ef02d6115fe4a20b2256e",
     },
   },
 }
@@ -46,14 +46,14 @@ Object {
   },
   "spaces": Object {
     "space3": Object {
-      "encryptionKey": "jRKRy3oPhXpUBrFJefO2CJnWw/IoalOPuepAwvTqrEk=",
-      "managementKey": "0xa7b76379659b6c19E4DFf46e0DfEa48AFEBA8fe3",
-      "signingKey": "027ab5238257532f486cbeeac59a5721bbfec2f13c3d26516ca9d4c5f0ec1aa229",
+      "encryptionKey": "F4OJwO3rpESb+/D8Q8IKGzaNwQJ+TwHt+QOzEtSvkSk=",
+      "managementKey": null,
+      "signingKey": "046006731db949141b42b64bf1121be029bb5abe9e8267413db1ee9d6c6010507f51607253f839ac3a2ce2c064fca8049b3c4204f7e502ba6b56a961b5a309de4f",
     },
     "space4": Object {
-      "encryptionKey": "jRKRy3oPhXpUBrFJefO2CJnWw/IoalOPuepAwvTqrEk=",
-      "managementKey": "0xa7b76379659b6c19E4DFf46e0DfEa48AFEBA8fe3",
-      "signingKey": "027ab5238257532f486cbeeac59a5721bbfec2f13c3d26516ca9d4c5f0ec1aa229",
+      "encryptionKey": "3QRW9cArRuXgIb0zI/r3/oaoP52TkIWc12Vr52XwAAE=",
+      "managementKey": null,
+      "signingKey": "047ed187e7ce1f88e6fdd058882cf6f48301efc4992697c623e7fb2837d8d8d8c0cadc19cf5c628c9034943a0ff48b591a1dc0ae83f40878b8b41da4d9bbd98bc6",
     },
   },
 }
@@ -68,14 +68,14 @@ Object {
   },
   "spaces": Object {
     "space2": Object {
-      "encryptionKey": "jRKRy3oPhXpUBrFJefO2CJnWw/IoalOPuepAwvTqrEk=",
-      "managementKey": "0xa7b76379659b6c19E4DFf46e0DfEa48AFEBA8fe3",
-      "signingKey": "027ab5238257532f486cbeeac59a5721bbfec2f13c3d26516ca9d4c5f0ec1aa229",
+      "encryptionKey": "G/pdGl6OtWv1Vz5LplLZIJxOhH2AmXnF+2BYF5e1TUc=",
+      "managementKey": null,
+      "signingKey": "04836712d05ad740972438b48b8c88571fa387c856f1c73a9abed17586de49c5dd9c681bc296087f2f5831813b93b15311c2fe483c284ef02d6115fe4a20b2256e",
     },
     "space3": Object {
-      "encryptionKey": "jRKRy3oPhXpUBrFJefO2CJnWw/IoalOPuepAwvTqrEk=",
-      "managementKey": "0xa7b76379659b6c19E4DFf46e0DfEa48AFEBA8fe3",
-      "signingKey": "027ab5238257532f486cbeeac59a5721bbfec2f13c3d26516ca9d4c5f0ec1aa229",
+      "encryptionKey": "F4OJwO3rpESb+/D8Q8IKGzaNwQJ+TwHt+QOzEtSvkSk=",
+      "managementKey": null,
+      "signingKey": "046006731db949141b42b64bf1121be029bb5abe9e8267413db1ee9d6c6010507f51607253f839ac3a2ce2c064fca8049b3c4204f7e502ba6b56a961b5a309de4f",
     },
   },
 }

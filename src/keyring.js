@@ -91,7 +91,7 @@ class Keyring {
   }
 
   getDBSalt (space) {
-    return sha256(this._getKey(space).signingKey.derivePath('0').privateKey.slice(2))
+    return sha256(this._getKeys(space).signingKey.derivePath('0').privateKey.slice(2))
   }
 
   getPublicKeys ({ space, uncompressed } = {}) {
