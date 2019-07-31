@@ -150,7 +150,7 @@ class IdentityWallet {
 
   async hashDBKey(key, space) {
     const salt = this._keyring.getDBSalt(space)
-    sha256Multihash(salt + key)
+    return sha256Multihash(salt + key)
   }
 }
 
