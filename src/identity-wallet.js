@@ -28,7 +28,7 @@ class IdentityWallet {
   }
 
   async getAddress () {
-    return this._ethereumAddress
+    return this._ethereumAddress || this._keyring.getPublicKeys().managementKey
   }
 
   _initKeyring (authData) {

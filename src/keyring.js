@@ -60,6 +60,7 @@ class Keyring {
     if (typeof msg === 'string') {
       msg = nacl.util.decodeUTF8(msg)
     }
+    // TODO - use an ephemneral key here
     const ciphertext = nacl.box(msg, nonce, toPublic, this._getKeys(space).asymEncryptionKey.secretKey)
     return {
       nonce: nacl.util.encodeBase64(nonce),

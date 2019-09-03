@@ -51,7 +51,7 @@ describe('IdentityWallet', () => {
   })
 
   it('getAddress correctly', async () => {
-    expect(await idWallet1.getAddress()).toBeUndefined()
+    expect(await idWallet1.getAddress()).toMatchSnapshot()
     expect(await idWallet2.getAddress()).toEqual(wallet2Conf.ethereumAddress)
   })
 
