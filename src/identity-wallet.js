@@ -3,9 +3,7 @@ import Keyring from './keyring'
 import didJWT from 'did-jwt'
 import { sha256Multihash, pad, unpad } from './utils'
 
-
 class IdentityWallet {
-
   /**
    * Creates an instance of IdentityWallet
    *
@@ -148,11 +146,10 @@ class IdentityWallet {
     return unpad(paddedMsg)
   }
 
-  async hashDBKey(key, space) {
+  async hashDBKey (key, space) {
     const salt = this._keyring.getDBSalt(space)
     return sha256Multihash(salt + key)
   }
 }
-
 
 module.exports = IdentityWallet
