@@ -1,15 +1,14 @@
 import nacl from 'tweetnacl'
 import naclutil from 'tweetnacl-util'
-nacl.util = naclutil
 import { HDNode } from 'ethers/utils'
 import { SimpleSigner } from 'did-jwt'
 import { sha256 } from './utils'
 import { ec as EC } from 'elliptic'
+nacl.util = naclutil
 const ec = new EC('secp256k1')
 
 const BASE_PATH = "m/51073068'/0'"
 const ROOT_STORE_PATH = "0'/0'/0'/0'/0'/0'/0'/0'"
-
 
 class Keyring {
   constructor (seed) {
@@ -17,12 +16,12 @@ class Keyring {
     this._baseNode = HDNode.fromSeed(this._seed).derivePath(BASE_PATH)
     const rootNode = this._baseNode.derivePath(ROOT_STORE_PATH)
     this._rootKeys = {
-      signingKey: rootNode.derivePath("0"),
-      managementKey: rootNode.derivePath("1"),
+      signingKey: rootNode.derivePath('0'),
+      managementKey: rootNode.derivePath('1'),
       asymEncryptionKey: nacl.box.keyPair.fromSecretKey(new Uint8Array(
-        Buffer.from(rootNode.derivePath("2").privateKey.slice(2), 'hex')
+        Buffer.from(rootNode.derivePath('2').privateKey.slice(2), 'hex')
       )),
-      symEncryptionKey: Keyring.hexToUint8Array(rootNode.derivePath("3").privateKey.slice(2))
+      symEncryptionKey: Keyring.hexToUint8Array(rootNode.derivePath('3').privateKey.slice(2))
     }
     this._spaceKeys = {}
   }
@@ -37,11 +36,11 @@ class Keyring {
       .map(n => parseInt(n, 2)).join("'/") + "'" // convert to uints and create path
     const spaceNode = this._baseNode.derivePath(spacePath)
     this._spaceKeys[space] = {
-      signingKey: spaceNode.derivePath("0"),
+      signingKey: spaceNode.derivePath('0'),
       asymEncryptionKey: nacl.box.keyPair.fromSecretKey(new Uint8Array(
-        Buffer.from(spaceNode.derivePath("2").privateKey.slice(2), 'hex')
+        Buffer.from(spaceNode.derivePath('2').privateKey.slice(2), 'hex')
       )),
-      symEncryptionKey: Keyring.hexToUint8Array(spaceNode.derivePath("3").privateKey.slice(2))
+      symEncryptionKey: Keyring.hexToUint8Array(spaceNode.derivePath('3').privateKey.slice(2))
     }
   }
 
@@ -60,6 +59,7 @@ class Keyring {
     if (typeof msg === 'string') {
       msg = nacl.util.decodeUTF8(msg)
     }
+    // TODO - use an ephemneral key here
     const ciphertext = nacl.box(msg, nonce, toPublic, this._getKeys(space).asymEncryptionKey.secretKey)
     return {
       nonce: nacl.util.encodeBase64(nonce),
@@ -91,7 +91,7 @@ class Keyring {
   }
 
   getDBSalt (space) {
-    return sha256(this._getKey(space).signingKey.derivePath('0').privateKey.slice(2))
+    return sha256(this._getKeys(space).signingKey.derivePath('0').privateKey.slice(2))
   }
 
   getPublicKeys ({ space, uncompressed } = {}) {

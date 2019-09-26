@@ -12,7 +12,7 @@ const unpad = padded => padded.replace(/\0+$/, '')
 
 const sha256 = msg => crypto.createHash('sha256').update(msg).digest('hex')
 
-const sha256Multihash = str => Multihash.encode(sha256(str), 'sha2-256').toString('hex')
+const sha256Multihash = str => Multihash.encode(Buffer.from(sha256(str)), 'sha2-256').toString('hex')
 
 module.exports = {
   pad,
