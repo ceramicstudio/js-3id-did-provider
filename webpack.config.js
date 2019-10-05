@@ -5,7 +5,7 @@ module.exports = {
   output: {
     filename: 'identity-wallet.js',
     path: path.resolve(__dirname, 'dist'),
-    library: 'Box',
+    library: 'IdentityWallet',
     libraryTarget: 'umd',
     umdNamedDefine: true
   },

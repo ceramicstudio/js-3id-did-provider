@@ -1,6 +1,6 @@
 {
   "name": "identity-wallet",
-  "version": "0.1.0",
+  "version": "0.2.0-beta.23",
   "description": "Create and manage identities",
   "main": "lib/identity-wallet.js",
   "directories": {
@@ -30,14 +30,14 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/3box/identity-wallet.git"
+    "url": "git+https://github.com/3box/identity-wallet-js.git"
   },
   "author": "3box <team@3box.io>",
   "license": "Apache-2.0",
   "bugs": {
-    "url": "https://github.com/3box/identity-wallet/issues"
+    "url": "https://github.com/3box/identity-wallet-js/issues"
   },
-  "homepage": "https://github.com/3box/identity-wallet#readme",
+  "homepage": "https://github.com/3box/identity-wallet-js#readme",
   "dependencies": {
     "@babel/runtime": "^7.4.5",
     "did-jwt": "^0.1.3",
