@@ -1,6 +1,7 @@
 import nacl from 'tweetnacl'
 import naclutil from 'tweetnacl-util'
 import { HDNode } from 'ethers/utils'
+import { Wallet } from 'ethers'
 import { SimpleSigner } from 'did-jwt'
 import { sha256 } from './utils'
 import { ec as EC } from 'elliptic'
@@ -84,6 +85,11 @@ class Keyring {
 
   symDecrypt (ciphertext, nonce, { space, toBuffer } = {}) {
     return Keyring.symDecryptBase(ciphertext, this._getKeys(space).symEncryptionKey, nonce, toBuffer)
+  }
+
+  managementPersonalSign (message) {
+    const wallet = new Wallet(this._rootKeys.managementKey.privateKey)
+    return wallet.signMessage(message)
   }
 
   getJWTSigner (space) {

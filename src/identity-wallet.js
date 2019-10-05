@@ -1,5 +1,6 @@
 import EventEmitter from 'events'
 import Keyring from './keyring'
+import ThreeIdProvider from './threeIdProvider'
 import didJWT from 'did-jwt'
 import { sha256Multihash, pad, unpad } from './utils'
 
@@ -11,7 +12,7 @@ class IdentityWallet {
    * @param     {String}    config.seed             The seed of the identity, 32 hex string
    * @param     {String}    config.authSecret       The authSecret to use, 32 hex string
    * @param     {String}    config.ethereumAddress  The ethereumAddress of the identity
-   * @return    {this}                            An IdentityWallet instance
+   * @return    {this}                              An IdentityWallet instance
    */
   constructor (config = {}) {
     this.events = new EventEmitter()
@@ -25,8 +26,27 @@ class IdentityWallet {
     }
   }
 
+  /**
+   * Get the 3IDProvider
+   *
+   * @return    {ThreeIdProvider}                   The 3IDProvider for this IdentityWallet instance
+   */
+  get3idProvider () {
+    return new ThreeIdProvider(this)
+  }
+
   async getAddress () {
-    return this._ethereumAddress || this._keyring.getPublicKeys().managementKey
+    return this._keyring ? this._keyring.getPublicKeys().managementKey : this._ethereumAddress
+  }
+
+  async linkManagementKey (did) {
+    const timestamp = Math.floor(new Date().getTime() / 1000)
+    const msg = `Create a new 3Box profile\n\n- \nYour unique profile ID is ${did} \nTimestamp: ${timestamp}`
+    return {
+      msg,
+      timestamp,
+      sig: await this._keyring.managementPersonalSign(msg)
+    }
   }
 
   _initKeyring (authData) {
@@ -60,7 +80,6 @@ class IdentityWallet {
       main: this._keyring.getPublicKeys(),
       spaces: {}
     }
-    if (this._ethereumAddress) result.main.managementKey = this._ethereumAddress
     spaces.map(space => {
       result.spaces[space] = this._keyring.getPublicKeys({ space, uncompressed: true })
     })
@@ -88,6 +107,10 @@ class IdentityWallet {
     const message = seed || this._keyring._seed
     const key = Keyring.hexToUint8Array(authSecret)
     const encAuthData = Keyring.symEncryptBase(message, key)
+
+    // TODO - a link from a key derived from the new authSecret
+    // should be created and sent along here. This allows
+    // the data to be synced without knowing ethAddr or managementKey
 
     this.events.emit('new-auth-method', encAuthData)
   }

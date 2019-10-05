@@ -69,6 +69,7 @@ const box = await Box.openBox(idWallet, window.ethereum)
 
 * [IdentityWallet](#IdentityWallet)
     * [new IdentityWallet(config)](#new_IdentityWallet_new)
+    * [.get3idProvider()](#IdentityWallet+get3idProvider) ⇒ <code>ThreeIdProvider</code>
     * [.authenticate(spaces, opts)](#IdentityWallet+authenticate) ⇒ <code>Object</code>
     * [.isAuthenticated(spaces)](#IdentityWallet+isAuthenticated) ⇒ <code>Boolean</code>
     * [.addAuthMethod(authSecret)](#IdentityWallet+addAuthMethod)
@@ -90,6 +91,13 @@ Creates an instance of IdentityWallet
 | config.authSecret | <code>String</code> | The authSecret to use, 32 hex string |
 | config.ethereumAddress | <code>String</code> | The ethereumAddress of the identity |
 
+<a name="IdentityWallet+get3idProvider"></a>
+
+#### identityWallet.get3idProvider() ⇒ <code>ThreeIdProvider</code>
+Get the 3IDProvider
+
+**Kind**: instance method of [<code>IdentityWallet</code>](#IdentityWallet)  
+**Returns**: <code>ThreeIdProvider</code> - The 3IDProvider for this IdentityWallet instance  
 <a name="IdentityWallet+authenticate"></a>
 
 #### identityWallet.authenticate(spaces, opts) ⇒ <code>Object</code>
