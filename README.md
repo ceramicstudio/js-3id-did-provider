@@ -57,7 +57,8 @@ idWallet.addAuthMethod(authSecret2)
 #### Using the IdentityWallet with 3box-js
 An instance of IdentityWallet can be passed directly to 3box-js and will be used to authenticate the user.
 ```js
-const box = await Box.openBox(idWallet, window.ethereum)
+const provider = idWallet.get3idProvider()
+const box = await Box.openBox(null, provider)
 ```
 
 
