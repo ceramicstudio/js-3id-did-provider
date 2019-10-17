@@ -14,7 +14,7 @@ const callbackOrThrow = (callback, errMsg) => {
   if (callback) {
     callback(errMsg)
   } else {
-    throw new Error(errMsg)
+    throw errMsg instanceof Error ? errMsg : new Error(errMsg)
   }
 }
 
@@ -32,48 +32,52 @@ class ThreeIdProvider {
       callback = origin
     }
     let result
-    switch (req.method) {
-      case methods.GET_LINK:
-        result = await this._idWallet.getAddress()
-        break
-      case methods.LINK_MANAGEMENT_KEY:
-        result = await this._idWallet.linkManagementKey(req.params.did)
-        break
-      case methods.AUTHENTICATE:
-        result = await this._idWallet.authenticate(req.params.spaces, { authData: req.params.authData })
-        break
-      case methods.IS_AUTHENTICATED:
-        result = await this._idWallet.isAuthenticated(req.params.spaces)
-        break
-      case methods.SIGN_CLAIM:
-        result = await this._idWallet.signClaim(req.params.payload, {
-          DID: req.params.did,
-          space: req.params.space,
-          expiresIn: req.params.expiresIn
-        })
-        break
-      case methods.ENCRYPT:
-        if (req.params.to) callbackOrThrow(callback, 'Encrypting with "to" param not supported yet')
-        result = await this._idWallet.encrypt(req.params.message, req.params.space, {
-          blockSize: req.params.blockSize
-        })
-        break
-      case methods.DECRYPT:
-        if (req.params.ephemneralFrom) callbackOrThrow(callback, 'Encrypting with "ephemneralFrom" param not supported yet')
-        result = await this._idWallet.decrypt({
-          ciphertext: req.params.ciphertext,
-          nonce: req.params.nonce
-        }, req.params.space)
-        break
-      case methods.HASH_ENTRY_KEY:
-        result = await this._idWallet.hashDBKey(req.params.key, req.params.space)
-        break
-      case methods.NEW_AUTH_METHOD_POLL:
-        result = [...this._newAuthMethods]
-        this._newAuthMethods = []
-        break
-      default:
-        callbackOrThrow(callback, `Unsupported method: ${req.method}`)
+    try {
+      switch (req.method) {
+        case methods.GET_LINK:
+          result = await this._idWallet.getAddress()
+          break
+        case methods.LINK_MANAGEMENT_KEY:
+          result = await this._idWallet.linkManagementKey(req.params.did)
+          break
+        case methods.AUTHENTICATE:
+          result = await this._idWallet.authenticate(req.params.spaces, { authData: req.params.authData })
+          break
+        case methods.IS_AUTHENTICATED:
+          result = await this._idWallet.isAuthenticated(req.params.spaces)
+          break
+        case methods.SIGN_CLAIM:
+          result = await this._idWallet.signClaim(req.params.payload, {
+            DID: req.params.did,
+            space: req.params.space,
+            expiresIn: req.params.expiresIn
+          })
+          break
+        case methods.ENCRYPT:
+          if (req.params.to) callbackOrThrow(callback, 'Encrypting with "to" param not supported yet')
+          result = await this._idWallet.encrypt(req.params.message, req.params.space, {
+            blockSize: req.params.blockSize
+          })
+          break
+        case methods.DECRYPT:
+          if (req.params.ephemneralFrom) callbackOrThrow(callback, 'Encrypting with "ephemneralFrom" param not supported yet')
+          result = await this._idWallet.decrypt({
+            ciphertext: req.params.ciphertext,
+            nonce: req.params.nonce
+          }, req.params.space)
+          break
+        case methods.HASH_ENTRY_KEY:
+          result = await this._idWallet.hashDBKey(req.params.key, req.params.space)
+          break
+        case methods.NEW_AUTH_METHOD_POLL:
+          result = [...this._newAuthMethods]
+          this._newAuthMethods = []
+          break
+        default:
+          callbackOrThrow(callback, `Unsupported method: ${req.method}`)
+      }
+    } catch (err) {
+      callbackOrThrow(callback, err)
     }
     const response = {
       'id': req.id,
