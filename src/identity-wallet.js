@@ -1,4 +1,5 @@
 import EventEmitter from 'events'
+import store from 'store'
 import Keyring from './keyring'
 import ThreeIdProvider from './threeIdProvider'
 import didJWT from 'did-jwt'
@@ -8,13 +9,17 @@ class IdentityWallet {
   /**
    * Creates an instance of IdentityWallet
    *
+   * @param     {Function}  getConsent              The function that is called to ask the user for consent
    * @param     {Object}    config                  The configuration to be used
    * @param     {String}    config.seed             The seed of the identity, 32 hex string
    * @param     {String}    config.authSecret       The authSecret to use, 32 hex string
    * @param     {String}    config.ethereumAddress  The ethereumAddress of the identity
    * @return    {this}                              An IdentityWallet instance
    */
-  constructor (config = {}) {
+  constructor (getConsent, config = {}) {
+    if (typeof getConsent !== 'function') throw new Error('getConsent parameter has to be a function')
+    // TODO - getConsent should remember past consents
+    this._getConsent = getConsent
     this.events = new EventEmitter()
     if (config.seed) {
       this._keyring = new Keyring(config.seed)
@@ -33,6 +38,29 @@ class IdentityWallet {
    */
   get3idProvider () {
     return new ThreeIdProvider(this)
+  }
+
+  hasConsent (spaces = [], origin) {
+    if (!origin) return true
+    const prefix = `3id_consent_${this._keyring.getPublicKeys().managementKey}_${origin}_`
+    const consentExists = space => Boolean(store.get(prefix + space))
+    return spaces.reduce((acc, space) => acc && consentExists(space), consentExists())
+  }
+
+  async getConsent (spaces = [], origin) {
+    if (!this.hasConsent(spaces, origin)) {
+      const consent = await this._getConsent({
+        type: 'authenticate',
+        origin,
+        spaces
+      })
+      if (!consent) return false
+      const prefix = `3id_consent_${this._keyring.getPublicKeys().managementKey}_${origin}_`
+      const saveConsent = space => store.set(prefix + space, true)
+      saveConsent()
+      spaces.map(saveConsent)
+    }
+    return true
   }
 
   async getAddress () {
@@ -74,7 +102,10 @@ class IdentityWallet {
    * @param     {Array<Object>}     opts.authData   The authData for this identity
    * @return    {Object}                            The public keys for the requested spaces of this identity
    */
-  async authenticate (spaces = [], { authData } = {}) {
+  async authenticate (spaces = [], { authData } = {}, origin) {
+    if (!(await this.getConsent(spaces, origin))) {
+      throw new Error('Authentication not authorized by user')
+    }
     if (!this._keyring) this._initKeyring(authData)
     const result = {
       main: this._keyring.getPublicKeys(),
@@ -92,8 +123,8 @@ class IdentityWallet {
    * @param     {Array<String>}     spaces          The desired spaces
    * @return    {Boolean}                           True if authenticated
    */
-  async isAuthenticated (spaces = []) {
-    return Boolean(this._keyring)
+  async isAuthenticated (spaces = [], origin) {
+    return Boolean(this._keyring) && this.hasConsent(spaces, origin)
   }
 
   /**

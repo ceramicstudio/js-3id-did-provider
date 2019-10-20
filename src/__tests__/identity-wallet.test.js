@@ -15,6 +15,7 @@ const badAuthData = [{
   nonce: 'Lxcd05Yk4aC8LCLbFjowzD3W6Uqx+v+n',
   ciphertext: 'elxT3d5Cxx4N9kIzRnJx0U1iKB1wLQu2u4pebshF3xXUEhw72rbCCfTsnNEKY3185MhRok0/t23Iyel5r6HJx/YOfj1XaKb4t9Ci8y21Bs38rQ=='
 }]
+const getConsentMock = jest.fn(() => false)
 
 registerMethod('3', async (_, { id }) => {
   let key = id === 'first'
@@ -42,12 +43,61 @@ describe('IdentityWallet', () => {
   let idWallet1, idWallet2
 
   beforeAll(() => {
-    idWallet1 = new IdentityWallet(wallet1Conf)
-    idWallet2 = new IdentityWallet(wallet2Conf)
+    idWallet1 = new IdentityWallet(getConsentMock, wallet1Conf)
+    idWallet2 = new IdentityWallet(getConsentMock, wallet2Conf)
   })
 
   it('should be correctly constructed', async () => {
     expect(idWallet1._keyring).toBeDefined()
+  })
+
+  describe('consent functionality', () => {
+    const origin = 'https://my.origin'
+    const type = 'authenticate'
+
+    beforeEach(() => {
+      getConsentMock.mockClear()
+    })
+
+    it('should throw if getConsent param not passed to constructor', async () => {
+      expect(() => new IdentityWallet(wallet1Conf)).toThrow('getConsent parameter has to be a function')
+    })
+
+    it('returns false if no consent given', async () => {
+      expect(await idWallet1.getConsent([], origin)).toBeFalsy()
+      expect(getConsentMock).toHaveBeenCalledTimes(1)
+      expect(getConsentMock).toHaveBeenCalledWith({ type, spaces: [], origin })
+    })
+
+    it('works without spaces', async () => {
+      getConsentMock.mockImplementationOnce(() => true)
+      expect(await idWallet1.getConsent([], origin)).toBeTruthy()
+      expect(getConsentMock).toHaveBeenCalledTimes(1)
+      expect(getConsentMock).toHaveBeenCalledWith({ type, spaces: [], origin })
+    })
+
+    it('should not call consent fn if consent already given', async () => {
+      expect(await idWallet1.getConsent([], origin)).toBeTruthy()
+      expect(getConsentMock).toHaveBeenCalledTimes(0)
+    })
+
+    it('should not have consent for different origin', async () => {
+      expect(await idWallet1.hasConsent([], 'https://my.other.origin')).toBeFalsy()
+    })
+
+    it('works with spaces', async () => {
+      const spaces = ['s1', 's2', 's3']
+      getConsentMock.mockImplementationOnce(() => true)
+      expect(await idWallet1.getConsent(spaces, origin)).toBeTruthy()
+      expect(getConsentMock).toHaveBeenCalledTimes(1)
+      expect(getConsentMock).toHaveBeenCalledWith({ type, spaces, origin })
+    })
+
+    it('works with spaces, already have consent', async () => {
+      const spaces = ['s1', 's2']
+      expect(await idWallet1.getConsent(spaces, origin)).toBeTruthy()
+      expect(getConsentMock).toHaveBeenCalledTimes(0)
+    })
   })
 
   it('getAddress correctly', async () => {
@@ -65,7 +115,7 @@ describe('IdentityWallet', () => {
     let authData = []
 
     beforeEach(() => {
-      idWallet2 = new IdentityWallet(wallet2Conf)
+      idWallet2 = new IdentityWallet(getConsentMock, wallet2Conf)
     })
 
     it('works correctly w/ seed only wallet', async () => {
@@ -101,7 +151,7 @@ describe('IdentityWallet', () => {
       await idWallet2.addAuthMethod(secondaryAuthSecret)
       authData.push(await authDataPromise)
 
-      const idWallet3 = new IdentityWallet({
+      const idWallet3 = new IdentityWallet(getConsentMock, {
         authSecret: secondaryAuthSecret,
         ethereumAddress: wallet2Conf.ethereumAddress
       })

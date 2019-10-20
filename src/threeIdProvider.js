@@ -30,6 +30,7 @@ class ThreeIdProvider {
   async send (req, origin, callback) {
     if (typeof origin === 'function') {
       callback = origin
+      origin = null
     }
     let result
     try {
@@ -41,10 +42,10 @@ class ThreeIdProvider {
           result = await this._idWallet.linkManagementKey(req.params.did)
           break
         case methods.AUTHENTICATE:
-          result = await this._idWallet.authenticate(req.params.spaces, { authData: req.params.authData })
+          result = await this._idWallet.authenticate(req.params.spaces, { authData: req.params.authData }, origin)
           break
         case methods.IS_AUTHENTICATED:
-          result = await this._idWallet.isAuthenticated(req.params.spaces)
+          result = await this._idWallet.isAuthenticated(req.params.spaces, origin)
           break
         case methods.SIGN_CLAIM:
           result = await this._idWallet.signClaim(req.params.payload, {
@@ -54,13 +55,19 @@ class ThreeIdProvider {
           })
           break
         case methods.ENCRYPT:
-          if (req.params.to) callbackOrThrow(callback, 'Encrypting with "to" param not supported yet')
+          if (req.params.to) {
+            callbackOrThrow(callback, 'Encrypting with "to" param not supported yet')
+            return
+          }
           result = await this._idWallet.encrypt(req.params.message, req.params.space, {
             blockSize: req.params.blockSize
           })
           break
         case methods.DECRYPT:
-          if (req.params.ephemneralFrom) callbackOrThrow(callback, 'Encrypting with "ephemneralFrom" param not supported yet')
+          if (req.params.ephemneralFrom) {
+            callbackOrThrow(callback, 'Encrypting with "ephemneralFrom" param not supported yet')
+            return
+          }
           result = await this._idWallet.decrypt({
             ciphertext: req.params.ciphertext,
             nonce: req.params.nonce
@@ -75,9 +82,11 @@ class ThreeIdProvider {
           break
         default:
           callbackOrThrow(callback, `Unsupported method: ${req.method}`)
+          return
       }
     } catch (err) {
       callbackOrThrow(callback, err)
+      return
     }
     const response = {
       'id': req.id,
