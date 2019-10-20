@@ -30,12 +30,26 @@ Import using the dist build in your html code
 <script type="text/javascript" src="../dist/identity-wallet.js"></script>
 ```
 
+#### Understanding the `getConsent` function
+The first parameter of the IdentityWallet constructor is the `getConsent` function. This function determines whether or not any given `origin` (app) is allowed access to the users data. What this function should do is to present a dialog to the user in the wallet UI, asking for permission to access the given spaces.
+
+The function is called with one parameter which is the `request` object. It looks like this:
+```js
+{
+  type: 'authenticate',
+  origin: 'https://my.app.origin',
+  spaces: ['space1', 'space2']
+}
+```
+In the above example the app with origin `https://my.app.origin` is requesting access to `space1` and `space2`. If the user consents to this the function should return `true`, otherwise it should return `false`.
+Note that if the `spaces` array is empty the app is requesting access to the general 3Box storage.
+
 #### Creating a wallet with a seed
 To create a wallet with a seed you can simply pass it as an option to the constructor. This will create an instance of the IdentityWallet that derives all it's keys from this seed. Be careful, if this seed is lost the identity and all of it's data will be lost as well.
 ```js
 const seed = '0xabc123...' // a hex encoded seed
 
-const idWallet = new IdentityWallet({ seed })
+const idWallet = new IdentityWallet(getConsent, { seed })
 ```
 
 #### Creating an identity for a contract wallet
@@ -44,7 +58,7 @@ For wallets which doesn't have one keypair, e.g. smart contract wallets, we prov
 const authSecret = '0xabc123...' // a hex encoded secret
 const ethereumAddress = '0xabc123' // an ethereum address
 
-const idWallet = new IdentityWallet({ authSecret, ethereumAddress })
+const idWallet = new IdentityWallet(getConsent, { authSecret, ethereumAddress })
 ```
 
 New authentication secrets can later be added by calling the `addAuthMethod` instance method of the identityWallet. Note that this method can only be called after an authentication first has happened (`Box.openBox` has been called from `3box-js`).
@@ -61,5 +75,18 @@ const provider = idWallet.get3idProvider()
 const box = await Box.openBox(null, provider)
 ```
 
+#### Using the ThreeIdProvider to consume RPC calls
+As described above the *3idProvider* can be accessed by calling `idWallet.get3idProvider()`. The provider object that is returned can be used to consume [3ID JSON-RPC](https://github.com/3box/3box/blob/master/3IPs/3ip-10.md) requests.
+```js
+const provider = idWallet.get3idProvider()
+// using the provider
+const response = await provider.send(rpcRequest, origin)
+
+// alternatively using a callback function
+provider.send(rpcRequest, origin, (error, response) => {
+  // use response or handle error
+})
+```
+In the above example `rpcRequest` is a request formated according to the [3ID JSON-RPC](https://github.com/3box/3box/blob/master/3IPs/3ip-10.md) specification, and `origin` is a string, e.g. `https://my.app.origin`.
 
 ## <a name="api"></a> API Documentation
