@@ -110,7 +110,7 @@ class Keyring {
     return {
       signingKey,
       managementKey,
-      encryptionKey: nacl.util.encodeBase64(keys.asymEncryptionKey.publicKey)
+      asymEncryptionKey: nacl.util.encodeBase64(keys.asymEncryptionKey.publicKey)
     }
   }
 
