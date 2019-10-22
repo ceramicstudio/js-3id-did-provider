@@ -1,5 +1,5 @@
 const Keyring = require('../keyring')
-const { HDNode } = require('ethers').utils
+const HDNode = require('@ethersproject/hdnode')
 
 
 describe('Keyring', () => {
