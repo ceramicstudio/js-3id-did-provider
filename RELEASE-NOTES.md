@@ -1,5 +1,8 @@
 # Release Notes
 
+## v0.2.1 - 2019-10-22
+Fix: correct name for encryption key
+
 ## v0.2.0 - 2019-10-17
 Feat: add 3ID Provider
 
