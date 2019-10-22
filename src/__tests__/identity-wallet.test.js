@@ -1,5 +1,5 @@
 const IdentityWallet = require('../identity-wallet')
-const { HDNode } = require('ethers').utils
+const HDNode = require('@ethersproject/hdnode')
 const { verifyJWT } = require('did-jwt')
 const { registerMethod } = require('did-resolver')
 
