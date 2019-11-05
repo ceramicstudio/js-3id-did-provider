@@ -41,7 +41,6 @@ class IdentityWallet {
   }
 
   hasConsent (spaces = [], origin) {
-    if (!origin) return true
     const prefix = `3id_consent_${this._keyring.getPublicKeys().managementKey}_${origin}_`
     const consentExists = space => Boolean(store.get(prefix + space))
     return spaces.reduce((acc, space) => acc && consentExists(space), consentExists())
@@ -103,10 +102,10 @@ class IdentityWallet {
    * @return    {Object}                            The public keys for the requested spaces of this identity
    */
   async authenticate (spaces = [], { authData } = {}, origin) {
+    if (!this._keyring) this._initKeyring(authData)
     if (!(await this.getConsent(spaces, origin))) {
       throw new Error('Authentication not authorized by user')
     }
-    if (!this._keyring) this._initKeyring(authData)
     const result = {
       main: this._keyring.getPublicKeys(),
       spaces: {}
