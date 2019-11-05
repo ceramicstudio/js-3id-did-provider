@@ -115,6 +115,7 @@ describe('IdentityWallet', () => {
     let authData = []
 
     beforeEach(() => {
+      getConsentMock.mockImplementation(() => true)
       idWallet2 = new IdentityWallet(getConsentMock, wallet2Conf)
     })
 
