@@ -24,12 +24,17 @@ function formatCall (method, params) {
   }
 }
 
-async function callWithCB (rpc, payload) {
+async function callWithCB (rpc, payload, origin) {
   return new Promise((resolve, reject) => {
-    rpc.send(payload, (err, resp) => {
+    const callback = (err, resp) => {
       if (err) reject(err)
       else resolve(resp)
-    })
+    }
+    if (origin) {
+      rpc.send(payload, origin, callback)
+    } else {
+      rpc.send(payload, callback)
+    }
   })
 }
 
@@ -38,6 +43,7 @@ describe('ThreeIdProvider', () => {
 
   beforeEach(() => {
     rpc = new ThreeIdProvider(IDW_MOCK)
+    IDW_MOCK.authenticate.mockClear()
   })
 
   it('getLink correctly', async () => {
@@ -59,23 +65,25 @@ describe('ThreeIdProvider', () => {
   })
 
   it('authenticate correctly', async () => {
+    const origin = 'https://my.origin'
     const spaces = ['space1']
     const authData = ['enc auth data']
     const payload = formatCall('authenticate', { spaces, authData })
-    expect(await rpc.send(payload)).toMatchSnapshot()
+    expect(await rpc.send(payload, origin)).toMatchSnapshot()
     expect(IDW_MOCK.authenticate).toHaveBeenCalledTimes(1)
-    expect(IDW_MOCK.authenticate).toHaveBeenCalledWith(spaces, { authData })
-    expect(await callWithCB(rpc, payload)).toMatchSnapshot()
+    expect(IDW_MOCK.authenticate).toHaveBeenCalledWith(spaces, { authData }, origin)
+    expect(await callWithCB(rpc, payload, origin)).toMatchSnapshot()
     expect(IDW_MOCK.authenticate).toHaveBeenCalledTimes(2)
   })
 
   it('isAuthenticated correctly', async () => {
+    const origin = 'https://my.origin'
     const spaces = ['space1']
     const payload = formatCall('isAuthenticated', { spaces })
-    expect(await rpc.send(payload)).toMatchSnapshot()
+    expect(await rpc.send(payload, origin)).toMatchSnapshot()
     expect(IDW_MOCK.isAuthenticated).toHaveBeenCalledTimes(1)
-    expect(IDW_MOCK.isAuthenticated).toHaveBeenCalledWith(spaces)
-    expect(await callWithCB(rpc, payload)).toMatchSnapshot()
+    expect(IDW_MOCK.isAuthenticated).toHaveBeenCalledWith(spaces, origin)
+    expect(await callWithCB(rpc, payload, origin)).toMatchSnapshot()
     expect(IDW_MOCK.isAuthenticated).toHaveBeenCalledTimes(2)
   })
 

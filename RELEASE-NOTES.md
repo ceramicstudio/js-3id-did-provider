@@ -1,5 +1,10 @@
 # Release Notes
 
+## v0.3.0 - 2019-11-05
+Feat: add required getConsent function
+Fix: bug when opening spaces
+chore: reduced bundle size
+
 ## v0.2.1 - 2019-10-22
 Fix: correct name for encryption key
 
