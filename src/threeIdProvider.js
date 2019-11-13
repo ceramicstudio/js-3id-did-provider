@@ -7,7 +7,8 @@ const methods = {
   ENCRYPT: '3id_encrypt',
   DECRYPT: '3id_decrypt',
   HASH_ENTRY_KEY: '3id_hashEntryKey',
-  NEW_AUTH_METHOD_POLL: '3id_newAuthMethodPoll'
+  NEW_AUTH_METHOD_POLL: '3id_newAuthMethodPoll',
+  NEW_LINK_POLL: '3id_newLinkPoll'
 }
 
 const callbackOrThrow = (callback, errMsg) => {
@@ -23,8 +24,12 @@ class ThreeIdProvider {
     this.is3idProvider = true
     this._idWallet = idWallet
     this._newAuthMethods = []
+    this._newLinks = []
     this._idWallet.events.on('new-auth-method', authBlob => {
       this._newAuthMethods.push(authBlob)
+    })
+    this._idWallet.events.on('new-link-proof', linkProof => {
+      this._newLinks.push(linkProof)
     })
   }
 
@@ -37,10 +42,10 @@ class ThreeIdProvider {
     try {
       switch (req.method) {
         case methods.GET_LINK:
-          result = await this._idWallet.getAddress()
+          result = (await this._idWallet.getLink()).toLowerCase()
           break
         case methods.LINK_MANAGEMENT_KEY:
-          result = await this._idWallet.linkManagementKey(req.params.did)
+          result = await this._idWallet.linkManagementKey()
           break
         case methods.AUTHENTICATE:
           result = await this._idWallet.authenticate(req.params.spaces, { authData: req.params.authData }, origin)
@@ -80,6 +85,10 @@ class ThreeIdProvider {
         case methods.NEW_AUTH_METHOD_POLL:
           result = [...this._newAuthMethods]
           this._newAuthMethods = []
+          break
+        case methods.NEW_LINK_POLL:
+          result = [...this._newLinks]
+          this._newLinks = []
           break
         default:
           callbackOrThrow(callback, `Unsupported method: ${req.method}`)

@@ -11,6 +11,11 @@ const ec = new EC('secp256k1')
 const BASE_PATH = "m/51073068'/0'"
 const ROOT_STORE_PATH = "0'/0'/0'/0'/0'/0'/0'/0'"
 
+const AUTH_PATH_WALLET = BASE_PATH + '/' + ROOT_STORE_PATH + '/0'
+const AUTH_PATH_ENCRYPTION = BASE_PATH + '/' + ROOT_STORE_PATH + '/3'
+
+const ensure0x = str => (str.startsWith('0x') ? '' : '0x') + str
+
 class Keyring {
   constructor (seed) {
     this._seed = seed
@@ -88,8 +93,12 @@ class Keyring {
   }
 
   managementPersonalSign (message) {
-    const wallet = new Wallet(this._rootKeys.managementKey.privateKey)
+    const wallet = this.managementWallet()
     return wallet.signMessage(message)
+  }
+
+  managementWallet () {
+    return new Wallet(this._rootKeys.managementKey.privateKey)
   }
 
   getJWTSigner (space) {
@@ -116,6 +125,23 @@ class Keyring {
 
   serialize () {
     return this._seed
+  }
+
+  static encryptWithAuthSecret (message, authSecret) {
+    const node = HDNode.fromSeed(ensure0x(authSecret)).derivePath(AUTH_PATH_ENCRYPTION)
+    const key = Keyring.hexToUint8Array(node.privateKey.slice(2))
+    return Keyring.symEncryptBase(message, key)
+  }
+
+  static decryptWithAuthSecret (ciphertext, nonce, authSecret) {
+    const node = HDNode.fromSeed(ensure0x(authSecret)).derivePath(AUTH_PATH_ENCRYPTION)
+    const key = Keyring.hexToUint8Array(node.privateKey.slice(2))
+    return Keyring.symDecryptBase(ciphertext, key, nonce)
+  }
+
+  static walletForAuthSecret (authSecret) {
+    const node = HDNode.fromSeed(ensure0x(authSecret)).derivePath(AUTH_PATH_WALLET)
+    return new Wallet(node.privateKey)
   }
 
   static hexToUint8Array (str) {

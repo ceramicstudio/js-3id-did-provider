@@ -47,4 +47,13 @@ describe('Keyring', () => {
     const cleartext = keyring2.symDecrypt(box.ciphertext, box.nonce)
     expect(cleartext).toEqual(testMsg)
   })
+
+  it('encrypts and decrypts correctly with authSecret', () => {
+    const testMsg = "Very secret test message"
+    const authSecret = Buffer.from(Keyring.naclRandom(32)).toString('hex')
+
+    const box = Keyring.encryptWithAuthSecret(testMsg, authSecret)
+    const cleartext = Keyring.decryptWithAuthSecret(box.ciphertext, box.nonce, authSecret)
+    expect(cleartext).toEqual(testMsg)
+  })
 })
