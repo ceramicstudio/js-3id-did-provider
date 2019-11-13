@@ -83,4 +83,6 @@ Object {
 
 exports[`IdentityWallet encrypt/decrypt works correctly 1`] = `[Error: IdentityWallet: Could not decrypt message]`;
 
-exports[`IdentityWallet getAddress correctly 1`] = `"0xa7b76379659b6c19E4DFf46e0DfEa48AFEBA8fe3"`;
+exports[`IdentityWallet getLink correctly 1`] = `"0xa7b76379659b6c19E4DFf46e0DfEa48AFEBA8fe3"`;
+
+exports[`IdentityWallet getLink correctly 2`] = `"0xE72E6c37c15986C86Aa94007451750176E9a999F"`;

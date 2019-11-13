@@ -98,6 +98,7 @@ In the above example `rpcRequest` is a request formated according to the [3ID JS
 * [IdentityWallet](#IdentityWallet)
     * [new IdentityWallet(getConsent, config)](#new_IdentityWallet_new)
     * [.get3idProvider()](#IdentityWallet+get3idProvider) ⇒ <code>ThreeIdProvider</code>
+    * [.linkAddress(address, provider)](#IdentityWallet+linkAddress) ⇒ <code>Object</code>
     * [.authenticate(spaces, opts)](#IdentityWallet+authenticate) ⇒ <code>Object</code>
     * [.isAuthenticated(spaces)](#IdentityWallet+isAuthenticated) ⇒ <code>Boolean</code>
     * [.addAuthMethod(authSecret)](#IdentityWallet+addAuthMethod)
@@ -118,7 +119,6 @@ Creates an instance of IdentityWallet
 | config | <code>Object</code> | The configuration to be used |
 | config.seed | <code>String</code> | The seed of the identity, 32 hex string |
 | config.authSecret | <code>String</code> | The authSecret to use, 32 hex string |
-| config.ethereumAddress | <code>String</code> | The ethereumAddress of the identity |
 
 <a name="IdentityWallet+get3idProvider"></a>
 
@@ -127,6 +127,19 @@ Get the 3IDProvider
 
 **Kind**: instance method of [<code>IdentityWallet</code>](#IdentityWallet)  
 **Returns**: <code>ThreeIdProvider</code> - The 3IDProvider for this IdentityWallet instance  
+<a name="IdentityWallet+linkAddress"></a>
+
+#### identityWallet.linkAddress(address, provider) ⇒ <code>Object</code>
+Link an address to the 3ID
+
+**Kind**: instance method of [<code>IdentityWallet</code>](#IdentityWallet)  
+**Returns**: <code>Object</code> - The link proof object  
+
+| Param | Type | Description |
+| --- | --- | --- |
+| address | <code>String</code> | The address to link |
+| provider | <code>Object</code> | The provider for the address |
+
 <a name="IdentityWallet+authenticate"></a>
 
 #### identityWallet.authenticate(spaces, opts) ⇒ <code>Object</code>
@@ -176,7 +189,6 @@ Sign a verifiable credential. The format of the credential is [did-jwt](https://
 | --- | --- | --- |
 | payload | <code>Object</code> | The payload of the claim |
 | opts | <code>Object</code> | Optional parameters |
-| opts.DID | <code>String</code> | The DID used as the issuer of this claim |
 | opts.space | <code>String</code> | The space used to sign the claim |
 | opts.expiresIn | <code>String</code> | Set an expiry date for the claim as unix timestamp |
 

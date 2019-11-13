@@ -3,7 +3,11 @@ import store from 'store'
 import Keyring from './keyring'
 import ThreeIdProvider from './threeIdProvider'
 import didJWT from 'did-jwt'
-import { sha256Multihash, pad, unpad } from './utils'
+import DidDocument from 'ipfs-did-document'
+import { createLink } from '3id-blockchain-utils'
+import { sha256Multihash, pad, unpad, fakeIpfs, fakeEthProvider } from './utils'
+
+const DID_METHOD_NAME = '3'
 
 class IdentityWallet {
   /**
@@ -13,7 +17,6 @@ class IdentityWallet {
    * @param     {Object}    config                  The configuration to be used
    * @param     {String}    config.seed             The seed of the identity, 32 hex string
    * @param     {String}    config.authSecret       The authSecret to use, 32 hex string
-   * @param     {String}    config.ethereumAddress  The ethereumAddress of the identity
    * @return    {this}                              An IdentityWallet instance
    */
   constructor (getConsent, config = {}) {
@@ -22,12 +25,11 @@ class IdentityWallet {
     this._getConsent = getConsent
     this.events = new EventEmitter()
     if (config.seed) {
-      this._keyring = new Keyring(config.seed)
-    }
-    if (config.authSecret) {
-      if (!config.ethereumAddress) throw new Error('Ethereum address needs to be defined when authSecret given')
+      this._seed = config.seed
+    } else if (config.authSecret) {
       this._authSecret = config.authSecret
-      this._ethereumAddress = config.ethereumAddress
+    } else {
+      throw new Error('Either seed, or authSecret has to be passed to create an IdentityWallet instance')
     }
   }
 
@@ -62,13 +64,39 @@ class IdentityWallet {
     return true
   }
 
-  async getAddress () {
-    return this._keyring ? this._keyring.getPublicKeys().managementKey : this._ethereumAddress
+  async getLink () {
+    if (this._seed) {
+      this._keyring = new Keyring(this._seed)
+      this.DID = await this._get3id()
+      delete this._seed
+      this._linkManagementAddress()
+    }
+    return this._keyring ? this._keyring.getPublicKeys().managementKey : Keyring.walletForAuthSecret(this._authSecret).address
   }
 
-  async linkManagementKey (did) {
+  async _linkManagementAddress () {
+    const managementWallet = this._keyring.managementWallet()
+    this.events.emit('new-link-proof', await createLink(this.DID, managementWallet.address, fakeEthProvider(managementWallet)))
+  }
+
+  /**
+   * Link an address to the 3ID
+   *
+   * @param     {String}        address          The address to link
+   * @param     {Object}        provider         The provider that can sign a message for the given address
+   * @return    {Object}                         The link proof object
+   */
+  async linkAddress (address, provider) {
+    if (!this._keyring) throw new Error('This method can only be called after authenticate has been called')
+    const proof = await createLink(this.DID, address, provider)
+    this.events.emit('new-link-proof', proof)
+    return proof
+  }
+
+  async linkManagementKey () {
+    // TODO - this method should be deprecated
     const timestamp = Math.floor(new Date().getTime() / 1000)
-    const msg = `Create a new 3Box profile\n\n- \nYour unique profile ID is ${did} \nTimestamp: ${timestamp}`
+    const msg = `Create a new 3Box profile\n\n- \nYour unique profile ID is ${this.DID} \nTimestamp: ${timestamp}`
     return {
       msg,
       timestamp,
@@ -76,21 +104,23 @@ class IdentityWallet {
     }
   }
 
-  _initKeyring (authData) {
-    let seed
+  async _initKeyring (authData) {
     if (authData) {
+      let seed
       authData.find(({ ciphertext, nonce }) => {
-        const key = Keyring.hexToUint8Array(this._authSecret)
-        seed = Keyring.symDecryptBase(ciphertext, key, nonce)
+        seed = Keyring.decryptWithAuthSecret(ciphertext, nonce, this._authSecret)
         return Boolean(seed)
       })
       if (!seed) throw new Error('No valid auth-secret for this identity')
+      this._keyring = new Keyring(seed)
+      this.DID = await this._get3id()
     } else {
       // no authData available so we create a new identity
-      seed = '0x' + Buffer.from(Keyring.naclRandom(32)).toString('hex')
-      this.addAuthMethod(this._authSecret, seed)
+      const seed = '0x' + Buffer.from(Keyring.naclRandom(32)).toString('hex')
+      this._keyring = new Keyring(seed)
+      this.DID = await this._get3id()
+      this.addAuthMethod(this._authSecret)
     }
-    this._keyring = new Keyring(seed)
   }
 
   /**
@@ -102,7 +132,7 @@ class IdentityWallet {
    * @return    {Object}                            The public keys for the requested spaces of this identity
    */
   async authenticate (spaces = [], { authData } = {}, origin) {
-    if (!this._keyring) this._initKeyring(authData)
+    if (!this._keyring) await this._initKeyring(authData)
     if (!(await this.getConsent(spaces, origin))) {
       throw new Error('Authentication not authorized by user')
     }
@@ -131,18 +161,17 @@ class IdentityWallet {
    *
    * @param     {String}    authSecret              A 32 byte hex string used as authentication secret
    */
-  async addAuthMethod (authSecret, seed) {
-    if (!seed && !this._keyring) throw new Error('This method can only be called after authenticate has been called')
+  async addAuthMethod (authSecret) {
+    if (!this._keyring) throw new Error('This method can only be called after authenticate has been called')
 
-    const message = seed || this._keyring._seed
-    const key = Keyring.hexToUint8Array(authSecret)
-    const encAuthData = Keyring.symEncryptBase(message, key)
-
-    // TODO - a link from a key derived from the new authSecret
-    // should be created and sent along here. This allows
-    // the data to be synced without knowing ethAddr or managementKey
-
+    const message = this._keyring._seed
+    const encAuthData = Keyring.encryptWithAuthSecret(message, authSecret)
     this.events.emit('new-auth-method', encAuthData)
+
+    // A link from the authSecret is created in order to find
+    // the DID if we don't know the seed
+    const authWallet = Keyring.walletForAuthSecret(authSecret)
+    this.events.emit('new-link-proof', await createLink(this.DID, authWallet.address, fakeEthProvider(authWallet)))
   }
 
   /**
@@ -150,7 +179,6 @@ class IdentityWallet {
    *
    * @param     {Object}    payload                 The payload of the claim
    * @param     {Object}    opts                    Optional parameters
-   * @param     {String}    opts.DID                The DID used as the issuer of this claim
    * @param     {String}    opts.space              The space used to sign the claim
    * @param     {String}    opts.expiresIn          Set an expiry date for the claim as unix timestamp
    * @return    {String}                            The signed claim encoded as a JWT
@@ -158,7 +186,7 @@ class IdentityWallet {
   async signClaim (payload, { DID, space, expiresIn } = {}) {
     if (!this._keyring) throw new Error('This method can only be called after authenticate has been called')
 
-    const issuer = DID
+    const issuer = DID || await this._get3id(space)
     const settings = {
       signer: this._keyring.getJWTSigner(space),
       issuer,
@@ -202,6 +230,34 @@ class IdentityWallet {
   async hashDBKey (key, space) {
     const salt = this._keyring.getDBSalt(space)
     return sha256Multihash(salt + key)
+  }
+
+  async _get3id (space) {
+    const pubkeys = this._keyring.getPublicKeys({ space, uncompressed: true })
+    const doc = new DidDocument(fakeIpfs, DID_METHOD_NAME)
+    if (!space) {
+      if (this.DID) return this.DID
+      doc.addPublicKey('signingKey', 'Secp256k1VerificationKey2018', 'publicKeyHex', pubkeys.signingKey)
+      doc.addPublicKey('encryptionKey', 'Curve25519EncryptionPublicKey', 'publicKeyBase64', pubkeys.asymEncryptionKey)
+      doc.addPublicKey('managementKey', 'Secp256k1VerificationKey2018', 'ethereumAddress', pubkeys.managementKey)
+      doc.addAuthentication('Secp256k1SignatureAuthentication2018', 'signingKey')
+    } else {
+      doc.addPublicKey('subSigningKey', 'Secp256k1VerificationKey2018', 'publicKeyHex', pubkeys.signingKey)
+      doc.addPublicKey('subEncryptionKey', 'Curve25519EncryptionPublicKey', 'publicKeyBase64', pubkeys.asymEncryptionKey)
+      doc.addAuthentication('Secp256k1SignatureAuthentication2018', 'subSigningKey')
+      doc.addCustomProperty('space', space)
+      doc.addCustomProperty('root', this.DID)
+      const payload = {
+        subSigningKey: pubkeys.signingKey,
+        subEncryptionKey: pubkeys.asymEncryptionKey,
+        space: space,
+        iat: null
+      }
+      const signature = (await this.signClaim(payload)).split('.')[2]
+      doc.addCustomProperty('proof', { alg: 'ES256K', signature })
+    }
+    await doc.commit({ noTimestamp: true })
+    return doc.DID
   }
 }
 
