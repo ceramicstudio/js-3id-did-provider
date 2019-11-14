@@ -46,6 +46,10 @@ describe('ThreeIdProvider', () => {
     IDW_MOCK.authenticate.mockClear()
   })
 
+  it('is 3id provider', async () => {
+    expect(rpc.is3idProvider).toBeTruthy()
+  })
+
   it('getLink correctly', async () => {
     const payload = formatCall('getLink')
     expect(await rpc.send(payload)).toMatchSnapshot()

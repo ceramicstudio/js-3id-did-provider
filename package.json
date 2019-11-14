@@ -1,6 +1,6 @@
 {
   "name": "identity-wallet",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "description": "Create and manage identities",
   "main": "lib/identity-wallet.js",
   "directories": {

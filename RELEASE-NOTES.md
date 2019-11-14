@@ -1,5 +1,8 @@
 # Release Notes
 
+## v0.3.1 - 2019-11-14
+Fix: add is3idProvider property to provider
+
 ## v0.3.0 - 2019-11-05
 Feat: add required getConsent function
 Fix: bug when opening spaces

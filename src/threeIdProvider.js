@@ -20,6 +20,7 @@ const callbackOrThrow = (callback, errMsg) => {
 
 class ThreeIdProvider {
   constructor (idWallet) {
+    this.is3idProvider = true
     this._idWallet = idWallet
     this._newAuthMethods = []
     this._idWallet.events.on('new-auth-method', authBlob => {
