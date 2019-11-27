@@ -105,7 +105,9 @@ class IdentityWallet {
   }
 
   async _initKeyring (authData) {
-    if (authData) {
+    if (this._seed) {
+      await this.getLink()
+    } else if (authData) {
       let seed
       authData.find(({ ciphertext, nonce }) => {
         seed = Keyring.decryptWithAuthSecret(ciphertext, nonce, this._authSecret)
