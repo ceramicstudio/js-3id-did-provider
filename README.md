@@ -138,7 +138,7 @@ Link an address to the 3ID
 | Param | Type | Description |
 | --- | --- | --- |
 | address | <code>String</code> | The address to link |
-| provider | <code>Object</code> | The provider for the address |
+| provider | <code>Object</code> | The provider that can sign a message for the given address |
 
 <a name="IdentityWallet+authenticate"></a>
 
