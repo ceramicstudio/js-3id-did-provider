@@ -1,4 +1,4 @@
-import crypto from 'crypto'
+import sha256 from 'js-sha256'
 import Multihash from 'multihashes'
 import dagCBOR from 'ipld-dag-cbor'
 
@@ -10,8 +10,6 @@ const pad = (val, blockSize = ENC_BLOCK_SIZE) => {
 }
 
 const unpad = padded => padded.replace(/\0+$/, '')
-
-const sha256 = msg => crypto.createHash('sha256').update(msg).digest('hex')
 
 const sha256Multihash = str => Multihash.encode(Buffer.from(sha256(str)), 'sha2-256').toString('hex')
 
