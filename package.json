@@ -47,6 +47,7 @@
     "events": "^3.0.0",
     "ipfs-did-document": "^1.2.3",
     "ipld-dag-cbor": "^0.15.0",
+    "js-sha256": "^0.9.0",
     "multihashes": "^0.4.15",
     "store": "^2.0.12",
     "tweetnacl": "^1.0.1",
