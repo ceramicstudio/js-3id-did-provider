@@ -80,7 +80,10 @@ class IdentityWallet {
   }
 
   /**
-   * Link an address to the 3ID
+   * Link a blockchain address to the identity. Usually the address
+   * would be an ethereum address (EOA or EIP1271 compatible contract)
+   * and the provider is an JSON-RPC provider that can sign a message
+   * with this address using personal_sign.
    *
    * @param     {String}        address          The address to link
    * @param     {Object}        provider         The provider that can sign a message for the given address
