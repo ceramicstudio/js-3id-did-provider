@@ -1,5 +1,11 @@
 # Release Notes
 
+## v1.0.0 - 2019-12-02
+refactor: improved logic for linking blockchain addresses
+fix: use js-sha256 instead of crypto dependency
+
+Also features other minor bug fixes
+
 ## v0.3.1 - 2019-11-14
 Fix: add is3idProvider property to provider
 

@@ -1,8 +1,8 @@
 const ThreeIdProvider = require('../threeIdProvider')
 
-let eventCB
+let authCB, linkCB
 const IDW_MOCK = {
-  getAddress: jest.fn(() => 'link'),
+  getLink: jest.fn(() => 'link'),
   linkManagementKey: jest.fn(() => 'link data'),
   authenticate: jest.fn(() => 'auth data'),
   isAuthenticated: jest.fn(() => true),
@@ -11,7 +11,10 @@ const IDW_MOCK = {
   decrypt: jest.fn(() => 'decrypted data'),
   hashDBKey: jest.fn(() => 'hashed data'),
   events: {
-    on: jest.fn((name, cb) => eventCB = cb)
+    on: jest.fn((name, cb) => {
+      if (name === 'new-auth-method') authCB = cb
+      else linkCB = cb
+    })
   }
 }
 
@@ -53,17 +56,16 @@ describe('ThreeIdProvider', () => {
   it('getLink correctly', async () => {
     const payload = formatCall('getLink')
     expect(await rpc.send(payload)).toMatchSnapshot()
-    expect(IDW_MOCK.getAddress).toHaveBeenCalledTimes(1)
+    expect(IDW_MOCK.getLink).toHaveBeenCalledTimes(1)
     expect(await callWithCB(rpc, payload)).toMatchSnapshot()
-    expect(IDW_MOCK.getAddress).toHaveBeenCalledTimes(2)
+    expect(IDW_MOCK.getLink).toHaveBeenCalledTimes(2)
   })
 
   it('linkManagementKey correctly', async () => {
-    const did = 'did:3:my'
-    const payload = formatCall('linkManagementKey', { did })
+    const payload = formatCall('linkManagementKey')
     expect(await rpc.send(payload)).toMatchSnapshot()
     expect(IDW_MOCK.linkManagementKey).toHaveBeenCalledTimes(1)
-    expect(IDW_MOCK.linkManagementKey).toHaveBeenCalledWith(did)
+    expect(IDW_MOCK.linkManagementKey).toHaveBeenCalledWith()
     expect(await callWithCB(rpc, payload)).toMatchSnapshot()
     expect(IDW_MOCK.linkManagementKey).toHaveBeenCalledTimes(2)
   })
@@ -146,14 +148,33 @@ describe('ThreeIdProvider', () => {
     expect(response.result.length).toEqual(0)
 
     const authBlob = 'auth data'
-    eventCB(authBlob)
+    authCB(authBlob)
     response = await rpc.send(payload)
     expect(response.result.length).toEqual(1)
     expect(response.result).toEqual([authBlob])
-    eventCB(authBlob)
+    authCB(authBlob)
     response = await callWithCB(rpc, payload)
     expect(response.result.length).toEqual(1)
     expect(response.result).toEqual([authBlob])
+  })
+
+  it('NEW_LINK_POLL should work correctly', async () => {
+    const payload = formatCall('newLinkPoll')
+    let response
+    response = await rpc.send(payload)
+    expect(response.result.length).toEqual(0)
+    response = await callWithCB(rpc, payload)
+    expect(response.result.length).toEqual(0)
+
+    const linkProof = 'link proof'
+    linkCB(linkProof)
+    response = await rpc.send(payload)
+    expect(response.result.length).toEqual(1)
+    expect(response.result).toEqual([linkProof])
+    linkCB(linkProof)
+    response = await callWithCB(rpc, payload)
+    expect(response.result.length).toEqual(1)
+    expect(response.result).toEqual([linkProof])
   })
 
   it('Unsupported method should throw', async () => {

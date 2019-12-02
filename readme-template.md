@@ -53,12 +53,11 @@ const idWallet = new IdentityWallet(getConsent, { seed })
 ```
 
 #### Creating an identity for a contract wallet
-For wallets which doesn't have one keypair, e.g. smart contract wallets, we provide a way of creating an identity with multiple authentication secrets. In this model each authentication secret grants full access to the identity. To create an instance of the IdentityWallet in this way the ethereum address of the account also needs to be passed to the constructor.
+For wallets which doesn't have one keypair, e.g. smart contract wallets, we provide a way of creating an identity with multiple authentication secrets. In this model each authentication secret grants full access to the identity.
 ```js
 const authSecret = '0xabc123...' // a hex encoded secret
-const ethereumAddress = '0xabc123' // an ethereum address
 
-const idWallet = new IdentityWallet(getConsent, { authSecret, ethereumAddress })
+const idWallet = new IdentityWallet(getConsent, { authSecret })
 ```
 
 New authentication secrets can later be added by calling the `addAuthMethod` instance method of the identityWallet. Note that this method can only be called after an authentication first has happened (`Box.openBox` has been called from `3box-js`).
@@ -88,5 +87,16 @@ provider.send(rpcRequest, origin, (error, response) => {
 })
 ```
 In the above example `rpcRequest` is a request formated according to the [3ID JSON-RPC](https://github.com/3box/3box/blob/master/3IPs/3ip-10.md) specification, and `origin` is a string, e.g. `https://my.app.origin`.
+
+
+#### Link an address to the identity
+Multiple blockchain addresses can be linked to an identity controlled by an IdentityWallet instance. Right now two types of ethereum addresses are supported: EOAs (externally owned accounts) and EIP1271 contracts. Support for other types and blockchains can be easily added by contributing to the 3id-blockchain-utils module.
+To link an address simply use the linkAddress method as shown in the example below. The ethProvider needs to be able to sign a message using personal_sign for the given address.
+```js
+const ethAddress = '0xabc...'
+const ethProvider = // an ethereum json-rpc provider
+
+await idWallet.linkAddress(ethAddress, ethProvider)
+```
 
 ## <a name="api"></a> API Documentation

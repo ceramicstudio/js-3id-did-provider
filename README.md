@@ -53,12 +53,11 @@ const idWallet = new IdentityWallet(getConsent, { seed })
 ```
 
 #### Creating an identity for a contract wallet
-For wallets which doesn't have one keypair, e.g. smart contract wallets, we provide a way of creating an identity with multiple authentication secrets. In this model each authentication secret grants full access to the identity. To create an instance of the IdentityWallet in this way the ethereum address of the account also needs to be passed to the constructor.
+For wallets which doesn't have one keypair, e.g. smart contract wallets, we provide a way of creating an identity with multiple authentication secrets. In this model each authentication secret grants full access to the identity.
 ```js
 const authSecret = '0xabc123...' // a hex encoded secret
-const ethereumAddress = '0xabc123' // an ethereum address
 
-const idWallet = new IdentityWallet(getConsent, { authSecret, ethereumAddress })
+const idWallet = new IdentityWallet(getConsent, { authSecret })
 ```
 
 New authentication secrets can later be added by calling the `addAuthMethod` instance method of the identityWallet. Note that this method can only be called after an authentication first has happened (`Box.openBox` has been called from `3box-js`).
@@ -89,6 +88,17 @@ provider.send(rpcRequest, origin, (error, response) => {
 ```
 In the above example `rpcRequest` is a request formated according to the [3ID JSON-RPC](https://github.com/3box/3box/blob/master/3IPs/3ip-10.md) specification, and `origin` is a string, e.g. `https://my.app.origin`.
 
+
+#### Link an address to the identity
+Multiple blockchain addresses can be linked to an identity controlled by an IdentityWallet instance. Right now two types of ethereum addresses are supported: EOAs (externally owned accounts) and EIP1271 contracts. Support for other types and blockchains can be easily added by contributing to the 3id-blockchain-utils module.
+To link an address simply use the linkAddress method as shown in the example below. The ethProvider needs to be able to sign a message using personal_sign for the given address.
+```js
+const ethAddress = '0xabc...'
+const ethProvider = // an ethereum json-rpc provider
+
+await idWallet.linkAddress(ethAddress, ethProvider)
+```
+
 ## <a name="api"></a> API Documentation
 <a name="IdentityWallet"></a>
 
@@ -98,6 +108,7 @@ In the above example `rpcRequest` is a request formated according to the [3ID JS
 * [IdentityWallet](#IdentityWallet)
     * [new IdentityWallet(getConsent, config)](#new_IdentityWallet_new)
     * [.get3idProvider()](#IdentityWallet+get3idProvider) ⇒ <code>ThreeIdProvider</code>
+    * [.linkAddress(address, provider)](#IdentityWallet+linkAddress) ⇒ <code>Object</code>
     * [.authenticate(spaces, opts)](#IdentityWallet+authenticate) ⇒ <code>Object</code>
     * [.isAuthenticated(spaces)](#IdentityWallet+isAuthenticated) ⇒ <code>Boolean</code>
     * [.addAuthMethod(authSecret)](#IdentityWallet+addAuthMethod)
@@ -118,7 +129,6 @@ Creates an instance of IdentityWallet
 | config | <code>Object</code> | The configuration to be used |
 | config.seed | <code>String</code> | The seed of the identity, 32 hex string |
 | config.authSecret | <code>String</code> | The authSecret to use, 32 hex string |
-| config.ethereumAddress | <code>String</code> | The ethereumAddress of the identity |
 
 <a name="IdentityWallet+get3idProvider"></a>
 
@@ -127,6 +137,22 @@ Get the 3IDProvider
 
 **Kind**: instance method of [<code>IdentityWallet</code>](#IdentityWallet)  
 **Returns**: <code>ThreeIdProvider</code> - The 3IDProvider for this IdentityWallet instance  
+<a name="IdentityWallet+linkAddress"></a>
+
+#### identityWallet.linkAddress(address, provider) ⇒ <code>Object</code>
+Link a blockchain address to the identity. Usually the address
+would be an ethereum address (EOA or EIP1271 compatible contract)
+and the provider is an JSON-RPC provider that can sign a message
+with this address using personal_sign.
+
+**Kind**: instance method of [<code>IdentityWallet</code>](#IdentityWallet)  
+**Returns**: <code>Object</code> - The link proof object  
+
+| Param | Type | Description |
+| --- | --- | --- |
+| address | <code>String</code> | The address to link |
+| provider | <code>Object</code> | The provider that can sign a message for the given address |
+
 <a name="IdentityWallet+authenticate"></a>
 
 #### identityWallet.authenticate(spaces, opts) ⇒ <code>Object</code>
@@ -176,7 +202,6 @@ Sign a verifiable credential. The format of the credential is [did-jwt](https://
 | --- | --- | --- |
 | payload | <code>Object</code> | The payload of the claim |
 | opts | <code>Object</code> | Optional parameters |
-| opts.DID | <code>String</code> | The DID used as the issuer of this claim |
 | opts.space | <code>String</code> | The space used to sign the claim |
 | opts.expiresIn | <code>String</code> | Set an expiry date for the claim as unix timestamp |
 
