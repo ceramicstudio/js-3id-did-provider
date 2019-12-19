@@ -61,21 +61,15 @@ class ThreeIdProvider {
           })
           break
         case methods.ENCRYPT:
-          if (req.params.to) {
-            callbackOrThrow(callback, 'Encrypting with "to" param not supported yet')
-            return
-          }
           result = await this._idWallet.encrypt(req.params.message, req.params.space, {
-            blockSize: req.params.blockSize
+            blockSize: req.params.blockSize,
+            to: req.params.to
           })
           break
         case methods.DECRYPT:
-          if (req.params.ephemneralFrom) {
-            callbackOrThrow(callback, 'Encrypting with "ephemneralFrom" param not supported yet')
-            return
-          }
           result = await this._idWallet.decrypt({
             ciphertext: req.params.ciphertext,
+            ephemeralFrom: req.params.ephemeralFrom,
             nonce: req.params.nonce
           }, req.params.space)
           break

@@ -2,6 +2,8 @@
 
 exports[`IdentityWallet addAuthMethod should throw before authenticate 1`] = `[Error: This method can only be called after authenticate has been called]`;
 
+exports[`IdentityWallet asymmetrically encrypt/decrypt works correctly 1`] = `[Error: IdentityWallet: Could not decrypt message]`;
+
 exports[`IdentityWallet authenticate should throw if no valid authSecrets 1`] = `[Error: No valid auth-secret for this identity]`;
 
 exports[`IdentityWallet authenticate works correctly w/ seed only wallet 1`] = `

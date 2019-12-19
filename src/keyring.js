@@ -59,16 +59,17 @@ class Keyring {
     return this._spaceKeys[space]
   }
 
-  asymEncrypt (msg, toPublic, { space, nonce } = {}) {
+  asymEncrypt (msg, toPublic, { nonce } = {}) {
     nonce = nonce || Keyring.randomNonce()
     toPublic = nacl.util.decodeBase64(toPublic)
     if (typeof msg === 'string') {
       msg = nacl.util.decodeUTF8(msg)
     }
-    // TODO - use an ephemneral key here
-    const ciphertext = nacl.box(msg, nonce, toPublic, this._getKeys(space).asymEncryptionKey.secretKey)
+    const ephemneralKeypair = nacl.box.keyPair()
+    const ciphertext = nacl.box(msg, nonce, toPublic, ephemneralKeypair.secretKey)
     return {
       nonce: nacl.util.encodeBase64(nonce),
+      ephemeralFrom: nacl.util.encodeBase64(ephemneralKeypair.publicKey),
       ciphertext: nacl.util.encodeBase64(ciphertext)
     }
   }
