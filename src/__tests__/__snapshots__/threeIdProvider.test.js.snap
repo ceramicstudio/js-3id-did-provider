@@ -4,6 +4,38 @@ exports[`ThreeIdProvider Unsupported method should throw 1`] = `[Error: Unsuppor
 
 exports[`ThreeIdProvider Unsupported method should throw 2`] = `"Unsupported method: 3id_notSupported"`;
 
+exports[`ThreeIdProvider asymmetrically decrypt correctly 1`] = `
+Object {
+  "id": 1,
+  "json-rpc": "2.0",
+  "result": "decrypted data",
+}
+`;
+
+exports[`ThreeIdProvider asymmetrically decrypt correctly 2`] = `
+Object {
+  "id": 1,
+  "json-rpc": "2.0",
+  "result": "decrypted data",
+}
+`;
+
+exports[`ThreeIdProvider asymmetrically encrypt correctly 1`] = `
+Object {
+  "id": 1,
+  "json-rpc": "2.0",
+  "result": "encrypted data",
+}
+`;
+
+exports[`ThreeIdProvider asymmetrically encrypt correctly 2`] = `
+Object {
+  "id": 1,
+  "json-rpc": "2.0",
+  "result": "encrypted data",
+}
+`;
+
 exports[`ThreeIdProvider authenticate correctly 1`] = `
 Object {
   "id": 1,

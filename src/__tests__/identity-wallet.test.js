@@ -203,4 +203,15 @@ describe('IdentityWallet', () => {
     const encObj2 = await idWallet1.encrypt(msg2, 'space1')
     expect(await idWallet1.decrypt(encObj2, 'space1')).toEqual(msg2)
   })
+
+  it('asymmetrically encrypt/decrypt works correctly', async () => {
+    // encrypt and decrypt should work
+    const msg1 = 'secret message'
+    const { asymEncryptionKey } = idWallet1._keyring.getPublicKeys({ space: 'space1' })
+    const encObj1 = await idWallet1.encrypt(msg1, null, { to: asymEncryptionKey })
+    expect(await idWallet1.decrypt(encObj1, 'space1')).toEqual(msg1)
+
+    // decrypt with wrong key should fail
+    await expect(idWallet1.decrypt(encObj1, 'space2')).rejects.toMatchSnapshot()
+  })
 })
