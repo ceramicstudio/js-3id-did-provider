@@ -1,5 +1,8 @@
 # Release Notes
 
+## v1.1.0 - 2020-01-07
+feature: Add support for asymmetric encryption
+
 ## v1.0.0 - 2019-12-02
 refactor: improved logic for linking blockchain addresses
 fix: use js-sha256 instead of crypto dependency
