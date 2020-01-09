@@ -206,28 +206,38 @@ class IdentityWallet {
    * @param     {String}    message                 The message to be encrypted
    * @param     {String}    space                   The space used for encryption
    * @param     {Object}    opts                    Optional parameters
+   * @param     {String}    opts.to                 The public key to encrypt the message to
    * @param     {String}    opts.nonce              The nonce used to encrypt the message
    * @param     {String}    opts.blockSize          The blockSize used for padding (default 24)
    * @return    {Object}                            The encrypted object (ciphertext and nonce)
    */
-  async encrypt (message, space, { nonce, blockSize } = {}) {
+  async encrypt (message, space, { nonce, blockSize, to } = {}) {
     if (!this._keyring) throw new Error('This method can only be called after authenticate has been called')
 
     const paddedMsg = pad(message, blockSize)
-    return this._keyring.symEncrypt(paddedMsg, { space, nonce })
+    if (to) {
+      return this._keyring.asymEncrypt(paddedMsg, to, { nonce })
+    } else {
+      return this._keyring.symEncrypt(paddedMsg, { space, nonce })
+    }
   }
 
   /**
    * Decrypt a message
    *
-   * @param     {Object}    encryptedObject         The encrypted object (ciphertext and nonce)
+   * @param     {Object}    encryptedObject         The encrypted object (ciphertext, nonce, and ephemeralFrom for asymmetric encrypted objects)
    * @param     {String}    space                   The space used for encryption
    * @return    {String}                            The decrypted message
    */
   async decrypt (encObj, space) {
     if (!this._keyring) throw new Error('This method can only be called after authenticate has been called')
 
-    const paddedMsg = this._keyring.symDecrypt(encObj.ciphertext, encObj.nonce, { space })
+    let paddedMsg
+    if (encObj.ephemeralFrom) {
+      paddedMsg = this._keyring.asymDecrypt(encObj.ciphertext, encObj.ephemeralFrom, encObj.nonce, { space })
+    } else {
+      paddedMsg = this._keyring.symDecrypt(encObj.ciphertext, encObj.nonce, { space })
+    }
     if (!paddedMsg) throw new Error('IdentityWallet: Could not decrypt message')
     return unpad(paddedMsg)
   }

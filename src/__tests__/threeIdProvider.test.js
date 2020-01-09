@@ -47,6 +47,8 @@ describe('ThreeIdProvider', () => {
   beforeEach(() => {
     rpc = new ThreeIdProvider(IDW_MOCK)
     IDW_MOCK.authenticate.mockClear()
+    IDW_MOCK.encrypt.mockClear()
+    IDW_MOCK.decrypt.mockClear()
   })
 
   it('is 3id provider', async () => {
@@ -116,6 +118,17 @@ describe('ThreeIdProvider', () => {
     expect(IDW_MOCK.encrypt).toHaveBeenCalledTimes(2)
   })
 
+  it('asymmetrically encrypt correctly', async () => {
+    const message = 'data'
+    const to = 'pubkey'
+    const payload = formatCall('encrypt', { message, to })
+    expect(await rpc.send(payload)).toMatchSnapshot()
+    expect(IDW_MOCK.encrypt).toHaveBeenCalledTimes(1)
+    expect(IDW_MOCK.encrypt).toHaveBeenCalledWith(message, undefined, { to, blockSize: undefined })
+    expect(await callWithCB(rpc, payload)).toMatchSnapshot()
+    expect(IDW_MOCK.encrypt).toHaveBeenCalledTimes(2)
+  })
+
   it('decrypt correctly', async () => {
     const ciphertext = 'data'
     const nonce = 'nonce'
@@ -124,6 +137,19 @@ describe('ThreeIdProvider', () => {
     expect(await rpc.send(payload)).toMatchSnapshot()
     expect(IDW_MOCK.decrypt).toHaveBeenCalledTimes(1)
     expect(IDW_MOCK.decrypt).toHaveBeenCalledWith({ ciphertext, nonce }, space)
+    expect(await callWithCB(rpc, payload)).toMatchSnapshot()
+    expect(IDW_MOCK.decrypt).toHaveBeenCalledTimes(2)
+  })
+
+  it('asymmetrically decrypt correctly', async () => {
+    const ciphertext = 'data'
+    const nonce = 'nonce'
+    const space = 'space1'
+    const ephemeralFrom = 'publicKey'
+    const payload = formatCall('decrypt', { ciphertext, nonce, space, ephemeralFrom })
+    expect(await rpc.send(payload)).toMatchSnapshot()
+    expect(IDW_MOCK.decrypt).toHaveBeenCalledTimes(1)
+    expect(IDW_MOCK.decrypt).toHaveBeenCalledWith({ ciphertext, ephemeralFrom, nonce }, space)
     expect(await callWithCB(rpc, payload)).toMatchSnapshot()
     expect(IDW_MOCK.decrypt).toHaveBeenCalledTimes(2)
   })

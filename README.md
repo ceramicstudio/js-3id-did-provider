@@ -218,6 +218,7 @@ Encrypt a message
 | message | <code>String</code> | The message to be encrypted |
 | space | <code>String</code> | The space used for encryption |
 | opts | <code>Object</code> | Optional parameters |
+| opts.to | <code>String</code> | The public key to encrypt the message to |
 | opts.nonce | <code>String</code> | The nonce used to encrypt the message |
 | opts.blockSize | <code>String</code> | The blockSize used for padding (default 24) |
 
@@ -231,6 +232,6 @@ Decrypt a message
 
 | Param | Type | Description |
 | --- | --- | --- |
-| encryptedObject | <code>Object</code> | The encrypted object (ciphertext and nonce) |
+| encryptedObject | <code>Object</code> | The encrypted object (ciphertext, nonce, and ephemeralFrom for asymmetric encrypted objects) |
 | space | <code>String</code> | The space used for encryption |
 
