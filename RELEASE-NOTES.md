@@ -1,5 +1,8 @@
 # Release Notes
 
+## v1.1.1 - 2020-02-12
+chore: update `hdnode` and `wallet` packages from `ethers.js`
+
 ## v1.1.0 - 2020-01-07
 feature: Add support for asymmetric encryption
 
