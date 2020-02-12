@@ -41,8 +41,8 @@
   "dependencies": {
     "3id-blockchain-utils": "^0.3.2",
     "@babel/runtime": "^7.4.5",
-    "@ethersproject/hdnode": "5.0.0-beta.133",
-    "@ethersproject/wallet": "5.0.0-beta.133",
+    "@ethersproject/hdnode": "^5.0.0-beta.137",
+    "@ethersproject/wallet": "^5.0.0-beta.136",
     "did-jwt": "^0.1.3",
     "events": "^3.0.0",
     "ipfs-did-document": "^1.2.3",
