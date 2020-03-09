@@ -17,6 +17,7 @@ class IdentityWallet {
    * @param     {Object}    config                  The configuration to be used
    * @param     {String}    config.seed             The seed of the identity, 32 hex string
    * @param     {String}    config.authSecret       The authSecret to use, 32 hex string
+   * @param     {String}    config.externalAuth     TODO func for external Auth
    * @return    {this}                              An IdentityWallet instance
    */
   constructor (getConsent, config = {}) {
@@ -28,6 +29,9 @@ class IdentityWallet {
       this._seed = config.seed
     } else if (config.authSecret) {
       this._authSecret = config.authSecret
+    } else if (config.externalAuth) {
+      // TODO?
+      this._externalAuth = config.externalAuth
     } else {
       throw new Error('Either seed, or authSecret has to be passed to create an IdentityWallet instance')
     }
@@ -65,6 +69,9 @@ class IdentityWallet {
   }
 
   async getLink () {
+    // TODO, partial migrations needs to get from localstore or ask to link right away
+    // return "0x73b46e6fde67a4c5d89daea8e4194e466586dcfe"
+    return '0x7e0dbEb9870BcaA62112cAb0147513068cF85E0b'
     if (this._seed) {
       this._keyring = new Keyring(this._seed)
       this.DID = await this._get3id()
@@ -107,10 +114,10 @@ class IdentityWallet {
     }
   }
 
-  async _initKeyring (authData) {
+  async _initKeyring (authData, address, spaces) {
     if (this._seed) {
       await this.getLink()
-    } else if (authData) {
+    } else if (authData && authData.length > 0) {
       let seed
       authData.find(({ ciphertext, nonce }) => {
         seed = Keyring.decryptWithAuthSecret(ciphertext, nonce, this._authSecret)
@@ -118,6 +125,13 @@ class IdentityWallet {
       })
       if (!seed) throw new Error('No valid auth-secret for this identity')
       this._keyring = new Keyring(seed)
+      this.DID = await this._get3id()
+
+    } else if (address) {
+      // address and not auth secret
+      // const authSecret = await this._externalAuth({ address, type: '3id_auth' })
+      const migratedKeys = await this._externalAuth({ address, spaces, type: '3id_migration' })
+      this._keyring = new Keyring(null, migratedKeys)
       this.DID = await this._get3id()
     } else {
       // no authData available so we create a new identity
@@ -136,8 +150,10 @@ class IdentityWallet {
    * @param     {Array<Object>}     opts.authData   The authData for this identity
    * @return    {Object}                            The public keys for the requested spaces of this identity
    */
-  async authenticate (spaces = [], { authData } = {}, origin) {
-    if (!this._keyring) await this._initKeyring(authData)
+  async authenticate (spaces = [], { authData, address } = {}, origin) {
+    // TODO pass another flag for partial migration somewhere? cant generally use !auth
+    // TODO maybe change ordering here, initkeyring opens provider sign, before getconsent modal
+    if (!this._keyring || !authData) await this._initKeyring(authData, address, spaces)
     if (!(await this.getConsent(spaces, origin))) {
       throw new Error('Authentication not authorized by user')
     }
@@ -158,6 +174,7 @@ class IdentityWallet {
    * @return    {Boolean}                           True if authenticated
    */
   async isAuthenticated (spaces = [], origin) {
+    // TODO address also?
     return Boolean(this._keyring) && this.hasConsent(spaces, origin)
   }
 

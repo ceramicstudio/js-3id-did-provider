@@ -21,7 +21,8 @@ const fakeIpfs = {
       return dagCBOR.util.cid(dagCBOR.util.serialize(data, opts))
     },
     get: () => ({ value: tmpData })
-  }
+  },
+  add: () => "empty"
 }
 
 const fakeEthProvider = wallet => ({
