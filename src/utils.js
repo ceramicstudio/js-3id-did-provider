@@ -29,7 +29,11 @@ const fakeEthProvider = wallet => ({
     if (request.method !== 'personal_sign') {
       callback(new Error('only supports personal_sign'))
     } else {
-      callback(null, { result: wallet.signMessage(request.params[0]) })
+      let message = request.params[0]
+      if (message.startsWith('0x')) {
+        message = Buffer.from(message.slice(2), 'hex').toString('utf8')
+      }
+      callback(null, { result: wallet.signMessage(message) })
     }
   }
 })
