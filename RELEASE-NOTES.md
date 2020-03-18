@@ -1,5 +1,9 @@
 # Release Notes
 
+## v1.1.3 - 2020-03-18
+fix: sign hex encoded messages correctly
+chore: pin `hdnode` and `wallet` package versions
+
 ## v1.1.1 - 2020-02-12
 chore: update `hdnode` and `wallet` packages from `ethers.js`
 
