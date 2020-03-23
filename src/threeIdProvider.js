@@ -71,7 +71,7 @@ class ThreeIdProvider {
             ciphertext: req.params.ciphertext,
             ephemeralFrom: req.params.ephemeralFrom,
             nonce: req.params.nonce
-          }, req.params.space)
+          }, req.params.space, req.params.buffer)
           break
         case methods.HASH_ENTRY_KEY:
           result = await this._idWallet.hashDBKey(req.params.key, req.params.space)

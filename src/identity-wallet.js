@@ -214,7 +214,7 @@ class IdentityWallet {
   async encrypt (message, space, { nonce, blockSize, to } = {}) {
     if (!this._keyring) throw new Error('This method can only be called after authenticate has been called')
 
-    const paddedMsg = pad(message, blockSize)
+    const paddedMsg = typeof message === 'string' ? pad(message, blockSize) : message
     if (to) {
       return this._keyring.asymEncrypt(paddedMsg, to, { nonce })
     } else {
@@ -229,17 +229,17 @@ class IdentityWallet {
    * @param     {String}    space                   The space used for encryption
    * @return    {String}                            The decrypted message
    */
-  async decrypt (encObj, space) {
+  async decrypt (encObj, space, toBuffer) {
     if (!this._keyring) throw new Error('This method can only be called after authenticate has been called')
 
     let paddedMsg
     if (encObj.ephemeralFrom) {
-      paddedMsg = this._keyring.asymDecrypt(encObj.ciphertext, encObj.ephemeralFrom, encObj.nonce, { space })
+      paddedMsg = this._keyring.asymDecrypt(encObj.ciphertext, encObj.ephemeralFrom, encObj.nonce, { space, toBuffer })
     } else {
-      paddedMsg = this._keyring.symDecrypt(encObj.ciphertext, encObj.nonce, { space })
+      paddedMsg = this._keyring.symDecrypt(encObj.ciphertext, encObj.nonce, { space, toBuffer })
     }
     if (!paddedMsg) throw new Error('IdentityWallet: Could not decrypt message')
-    return unpad(paddedMsg)
+    return toBuffer ? paddedMsg : unpad(paddedMsg)
   }
 
   async hashDBKey (key, space) {
