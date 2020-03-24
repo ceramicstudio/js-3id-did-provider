@@ -150,6 +150,7 @@ describe('IdentityWallet', () => {
       expect(await idWallet1.authenticate(['space1', 'space2'])).toMatchSnapshot()
       expect(await idWallet1.authenticate(['space3', 'space4'])).toMatchSnapshot()
       expect(await idWallet1.authenticate(['space2', 'space3'])).toMatchSnapshot()
+      expect(await idWallet1.authenticate([], { mgmtPub: true })).toMatchSnapshot()
     })
 
     it('should generate seed if no auth data passed', async () => {

@@ -133,6 +133,17 @@ Object {
 }
 `;
 
+exports[`IdentityWallet authenticate works correctly w/ seed only wallet 5`] = `
+Object {
+  "main": Object {
+    "asymEncryptionKey": "jRKRy3oPhXpUBrFJefO2CJnWw/IoalOPuepAwvTqrEk=",
+    "managementKey": "0350966498e802a007513d518dc12a0a0ab1e48addcec1beaa989c6ff5f5ed226c",
+    "signingKey": "027ab5238257532f486cbeeac59a5721bbfec2f13c3d26516ca9d4c5f0ec1aa229",
+  },
+  "spaces": Object {},
+}
+`;
+
 exports[`IdentityWallet encrypt/decrypt works correctly 1`] = `[Error: IdentityWallet: Could not decrypt message]`;
 
 exports[`IdentityWallet getLink correctly 1`] = `"0xa7b76379659b6c19E4DFf46e0DfEa48AFEBA8fe3"`;
