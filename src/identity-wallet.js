@@ -168,16 +168,15 @@ class IdentityWallet {
    * @param     {Array<Object>}     opts.authData   The authData for this identity
    * @return    {Object}                            The public keys for the requested spaces of this identity
    */
-  async authenticate (spaces = [], { authData, address } = {}, origin) {
+  async authenticate (spaces = [], { authData, address, mgmtPub } = {}, origin) {
     let consent
     // if external auth and address, get consent first, pass address since keyring not avaiable, otherwise call after keyring
     if (address) consent = await this.getConsent(spaces, origin, { address })
     if (!this._keyring || this._externalAuth) await this._initKeyring(authData, address, spaces)
-    if (!address) consent = this.getConsent(spaces, origin)
+    if (!address) consent = await this.getConsent(spaces, origin)
     if (!consent) throw new Error('Authentication not authorized by user')
-
     const result = {
-      main: this._keyring.getPublicKeys(),
+      main: this._keyring.getPublicKeys({ mgmtPub }),
       spaces: {}
     }
     spaces.map(space => {

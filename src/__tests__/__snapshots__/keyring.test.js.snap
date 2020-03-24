@@ -16,6 +16,14 @@ Object {
 }
 `;
 
+exports[`Keyring Keyring from migratedKeys derives correct keys from 3`] = `
+Object {
+  "asymEncryptionKey": "12X0Ua5LDr1rDwKb34mYzNIZUGoqYZBou8h/TLo+FDk=",
+  "managementKey": "0x8fef7ac873dec3cc8a112ea20cd25d4f01cb3e6a",
+  "signingKey": "044f849b104b7c10ee94cfc29ddb46163b1e988f6f1fbb95b14dd1777205963a9aeed1a885247b4b6c860e630e3adfa8df5018bf73f6d6021591f881eb8c330354",
+}
+`;
+
 exports[`Keyring Keyring from migratedKeys signs data correctly 1`] = `
 Object {
   "r": "748f55a9e203e250a3588ae85a917eba48081f9917bc58b98767894e6dd59cc3",
@@ -51,8 +59,16 @@ Object {
 exports[`Keyring Keyring from seed derives correct keys from 2`] = `
 Object {
   "asymEncryptionKey": "jRKRy3oPhXpUBrFJefO2CJnWw/IoalOPuepAwvTqrEk=",
-  "managementKey": "0xa7b76379659b6c19E4DFf46e0DfEa48AFEBA8fe3",
+  "managementKey": "0350966498e802a007513d518dc12a0a0ab1e48addcec1beaa989c6ff5f5ed226c",
   "signingKey": "027ab5238257532f486cbeeac59a5721bbfec2f13c3d26516ca9d4c5f0ec1aa229",
+}
+`;
+
+exports[`Keyring Keyring from seed derives correct keys from 3`] = `
+Object {
+  "asymEncryptionKey": "jRKRy3oPhXpUBrFJefO2CJnWw/IoalOPuepAwvTqrEk=",
+  "managementKey": "0xa7b76379659b6c19E4DFf46e0DfEa48AFEBA8fe3",
+  "signingKey": "047ab5238257532f486cbeeac59a5721bbfec2f13c3d26516ca9d4c5f0ec1aa2298f6eda9fabcee1df8fbe7d49f7f8c14b736d05c4c8f4f276f1a523371ae202fa",
 }
 `;
 

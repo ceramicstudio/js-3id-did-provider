@@ -144,10 +144,10 @@ class Keyring {
     return sha256(this._getKeys(space).signingKey.derivePath('0').privateKey.slice(2))
   }
 
-  getPublicKeys ({ space, uncompressed } = {}) {
+  getPublicKeys ({ space, uncompressed, mgmtPub } = {}) {
     const keys = this._getKeys(space)
     let signingKey = keys.signingKey.publicKey.slice(2)
-    const managementKey = space ? null : keys.managementKey.address
+    const managementKey = space ? null : (mgmtPub && keys.managementKey.publicKey ? keys.managementKey.publicKey.slice(2) : keys.managementKey.address)
     if (uncompressed) {
       signingKey = ec.keyFromPublic(Buffer.from(signingKey, 'hex')).getPublic(false, 'hex')
     }
