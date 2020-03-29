@@ -15,6 +15,7 @@
     "build:dist:prod": "./node_modules/.bin/webpack --config webpack.config.js --mode=production --output-filename identity-wallet.min.js",
     "build": "npm run build:es5; npm run build:dist; npm run build:dist:prod",
     "prepublishOnly": "npm run build; npm run generate-readme",
+    "prepare": "npm run build",
     "generate-readme": "cp readme-template.md README.md; ./node_modules/.bin/jsdoc2md -g none -d 3 'src/**/*.js' >> README.md"
   },
   "browser": {

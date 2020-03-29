@@ -51,7 +51,6 @@ class ThreeIdProvider {
           result = await this._idWallet.authenticate(req.params.spaces, { authData: req.params.authData, address: req.params.address }, origin)
           break
         case methods.IS_AUTHENTICATED:
-          // TODO need address too?
           result = await this._idWallet.isAuthenticated(req.params.spaces, origin)
           break
         case methods.SIGN_CLAIM:

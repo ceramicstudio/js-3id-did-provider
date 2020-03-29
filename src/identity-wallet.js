@@ -46,21 +46,26 @@ class IdentityWallet {
     return new ThreeIdProvider(this)
   }
 
-  hasConsent (spaces = [], origin) {
-    const prefix = `3id_consent_${this._keyring.getPublicKeys().managementKey}_${origin}_`
+  hasConsent (spaces = [], origin, { address } = {} ) {
+    const key = address || this._keyring.getPublicKeys().managementKey
+    const prefix = `3id_consent_${key}_${origin}_`
     const consentExists = space => Boolean(store.get(prefix + space))
     return spaces.reduce((acc, space) => acc && consentExists(space), consentExists())
   }
 
-  async getConsent (spaces = [], origin) {
-    if (!this.hasConsent(spaces, origin)) {
+  async getConsent (spaces = [], origin, { address } = {} ) {
+    if (!this.hasConsent(spaces, origin, { address })) {
       const consent = await this._getConsent({
         type: 'authenticate',
         origin,
-        spaces
+        spaces,
+        opts: {
+          address
+        }
       })
       if (!consent) return false
-      const prefix = `3id_consent_${this._keyring.getPublicKeys().managementKey}_${origin}_`
+      const key = address || this._keyring.getPublicKeys().managementKey
+      const prefix = `3id_consent_${key}_${origin}_`
       const saveConsent = space => store.set(prefix + space, true)
       saveConsent()
       spaces.map(saveConsent)
@@ -69,9 +74,9 @@ class IdentityWallet {
   }
 
   async getLink () {
-    // TODO, partial migrations needs to get from localstore or ask to link right away
-    // return "0x73b46e6fde67a4c5d89daea8e4194e466586dcfe"
-    return '0x7e0dbEb9870BcaA62112cAb0147513068cF85E0b'
+    // TODO maybe throw if externAuth and authed yet (-> no keyring)
+    if (!this._seed && ! this._authSecret && !this._keyring) return null
+
     if (this._seed) {
       this._keyring = new Keyring(this._seed)
       this.DID = await this._get3id()
@@ -105,6 +110,10 @@ class IdentityWallet {
 
   async linkManagementKey () {
     // TODO - this method should be deprecated
+    if (this._externalAuth) {
+      return this._externalAuth({ address: this._keyring._rootKeys.managementAddress, spaces: [], type: '3id_createLink' })
+    }
+
     const timestamp = Math.floor(new Date().getTime() / 1000)
     const msg = `Create a new 3Box profile\n\n- \nYour unique profile ID is ${this.DID} \nTimestamp: ${timestamp}`
     return {
@@ -128,8 +137,7 @@ class IdentityWallet {
       this.DID = await this._get3id()
 
     } else if (address) {
-      // address and not auth secret
-      // const authSecret = await this._externalAuth({ address, type: '3id_auth' })
+      // TODO is this the right if path
       const migratedKeys = await this._externalAuth({ address, spaces, type: '3id_migration' })
       this._keyring = new Keyring(null, migratedKeys)
       this.DID = await this._get3id()
@@ -151,12 +159,12 @@ class IdentityWallet {
    * @return    {Object}                            The public keys for the requested spaces of this identity
    */
   async authenticate (spaces = [], { authData, address } = {}, origin) {
-    // TODO pass another flag for partial migration somewhere? cant generally use !auth
-    // TODO maybe change ordering here, initkeyring opens provider sign, before getconsent modal
-    if (!this._keyring || !authData) await this._initKeyring(authData, address, spaces)
-    if (!(await this.getConsent(spaces, origin))) {
+    if (!(await this.getConsent(spaces, origin, { address }))) {
       throw new Error('Authentication not authorized by user')
     }
+
+    if (!this._keyring || !authData) await this._initKeyring(authData, address, spaces)
+
     const result = {
       main: this._keyring.getPublicKeys(),
       spaces: {}
