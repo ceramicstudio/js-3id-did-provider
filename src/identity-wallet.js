@@ -224,12 +224,12 @@ class IdentityWallet {
    * @param     {String}    opts.expiresIn          Set an expiry date for the claim as unix timestamp
    * @return    {String}                            The signed claim encoded as a JWT
    */
-  async signClaim (payload, { DID, space, expiresIn } = {}) {
+  async signClaim (payload, { DID, space, expiresIn, useMgmt } = {}) {
     if (!this._keyring) throw new Error('This method can only be called after authenticate has been called')
 
     const issuer = DID || await this._get3id(space)
     const settings = {
-      signer: this._keyring.getJWTSigner(space),
+      signer: this._keyring.getJWTSigner(space, useMgmt),
       issuer,
       expiresIn
     }
