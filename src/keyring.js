@@ -136,8 +136,12 @@ class Keyring {
     return new Wallet(this._rootKeys.managementKey.privateKey)
   }
 
-  getJWTSigner (space) {
-    return SimpleSigner(this._getKeys(space).signingKey.privateKey.slice(2))
+  getJWTSigner (space, useMgmt) {
+    const pubkeys = this._getKeys(space)
+    if (useMgmt) {
+      return SimpleSigner(pubkeys.managementKey.privateKey.slice(2))
+    }
+    return SimpleSigner(pubkeys.signingKey.privateKey.slice(2))
   }
 
   getDBSalt (space) {

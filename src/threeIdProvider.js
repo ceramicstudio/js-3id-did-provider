@@ -61,7 +61,8 @@ class ThreeIdProvider {
           result = await this._idWallet.signClaim(req.params.payload, {
             DID: req.params.did,
             space: req.params.space,
-            expiresIn: req.params.expiresIn
+            expiresIn: req.params.expiresIn,
+            useMgmt: req.params.useMgmt
           })
           break
         case methods.ENCRYPT:
