@@ -17,7 +17,7 @@ class IdentityWallet {
    * @param     {Object}    config                  The configuration to be used
    * @param     {String}    config.seed             The seed of the identity, 32 hex string
    * @param     {String}    config.authSecret       The authSecret to use, 32 hex string
-   * @param     {String}    config.externalAuth     TODO func for external Auth
+   * @param     {String}    config.externalAuth     External auth function, direclty returns key material, used to migrate legacy 3box accounts
    * @return    {this}                              An IdentityWallet instance
    */
   constructor (getConsent, config = {}) {
@@ -30,7 +30,6 @@ class IdentityWallet {
     } else if (config.authSecret) {
       this._authSecret = config.authSecret
     } else if (config.externalAuth) {
-      // TODO?
       this._externalAuth = config.externalAuth
     } else {
       throw new Error('Either seed, or authSecret has to be passed to create an IdentityWallet instance')
@@ -46,6 +45,14 @@ class IdentityWallet {
     return new ThreeIdProvider(this)
   }
 
+  /**
+   * Determine if consent has been given for spaces for a given origin
+   *
+   * @param     {Array<String>}     spaces          The desired spaces
+   * @param     {String}            origin          Application domain
+   * @param     {String}            opt.address     Optional address (managementKey) if keyring not available yet
+   * @return    {Boolean}                           True if consent has already been given
+   */
   hasConsent (spaces = [], origin, { address } = {} ) {
     const key = address || this._keyring.getPublicKeys().managementKey
     const prefix = `3id_consent_${key}_${origin}_`
@@ -53,6 +60,14 @@ class IdentityWallet {
     return spaces.reduce((acc, space) => acc && consentExists(space), consentExists())
   }
 
+  /**
+  *  Get consent for given spaces for a given origin
+  *
+  * @param     {Array<String>}     spaces          The desired spaces
+  * @param     {String}            origin          Application domain
+  * @param     {String}            opt.address     Optional address (managementKey) if keyring not available yet
+  * @return    {Boolean}                           True consent was given
+  */
   async getConsent (spaces = [], origin, { address } = {} ) {
     if (!this.hasConsent(spaces, origin, { address })) {
       const consent = await this._getConsent({
@@ -74,15 +89,13 @@ class IdentityWallet {
   }
 
   async getLink () {
-    // TODO maybe throw if externAuth and authed yet (-> no keyring)
-    if (!this._seed && ! this._authSecret && !this._keyring) return null
-
     if (this._seed) {
       this._keyring = new Keyring(this._seed)
       this.DID = await this._get3id()
       delete this._seed
       this._linkManagementAddress()
     }
+    // for external auth keyring will already exist at this point
     return this._keyring ? this._keyring.getPublicKeys().managementKey : Keyring.walletForAuthSecret(this._authSecret).address
   }
 
@@ -136,8 +149,8 @@ class IdentityWallet {
       this._keyring = new Keyring(seed)
       this.DID = await this._get3id()
 
-    } else if (address) {
-      // TODO is this the right if path
+    } else if (this._externalAuth) {
+      if (!address) throw new Error('External authentication requires an address')
       const migratedKeys = await this._externalAuth({ address, spaces, type: '3id_migration' })
       this._keyring = new Keyring(null, migratedKeys)
       this.DID = await this._get3id()
@@ -163,7 +176,7 @@ class IdentityWallet {
       throw new Error('Authentication not authorized by user')
     }
 
-    if (!this._keyring || !authData) await this._initKeyring(authData, address, spaces)
+    if (!this._keyring || this._externalAuth) await this._initKeyring(authData, address, spaces)
 
     const result = {
       main: this._keyring.getPublicKeys(),
@@ -179,11 +192,12 @@ class IdentityWallet {
    * Check if authenticated to given spaces
    *
    * @param     {Array<String>}     spaces          The desired spaces
+   * @param     {String}            origin          Application domain
+   * @param     {String}            opt.address     Optional address (managementKey) if keyring not available yet
    * @return    {Boolean}                           True if authenticated
    */
-  async isAuthenticated (spaces = [], origin) {
-    // TODO address also?
-    return Boolean(this._keyring) && this.hasConsent(spaces, origin)
+  async isAuthenticated (spaces = [], origin, { address } = {}) {
+    return Boolean(this._keyring) && this.hasConsent(spaces, origin, { address })
   }
 
   /**

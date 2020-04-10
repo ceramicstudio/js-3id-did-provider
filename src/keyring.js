@@ -10,6 +10,7 @@ const ec = new EC('secp256k1')
 
 const BASE_PATH = "m/51073068'/0'"
 const ROOT_STORE_PATH = "0'/0'/0'/0'/0'/0'/0'/0'"
+const BASE_PATH_LEGACY = "m/7696500'/0'/0'"
 
 const AUTH_PATH_WALLET = BASE_PATH + '/' + ROOT_STORE_PATH + '/0'
 const AUTH_PATH_ENCRYPTION = BASE_PATH + '/' + ROOT_STORE_PATH + '/3'
@@ -18,25 +19,14 @@ const ensure0x = str => (str.startsWith('0x') ? '' : '0x') + str
 
 class Keyring {
   constructor (seed, migratedKeys) {
-
-    // TODO deal with seed AND migrated keys, where there will be two sets
-    // of root keys, old for many ops, but new for further derivations
-
+    // TODO for full migration handle two sets of 'root keys' seed and migrated
     this._spaceKeys = {}
 
     if (seed) {
       this._seed = seed
       this._baseNode = HDNode.fromSeed(this._seed).derivePath(BASE_PATH)
       const rootNode = this._baseNode.derivePath(ROOT_STORE_PATH)
-      // TODO replace with _deriveKeySet
-      this._rootKeys = {
-        signingKey: rootNode.derivePath('0'),
-        managementKey: rootNode.derivePath('1'),
-        asymEncryptionKey: nacl.box.keyPair.fromSecretKey(new Uint8Array(
-          Buffer.from(rootNode.derivePath('2').privateKey.slice(2), 'hex')
-        )),
-        symEncryptionKey: Keyring.hexToUint8Array(rootNode.derivePath('3').privateKey.slice(2))
-      }
+      this._rootKeys = this._deriveKeySet(rootNode, true)
     }
 
     if (migratedKeys) {
@@ -44,8 +34,8 @@ class Keyring {
     }
   }
 
+  //  Import and load legacy keys
   _importMigratedKeys(migratedKeys) {
-    const BASE_PATH_LEGACY = "m/7696500'/0'/0'"
     migratedKeys = JSON.parse(migratedKeys)
 
     const getHDNode = (seed) => {
@@ -63,18 +53,18 @@ class Keyring {
       const spaceNode = getHDNode(migratedKeys.spaceSeeds[name])
       this._spaceKeys[name] = this._deriveKeySet(spaceNode)
     })
-
-    return
   }
 
-  _deriveKeySet(hdNode) {
-    return {
+  _deriveKeySet(hdNode, deriveManagementKey) {
+    const keys = {
       signingKey: hdNode.derivePath('0'),
       asymEncryptionKey: nacl.box.keyPair.fromSecretKey(new Uint8Array(
         Buffer.from(hdNode.derivePath('2').privateKey.slice(2), 'hex')
       )),
       symEncryptionKey: Keyring.hexToUint8Array(hdNode.derivePath('3').privateKey.slice(2))
     }
+    if (deriveManagementKey) keys.managementKey = hdNode.derivePath('1')
+    return keys
   }
 
   _deriveSpaceKeys (space) {
@@ -86,14 +76,7 @@ class Keyring {
       .join('').match(/.{1,31}/g) // chunk binary string for path encoding
       .map(n => parseInt(n, 2)).join("'/") + "'" // convert to uints and create path
     const spaceNode = this._baseNode.derivePath(spacePath)
-    // TODO replace with _deriveKeySet
-    this._spaceKeys[space] = {
-      signingKey: spaceNode.derivePath('0'),
-      asymEncryptionKey: nacl.box.keyPair.fromSecretKey(new Uint8Array(
-        Buffer.from(spaceNode.derivePath('2').privateKey.slice(2), 'hex')
-      )),
-      symEncryptionKey: Keyring.hexToUint8Array(spaceNode.derivePath('3').privateKey.slice(2))
-    }
+    this._spaceKeys[space] = this._deriveKeySet(spaceNode)
   }
 
   _getKeys (space) {
