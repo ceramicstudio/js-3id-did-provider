@@ -22,7 +22,7 @@ const fakeIpfs = {
     },
     get: () => ({ value: tmpData })
   },
-  add: () => "empty" //used in _initMuport in 3box-js 3id, but muport fingerprint not needed here
+  add: () => 'empty' // used in _initMuport in 3box-js 3id, but muport fingerprint not needed here
 }
 
 const fakeEthProvider = wallet => ({

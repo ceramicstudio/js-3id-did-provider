@@ -32,10 +32,12 @@ class Keyring {
     if (migratedKeys) {
       this._importMigratedKeys(migratedKeys)
     }
+
+    if (!(seed || migratedKeys)) throw new Error('One or both of seed or migratedKeys required')
   }
 
   //  Import and load legacy keys
-  _importMigratedKeys(migratedKeys) {
+  _importMigratedKeys (migratedKeys) {
     migratedKeys = JSON.parse(migratedKeys)
 
     const getHDNode = (seed) => {
@@ -47,7 +49,7 @@ class Keyring {
 
     this._rootKeys = this._deriveKeySet(rootNode)
     this._rootKeys.managementAddress = migratedKeys.managementAddress
-    this._rootKeys.managementKey = {address: migratedKeys.managementAddress}
+    this._rootKeys.managementKey = { address: migratedKeys.managementAddress }
 
     Object.keys(migratedKeys.spaceSeeds).map(name => {
       const spaceNode = getHDNode(migratedKeys.spaceSeeds[name])
@@ -55,7 +57,7 @@ class Keyring {
     })
   }
 
-  _deriveKeySet(hdNode, deriveManagementKey) {
+  _deriveKeySet (hdNode, deriveManagementKey) {
     const keys = {
       signingKey: hdNode.derivePath('0'),
       asymEncryptionKey: nacl.box.keyPair.fromSecretKey(new Uint8Array(

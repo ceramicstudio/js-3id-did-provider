@@ -79,14 +79,14 @@ describe('IdentityWallet', () => {
     it('returns false if no consent given', async () => {
       expect(await idWallet1.getConsent([], origin)).toBeFalsy()
       expect(getConsentMock).toHaveBeenCalledTimes(1)
-      expect(getConsentMock).toHaveBeenCalledWith({ type, spaces: [], origin })
+      expect(getConsentMock).toHaveBeenCalledWith({ type, spaces: [], origin, opts: {address: undefined}})
     })
 
     it('works without spaces', async () => {
       getConsentMock.mockImplementationOnce(() => true)
       expect(await idWallet1.getConsent([], origin)).toBeTruthy()
       expect(getConsentMock).toHaveBeenCalledTimes(1)
-      expect(getConsentMock).toHaveBeenCalledWith({ type, spaces: [], origin })
+      expect(getConsentMock).toHaveBeenCalledWith({ type, spaces: [], origin, opts: {address: undefined} })
     })
 
     it('should not call consent fn if consent already given', async () => {
@@ -103,7 +103,7 @@ describe('IdentityWallet', () => {
       getConsentMock.mockImplementationOnce(() => true)
       expect(await idWallet1.getConsent(spaces, origin)).toBeTruthy()
       expect(getConsentMock).toHaveBeenCalledTimes(1)
-      expect(getConsentMock).toHaveBeenCalledWith({ type, spaces, origin })
+      expect(getConsentMock).toHaveBeenCalledWith({ type, spaces, origin, opts: {address: undefined} })
     })
 
     it('works with spaces, already have consent', async () => {

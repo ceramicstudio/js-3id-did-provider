@@ -17,7 +17,7 @@ class IdentityWallet {
    * @param     {Object}    config                  The configuration to be used
    * @param     {String}    config.seed             The seed of the identity, 32 hex string
    * @param     {String}    config.authSecret       The authSecret to use, 32 hex string
-   * @param     {String}    config.externalAuth     External auth function, direclty returns key material, used to migrate legacy 3box accounts
+   * @param     {String}    config.externalAuth     External auth function, directly returns key material, used to migrate legacy 3box accounts
    * @return    {this}                              An IdentityWallet instance
    */
   constructor (getConsent, config = {}) {
@@ -53,7 +53,7 @@ class IdentityWallet {
    * @param     {String}            opt.address     Optional address (managementKey) if keyring not available yet
    * @return    {Boolean}                           True if consent has already been given
    */
-  hasConsent (spaces = [], origin, { address } = {} ) {
+  hasConsent (spaces = [], origin, { address } = {}) {
     const key = address || this._keyring.getPublicKeys().managementKey
     const prefix = `3id_consent_${key}_${origin}_`
     const consentExists = space => Boolean(store.get(prefix + space))
@@ -68,7 +68,7 @@ class IdentityWallet {
   * @param     {String}            opt.address     Optional address (managementKey) if keyring not available yet
   * @return    {Boolean}                           True consent was given
   */
-  async getConsent (spaces = [], origin, { address } = {} ) {
+  async getConsent (spaces = [], origin, { address } = {}) {
     if (!this.hasConsent(spaces, origin, { address })) {
       const consent = await this._getConsent({
         type: 'authenticate',
@@ -148,7 +148,6 @@ class IdentityWallet {
       if (!seed) throw new Error('No valid auth-secret for this identity')
       this._keyring = new Keyring(seed)
       this.DID = await this._get3id()
-
     } else if (this._externalAuth) {
       if (!address) throw new Error('External authentication requires an address')
       const migratedKeys = await this._externalAuth({ address, spaces, type: '3id_migration' })
@@ -172,11 +171,12 @@ class IdentityWallet {
    * @return    {Object}                            The public keys for the requested spaces of this identity
    */
   async authenticate (spaces = [], { authData, address } = {}, origin) {
-    if (!(await this.getConsent(spaces, origin, { address }))) {
-      throw new Error('Authentication not authorized by user')
-    }
-
+    let consent
+    // if external auth and address, get consent first, pass address since keyring not avaiable, otherwise call after keyring
+    if (address) consent = await this.getConsent(spaces, origin, { address })
     if (!this._keyring || this._externalAuth) await this._initKeyring(authData, address, spaces)
+    if (!address) consent = this.getConsent(spaces, origin)
+    if (!consent) throw new Error('Authentication not authorized by user')
 
     const result = {
       main: this._keyring.getPublicKeys(),
