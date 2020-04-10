@@ -30,6 +30,7 @@ class Keyring {
     }
 
     if (migratedKeys) {
+      this._migratedKeys = true
       this._importMigratedKeys(migratedKeys)
     }
 
@@ -85,6 +86,8 @@ class Keyring {
     if (!space) {
       return this._rootKeys
     } else if (!this._spaceKeys[space]) {
+      // only hold during partial migration, otherwise will derive on demand
+      if (this._migratedKeys) throw new Error('Can not derive space keys, not given in migrated keys')
       this._deriveSpaceKeys(space)
     }
     return this._spaceKeys[space]
