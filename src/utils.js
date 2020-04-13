@@ -21,7 +21,8 @@ const fakeIpfs = {
       return dagCBOR.util.cid(dagCBOR.util.serialize(data, opts))
     },
     get: () => ({ value: tmpData })
-  }
+  },
+  add: () => 'empty' // used in _initMuport in 3box-js 3id, but muport fingerprint not needed here
 }
 
 const fakeEthProvider = wallet => ({
