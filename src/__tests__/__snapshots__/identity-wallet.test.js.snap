@@ -4,6 +4,56 @@ exports[`IdentityWallet addAuthMethod should throw before authenticate 1`] = `[E
 
 exports[`IdentityWallet asymmetrically encrypt/decrypt works correctly 1`] = `[Error: IdentityWallet: Could not decrypt message]`;
 
+exports[`IdentityWallet authenticate externalAuth migration returns keys 1`] = `
+Object {
+  "main": Object {
+    "asymEncryptionKey": "12X0Ua5LDr1rDwKb34mYzNIZUGoqYZBou8h/TLo+FDk=",
+    "managementKey": "0x8fef7ac873dec3cc8a112ea20cd25d4f01cb3e6a",
+    "signingKey": "024f849b104b7c10ee94cfc29ddb46163b1e988f6f1fbb95b14dd1777205963a9a",
+  },
+  "spaces": Object {},
+}
+`;
+
+exports[`IdentityWallet authenticate externalAuth migration returns keys 2`] = `
+Object {
+  "main": Object {
+    "asymEncryptionKey": "12X0Ua5LDr1rDwKb34mYzNIZUGoqYZBou8h/TLo+FDk=",
+    "managementKey": "0x8fef7ac873dec3cc8a112ea20cd25d4f01cb3e6a",
+    "signingKey": "024f849b104b7c10ee94cfc29ddb46163b1e988f6f1fbb95b14dd1777205963a9a",
+  },
+  "spaces": Object {
+    "space1": Object {
+      "asymEncryptionKey": "07o6cX+mSS3Cm74grNc5jHnn6Yp8Cuv4BJUz7nW+6Xs=",
+      "managementKey": null,
+      "signingKey": "0494425f50ab3699013b6cdec04d2f266d2af09cb4e1968c2c7734706e76d48d25661b78e54348e3b4783b87c5fbe9b3967bb0728ea00ce2ca38e1f8d75a3843eb",
+    },
+  },
+}
+`;
+
+exports[`IdentityWallet authenticate externalAuth migration returns keys 3`] = `
+Object {
+  "main": Object {
+    "asymEncryptionKey": "12X0Ua5LDr1rDwKb34mYzNIZUGoqYZBou8h/TLo+FDk=",
+    "managementKey": "0x8fef7ac873dec3cc8a112ea20cd25d4f01cb3e6a",
+    "signingKey": "024f849b104b7c10ee94cfc29ddb46163b1e988f6f1fbb95b14dd1777205963a9a",
+  },
+  "spaces": Object {
+    "space1": Object {
+      "asymEncryptionKey": "07o6cX+mSS3Cm74grNc5jHnn6Yp8Cuv4BJUz7nW+6Xs=",
+      "managementKey": null,
+      "signingKey": "0494425f50ab3699013b6cdec04d2f266d2af09cb4e1968c2c7734706e76d48d25661b78e54348e3b4783b87c5fbe9b3967bb0728ea00ce2ca38e1f8d75a3843eb",
+    },
+    "space2": Object {
+      "asymEncryptionKey": "iW8/11qdRkUfIaKcXwOdzoW6rjhI9OKzsCyb5gg6nA0=",
+      "managementKey": null,
+      "signingKey": "049eccb01e5597f48ccf1bcefba32ddba631c7cf1bd38da2d8b649d7cba9de1118f8b06fbb4127bb3fa2c615f1d5d309f64e64ebfcce5752231963a3fa9246cb1c",
+    },
+  },
+}
+`;
+
 exports[`IdentityWallet authenticate should throw if no valid authSecrets 1`] = `[Error: No valid auth-secret for this identity]`;
 
 exports[`IdentityWallet authenticate works correctly w/ seed only wallet 1`] = `

@@ -17,6 +17,7 @@ class IdentityWallet {
    * @param     {Object}    config                  The configuration to be used
    * @param     {String}    config.seed             The seed of the identity, 32 hex string
    * @param     {String}    config.authSecret       The authSecret to use, 32 hex string
+   * @param     {String}    config.externalAuth     External auth function, directly returns key material, used to migrate legacy 3box accounts
    * @return    {this}                              An IdentityWallet instance
    */
   constructor (getConsent, config = {}) {
@@ -28,6 +29,8 @@ class IdentityWallet {
       this._seed = config.seed
     } else if (config.authSecret) {
       this._authSecret = config.authSecret
+    } else if (config.externalAuth) {
+      this._externalAuth = config.externalAuth
     } else {
       throw new Error('Either seed, or authSecret has to be passed to create an IdentityWallet instance')
     }
@@ -42,21 +45,42 @@ class IdentityWallet {
     return new ThreeIdProvider(this)
   }
 
-  hasConsent (spaces = [], origin) {
-    const prefix = `3id_consent_${this._keyring.getPublicKeys().managementKey}_${origin}_`
+  /**
+   * Determine if consent has been given for spaces for a given origin
+   *
+   * @param     {Array<String>}     spaces          The desired spaces
+   * @param     {String}            origin          Application domain
+   * @param     {String}            opt.address     Optional address (managementKey) if keyring not available yet
+   * @return    {Boolean}                           True if consent has already been given
+   */
+  hasConsent (spaces = [], origin, { address } = {}) {
+    const key = address || this._keyring.getPublicKeys().managementKey
+    const prefix = `3id_consent_${key}_${origin}_`
     const consentExists = space => Boolean(store.get(prefix + space))
     return spaces.reduce((acc, space) => acc && consentExists(space), consentExists())
   }
 
-  async getConsent (spaces = [], origin) {
-    if (!this.hasConsent(spaces, origin)) {
+  /**
+  *  Get consent for given spaces for a given origin
+  *
+  * @param     {Array<String>}     spaces          The desired spaces
+  * @param     {String}            origin          Application domain
+  * @param     {String}            opt.address     Optional address (managementKey) if keyring not available yet
+  * @return    {Boolean}                           True consent was given
+  */
+  async getConsent (spaces = [], origin, { address } = {}) {
+    if (!this.hasConsent(spaces, origin, { address })) {
       const consent = await this._getConsent({
         type: 'authenticate',
         origin,
-        spaces
+        spaces,
+        opts: {
+          address
+        }
       })
       if (!consent) return false
-      const prefix = `3id_consent_${this._keyring.getPublicKeys().managementKey}_${origin}_`
+      const key = address || this._keyring.getPublicKeys().managementKey
+      const prefix = `3id_consent_${key}_${origin}_`
       const saveConsent = space => store.set(prefix + space, true)
       saveConsent()
       spaces.map(saveConsent)
@@ -71,6 +95,7 @@ class IdentityWallet {
       delete this._seed
       this._linkManagementAddress()
     }
+    // for external auth keyring will already exist at this point
     return this._keyring ? this._keyring.getPublicKeys().managementKey : Keyring.walletForAuthSecret(this._authSecret).address
   }
 
@@ -98,6 +123,10 @@ class IdentityWallet {
 
   async linkManagementKey () {
     // TODO - this method should be deprecated
+    if (this._externalAuth) {
+      return this._externalAuth({ address: this._keyring._rootKeys.managementAddress, spaces: [], type: '3id_createLink' })
+    }
+
     const timestamp = Math.floor(new Date().getTime() / 1000)
     const msg = `Create a new 3Box profile\n\n- \nYour unique profile ID is ${this.DID} \nTimestamp: ${timestamp}`
     return {
@@ -107,10 +136,10 @@ class IdentityWallet {
     }
   }
 
-  async _initKeyring (authData) {
+  async _initKeyring (authData, address, spaces) {
     if (this._seed) {
       await this.getLink()
-    } else if (authData) {
+    } else if (authData && authData.length > 0) {
       let seed
       authData.find(({ ciphertext, nonce }) => {
         seed = Keyring.decryptWithAuthSecret(ciphertext, nonce, this._authSecret)
@@ -118,6 +147,11 @@ class IdentityWallet {
       })
       if (!seed) throw new Error('No valid auth-secret for this identity')
       this._keyring = new Keyring(seed)
+      this.DID = await this._get3id()
+    } else if (this._externalAuth) {
+      if (!address) throw new Error('External authentication requires an address')
+      const migratedKeys = await this._externalAuth({ address, spaces, type: '3id_migration' })
+      this._keyring = new Keyring(null, migratedKeys)
       this.DID = await this._get3id()
     } else {
       // no authData available so we create a new identity
@@ -136,11 +170,14 @@ class IdentityWallet {
    * @param     {Array<Object>}     opts.authData   The authData for this identity
    * @return    {Object}                            The public keys for the requested spaces of this identity
    */
-  async authenticate (spaces = [], { authData } = {}, origin) {
-    if (!this._keyring) await this._initKeyring(authData)
-    if (!(await this.getConsent(spaces, origin))) {
-      throw new Error('Authentication not authorized by user')
-    }
+  async authenticate (spaces = [], { authData, address } = {}, origin) {
+    let consent
+    // if external auth and address, get consent first, pass address since keyring not avaiable, otherwise call after keyring
+    if (address) consent = await this.getConsent(spaces, origin, { address })
+    if (!this._keyring || this._externalAuth) await this._initKeyring(authData, address, spaces)
+    if (!address) consent = this.getConsent(spaces, origin)
+    if (!consent) throw new Error('Authentication not authorized by user')
+
     const result = {
       main: this._keyring.getPublicKeys(),
       spaces: {}
@@ -155,10 +192,12 @@ class IdentityWallet {
    * Check if authenticated to given spaces
    *
    * @param     {Array<String>}     spaces          The desired spaces
+   * @param     {String}            origin          Application domain
+   * @param     {String}            opt.address     Optional address (managementKey) if keyring not available yet
    * @return    {Boolean}                           True if authenticated
    */
-  async isAuthenticated (spaces = [], origin) {
-    return Boolean(this._keyring) && this.hasConsent(spaces, origin)
+  async isAuthenticated (spaces = [], origin, { address } = {}) {
+    return Boolean(this._keyring) && this.hasConsent(spaces, origin, { address })
   }
 
   /**
@@ -214,7 +253,7 @@ class IdentityWallet {
   async encrypt (message, space, { nonce, blockSize, to } = {}) {
     if (!this._keyring) throw new Error('This method can only be called after authenticate has been called')
 
-    const paddedMsg = pad(message, blockSize)
+    const paddedMsg = typeof message === 'string' ? pad(message, blockSize) : message
     if (to) {
       return this._keyring.asymEncrypt(paddedMsg, to, { nonce })
     } else {
@@ -229,17 +268,17 @@ class IdentityWallet {
    * @param     {String}    space                   The space used for encryption
    * @return    {String}                            The decrypted message
    */
-  async decrypt (encObj, space) {
+  async decrypt (encObj, space, toBuffer) {
     if (!this._keyring) throw new Error('This method can only be called after authenticate has been called')
 
     let paddedMsg
     if (encObj.ephemeralFrom) {
-      paddedMsg = this._keyring.asymDecrypt(encObj.ciphertext, encObj.ephemeralFrom, encObj.nonce, { space })
+      paddedMsg = this._keyring.asymDecrypt(encObj.ciphertext, encObj.ephemeralFrom, encObj.nonce, { space, toBuffer })
     } else {
-      paddedMsg = this._keyring.symDecrypt(encObj.ciphertext, encObj.nonce, { space })
+      paddedMsg = this._keyring.symDecrypt(encObj.ciphertext, encObj.nonce, { space, toBuffer })
     }
     if (!paddedMsg) throw new Error('IdentityWallet: Could not decrypt message')
-    return unpad(paddedMsg)
+    return toBuffer ? paddedMsg : unpad(paddedMsg)
   }
 
   async hashDBKey (key, space) {

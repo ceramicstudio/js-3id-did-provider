@@ -1,5 +1,9 @@
 # Release Notes
 
+## v1.2.0 - 2020-04-13
+fix: buffer (un)encrypt (now support confidential threads)
+feat: import migrated keys, and external auth function (support 3boxjs migration)
+
 ## v1.1.3 - 2020-03-18
 fix: sign hex encoded messages correctly
 chore: pin `hdnode` and `wallet` package versions

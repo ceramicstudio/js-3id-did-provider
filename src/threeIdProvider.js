@@ -48,7 +48,7 @@ class ThreeIdProvider {
           result = await this._idWallet.linkManagementKey()
           break
         case methods.AUTHENTICATE:
-          result = await this._idWallet.authenticate(req.params.spaces, { authData: req.params.authData }, origin)
+          result = await this._idWallet.authenticate(req.params.spaces, { authData: req.params.authData, address: req.params.address }, origin)
           break
         case methods.IS_AUTHENTICATED:
           result = await this._idWallet.isAuthenticated(req.params.spaces, origin)
@@ -71,7 +71,7 @@ class ThreeIdProvider {
             ciphertext: req.params.ciphertext,
             ephemeralFrom: req.params.ephemeralFrom,
             nonce: req.params.nonce
-          }, req.params.space)
+          }, req.params.space, req.params.buffer)
           break
         case methods.HASH_ENTRY_KEY:
           result = await this._idWallet.hashDBKey(req.params.key, req.params.space)

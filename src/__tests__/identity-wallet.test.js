@@ -9,6 +9,22 @@ const wallet1Conf = {
 const wallet2Conf = {
   authSecret: '24a0bc3a2a1d1404c0ab24bef9bb0618938ee892fbf62f63f82f015eddf1729e'
 }
+
+const migratedKeys = {
+  managementAddress: "0x8fef7ac873dec3cc8a112ea20cd25d4f01cb3e6a",
+  seed: "0x8e641c0dc77f6916cc7f743dad774cdf9f6f7bcb880b11395149dd878377cd398650bbfd4607962b49953c87da4d7f3ff247ed734b06f96bdd69479377bc612b",
+  spaceSeeds:{
+    space1: "0xcaf77e39b1e480fabffded1f53b60d6f3ade208205f84021e5cdad7e34c1177d5bf8ef9cf55b053f32e704027259e5c7de89ca871558715985e859b4ea522666",
+    space2: "0x4799b693d258582dc0439ede87e007fa853b78678e4ba87811bb6044b84c411ba6cf64232448ddc3c72bb9ecc200e17ebf739187967c0f18c48f5f3f1dd0375b"
+  }
+}
+
+const walletExternalAuthConf = {
+  externalAuth: jest.fn(({ address, spaces, type }) => {
+    if (type === '3id_migration') return JSON.stringify(migratedKeys)
+  })
+}
+
 const secondaryAuthSecret = '4567898765434567c0ab24bef9bb0618938ee892fbf62f63f82f015eddf1729e'
 const badAuthData = [{
   nonce: 'Lxcd05Yk4aC8LCLbFjowzD3W6Uqx+v+n',
@@ -43,16 +59,18 @@ registerMethod('3', async (_, { id }) => {
 
 describe('IdentityWallet', () => {
 
-  let idWallet1, idWallet2
+  let idWallet1, idWallet2, idWalletExternalAuth
 
   beforeAll(() => {
     idWallet1 = new IdentityWallet(getConsentMock, wallet1Conf)
     idWallet2 = new IdentityWallet(getConsentMock, wallet2Conf)
+    idWalletExternalAuth = new IdentityWallet(getConsentMock, walletExternalAuthConf)
   })
 
   it('should be correctly constructed', async () => {
     expect(idWallet1._seed).toBeDefined()
     expect(idWallet2._authSecret).toBeDefined()
+    expect(idWalletExternalAuth._externalAuth).toBeDefined()
   })
 
   it('getLink correctly', async () => {
@@ -79,14 +97,14 @@ describe('IdentityWallet', () => {
     it('returns false if no consent given', async () => {
       expect(await idWallet1.getConsent([], origin)).toBeFalsy()
       expect(getConsentMock).toHaveBeenCalledTimes(1)
-      expect(getConsentMock).toHaveBeenCalledWith({ type, spaces: [], origin })
+      expect(getConsentMock).toHaveBeenCalledWith({ type, spaces: [], origin, opts: {address: undefined}})
     })
 
     it('works without spaces', async () => {
       getConsentMock.mockImplementationOnce(() => true)
       expect(await idWallet1.getConsent([], origin)).toBeTruthy()
       expect(getConsentMock).toHaveBeenCalledTimes(1)
-      expect(getConsentMock).toHaveBeenCalledWith({ type, spaces: [], origin })
+      expect(getConsentMock).toHaveBeenCalledWith({ type, spaces: [], origin, opts: {address: undefined} })
     })
 
     it('should not call consent fn if consent already given', async () => {
@@ -103,7 +121,7 @@ describe('IdentityWallet', () => {
       getConsentMock.mockImplementationOnce(() => true)
       expect(await idWallet1.getConsent(spaces, origin)).toBeTruthy()
       expect(getConsentMock).toHaveBeenCalledTimes(1)
-      expect(getConsentMock).toHaveBeenCalledWith({ type, spaces, origin })
+      expect(getConsentMock).toHaveBeenCalledWith({ type, spaces, origin, opts: {address: undefined} })
     })
 
     it('works with spaces, already have consent', async () => {
@@ -173,6 +191,53 @@ describe('IdentityWallet', () => {
       })
       expect((await idWallet3.getLink()).toLowerCase()).toEqual(linkAddress)
       expect(await idWallet3.authenticate([], { authData })).toEqual(authPubKeys)
+    })
+  })
+
+  describe('authenticate externalAuth migration', () => {
+
+    let getConsent, initKeyring
+
+    beforeEach(() => {
+      getConsentMock.mockImplementation(() => true)
+      idWalletExternalAuth = new IdentityWallet(getConsentMock, walletExternalAuthConf)
+      getConsent =  jest.spyOn(idWalletExternalAuth, 'getConsent')
+      initKeyring =  jest.spyOn(idWalletExternalAuth, '_initKeyring')
+    })
+
+    const opts = { address: migratedKeys.managementAddress }
+
+    it('returns keys', async () => {
+      const opts = { address: migratedKeys.managementAddress }
+      expect(await idWalletExternalAuth.authenticate([], opts)).toMatchSnapshot()
+      expect(await idWalletExternalAuth.authenticate(['space1'], opts)).toMatchSnapshot()
+      expect(await idWalletExternalAuth.authenticate(['space1', 'space2'], opts)).toMatchSnapshot()
+    })
+
+    it('throws if request space not available in migratedKeys', async () => {
+      await expect(idWalletExternalAuth.authenticate(['notSpace '], opts)).rejects.toThrow(/not derive/)
+    })
+
+    it('getConsent function is called before creating keyring', async () => {
+      const order = (spy) => spy.mock.invocationCallOrder[0]
+      await idWalletExternalAuth.authenticate([], opts)
+      expect(order(getConsent)).toBeLessThan(order(initKeyring))
+    })
+
+    it('getConsent function is given address arg', async () => {
+      await idWalletExternalAuth.authenticate([], opts)
+      expect(getConsent).toHaveBeenCalledWith([], undefined, opts)
+    })
+
+    it('keyring is created on every auth request', async () => {
+      await idWalletExternalAuth.authenticate([], opts)
+      await idWalletExternalAuth.authenticate([], opts)
+      await idWalletExternalAuth.authenticate([], opts)
+      expect(initKeyring).toHaveBeenCalledTimes(3)
+    })
+
+    it('throws if not given address opts ', async () => {
+      await expect(idWalletExternalAuth.authenticate([])).rejects.toThrow(/requires an address/)
     })
   })
 

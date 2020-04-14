@@ -10,6 +10,7 @@ const ec = new EC('secp256k1')
 
 const BASE_PATH = "m/51073068'/0'"
 const ROOT_STORE_PATH = "0'/0'/0'/0'/0'/0'/0'/0'"
+const BASE_PATH_LEGACY = "m/7696500'/0'/0'"
 
 const AUTH_PATH_WALLET = BASE_PATH + '/' + ROOT_STORE_PATH + '/0'
 const AUTH_PATH_ENCRYPTION = BASE_PATH + '/' + ROOT_STORE_PATH + '/3'
@@ -17,19 +18,56 @@ const AUTH_PATH_ENCRYPTION = BASE_PATH + '/' + ROOT_STORE_PATH + '/3'
 const ensure0x = str => (str.startsWith('0x') ? '' : '0x') + str
 
 class Keyring {
-  constructor (seed) {
-    this._seed = seed
-    this._baseNode = HDNode.fromSeed(this._seed).derivePath(BASE_PATH)
-    const rootNode = this._baseNode.derivePath(ROOT_STORE_PATH)
-    this._rootKeys = {
-      signingKey: rootNode.derivePath('0'),
-      managementKey: rootNode.derivePath('1'),
-      asymEncryptionKey: nacl.box.keyPair.fromSecretKey(new Uint8Array(
-        Buffer.from(rootNode.derivePath('2').privateKey.slice(2), 'hex')
-      )),
-      symEncryptionKey: Keyring.hexToUint8Array(rootNode.derivePath('3').privateKey.slice(2))
-    }
+  constructor (seed, migratedKeys) {
+    // TODO for full migration handle two sets of 'root keys' seed and migrated
     this._spaceKeys = {}
+
+    if (seed) {
+      this._seed = seed
+      this._baseNode = HDNode.fromSeed(this._seed).derivePath(BASE_PATH)
+      const rootNode = this._baseNode.derivePath(ROOT_STORE_PATH)
+      this._rootKeys = this._deriveKeySet(rootNode, true)
+    }
+
+    if (migratedKeys) {
+      this._migratedKeys = true
+      this._importMigratedKeys(migratedKeys)
+    }
+
+    if (!(seed || migratedKeys)) throw new Error('One or both of seed or migratedKeys required')
+  }
+
+  //  Import and load legacy keys
+  _importMigratedKeys (migratedKeys) {
+    migratedKeys = JSON.parse(migratedKeys)
+
+    const getHDNode = (seed) => {
+      const seedNode = HDNode.fromSeed(seed)
+      return seedNode.derivePath(BASE_PATH_LEGACY)
+    }
+
+    const rootNode = getHDNode(migratedKeys.seed)
+
+    this._rootKeys = this._deriveKeySet(rootNode)
+    this._rootKeys.managementAddress = migratedKeys.managementAddress
+    this._rootKeys.managementKey = { address: migratedKeys.managementAddress }
+
+    Object.keys(migratedKeys.spaceSeeds).map(name => {
+      const spaceNode = getHDNode(migratedKeys.spaceSeeds[name])
+      this._spaceKeys[name] = this._deriveKeySet(spaceNode)
+    })
+  }
+
+  _deriveKeySet (hdNode, deriveManagementKey) {
+    const keys = {
+      signingKey: hdNode.derivePath('0'),
+      asymEncryptionKey: nacl.box.keyPair.fromSecretKey(new Uint8Array(
+        Buffer.from(hdNode.derivePath('2').privateKey.slice(2), 'hex')
+      )),
+      symEncryptionKey: Keyring.hexToUint8Array(hdNode.derivePath('3').privateKey.slice(2))
+    }
+    if (deriveManagementKey) keys.managementKey = hdNode.derivePath('1')
+    return keys
   }
 
   _deriveSpaceKeys (space) {
@@ -41,19 +79,15 @@ class Keyring {
       .join('').match(/.{1,31}/g) // chunk binary string for path encoding
       .map(n => parseInt(n, 2)).join("'/") + "'" // convert to uints and create path
     const spaceNode = this._baseNode.derivePath(spacePath)
-    this._spaceKeys[space] = {
-      signingKey: spaceNode.derivePath('0'),
-      asymEncryptionKey: nacl.box.keyPair.fromSecretKey(new Uint8Array(
-        Buffer.from(spaceNode.derivePath('2').privateKey.slice(2), 'hex')
-      )),
-      symEncryptionKey: Keyring.hexToUint8Array(spaceNode.derivePath('3').privateKey.slice(2))
-    }
+    this._spaceKeys[space] = this._deriveKeySet(spaceNode)
   }
 
   _getKeys (space) {
     if (!space) {
       return this._rootKeys
     } else if (!this._spaceKeys[space]) {
+      // only hold during partial migration, otherwise will derive on demand
+      if (this._migratedKeys) throw new Error('Can not derive space keys, not given in migrated keys')
       this._deriveSpaceKeys(space)
     }
     return this._spaceKeys[space]

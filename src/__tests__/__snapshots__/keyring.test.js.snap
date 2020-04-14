@@ -1,6 +1,46 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
-exports[`Keyring derives correct keys from seed 1`] = `
+exports[`Keyring Keyring from migratedKeys derives correct keys from 1`] = `
+Object {
+  "asymEncryptionKey": "12X0Ua5LDr1rDwKb34mYzNIZUGoqYZBou8h/TLo+FDk=",
+  "managementKey": "0x8fef7ac873dec3cc8a112ea20cd25d4f01cb3e6a",
+  "signingKey": "024f849b104b7c10ee94cfc29ddb46163b1e988f6f1fbb95b14dd1777205963a9a",
+}
+`;
+
+exports[`Keyring Keyring from migratedKeys derives correct keys from 2`] = `
+Object {
+  "asymEncryptionKey": "12X0Ua5LDr1rDwKb34mYzNIZUGoqYZBou8h/TLo+FDk=",
+  "managementKey": "0x8fef7ac873dec3cc8a112ea20cd25d4f01cb3e6a",
+  "signingKey": "024f849b104b7c10ee94cfc29ddb46163b1e988f6f1fbb95b14dd1777205963a9a",
+}
+`;
+
+exports[`Keyring Keyring from migratedKeys signs data correctly 1`] = `
+Object {
+  "r": "748f55a9e203e250a3588ae85a917eba48081f9917bc58b98767894e6dd59cc3",
+  "recoveryParam": 0,
+  "s": "64de7bccf367a8e0138e9f0ddfa957c828d0b52c3c869d552286be02c5a001fd",
+}
+`;
+
+exports[`Keyring Keyring from migratedKeys signs data correctly 2`] = `
+Object {
+  "r": "d07a7cf122e73f47369a749e7d57c0a4adcd0d9bf4f1698e3625ecdb1ec14a44",
+  "recoveryParam": 1,
+  "s": "30c6985ab5e51816932af3fcabc560a4e210dd5483823c438b2d361cc6c05e8c",
+}
+`;
+
+exports[`Keyring Keyring from migratedKeys signs data correctly 3`] = `
+Object {
+  "r": "33d84c18973376a0f605571ac412f36f6ade48de1ff93e41e2523308defe221f",
+  "recoveryParam": 0,
+  "s": "a60f4477a482623dcf109087a1c397ed88b5a2d2424238990138262c0b042a23",
+}
+`;
+
+exports[`Keyring Keyring from seed derives correct keys from 1`] = `
 Object {
   "asymEncryptionKey": "jRKRy3oPhXpUBrFJefO2CJnWw/IoalOPuepAwvTqrEk=",
   "managementKey": "0xa7b76379659b6c19E4DFf46e0DfEa48AFEBA8fe3",
@@ -8,7 +48,7 @@ Object {
 }
 `;
 
-exports[`Keyring derives correct keys from seed 2`] = `
+exports[`Keyring Keyring from seed derives correct keys from 2`] = `
 Object {
   "asymEncryptionKey": "jRKRy3oPhXpUBrFJefO2CJnWw/IoalOPuepAwvTqrEk=",
   "managementKey": "0xa7b76379659b6c19E4DFf46e0DfEa48AFEBA8fe3",
@@ -16,7 +56,7 @@ Object {
 }
 `;
 
-exports[`Keyring signs data correctly 1`] = `
+exports[`Keyring Keyring from seed signs data correctly 1`] = `
 Object {
   "r": "c896c3198ae31e3038bb22bf1a7da49c3f3a77a5e8a41fc19cdb275532583205",
   "recoveryParam": 0,
@@ -24,7 +64,7 @@ Object {
 }
 `;
 
-exports[`Keyring signs data correctly 2`] = `
+exports[`Keyring Keyring from seed signs data correctly 2`] = `
 Object {
   "r": "244a23056eba642037ab0606f08ce5a077ab6041e92977a9f65727a6be1b3497",
   "recoveryParam": 1,
@@ -32,7 +72,7 @@ Object {
 }
 `;
 
-exports[`Keyring signs data correctly 3`] = `
+exports[`Keyring Keyring from seed signs data correctly 3`] = `
 Object {
   "r": "b04fb687a16254cff30acee7f41fe3bf5e5d1d583c34ab869abae46e2dafa16c",
   "recoveryParam": 0,
