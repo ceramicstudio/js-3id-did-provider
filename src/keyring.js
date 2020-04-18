@@ -15,11 +15,12 @@ const BASE_PATH_LEGACY = "m/7696500'/0'/0'"
 const AUTH_PATH_WALLET = BASE_PATH + '/' + ROOT_STORE_PATH + '/0'
 const AUTH_PATH_ENCRYPTION = BASE_PATH + '/' + ROOT_STORE_PATH + '/3'
 
+const MIGRATION = true
+
 const ensure0x = str => (str.startsWith('0x') ? '' : '0x') + str
 
 class Keyring {
   constructor (seed, migratedKeys) {
-    // TODO for full migration handle two sets of 'root keys' seed and migrated
     this._spaceKeys = {}
 
     if (seed) {
@@ -29,16 +30,13 @@ class Keyring {
       this._rootKeys = this._deriveKeySet(rootNode, true)
     }
 
-    if (migratedKeys) {
-      this._migratedKeys = true
-      this._importMigratedKeys(migratedKeys)
-    }
+    if (migratedKeys) this.importMigratedKeys(migratedKeys)
 
     if (!(seed || migratedKeys)) throw new Error('One or both of seed or migratedKeys required')
   }
 
-  //  Import and load legacy keys
-  _importMigratedKeys (migratedKeys) {
+  importMigratedKeys (migratedKeys) {
+    this._migratedKeys = true
     migratedKeys = JSON.parse(migratedKeys)
 
     const getHDNode = (seed) => {
@@ -48,9 +46,9 @@ class Keyring {
 
     const rootNode = getHDNode(migratedKeys.seed)
 
-    this._rootKeys = this._deriveKeySet(rootNode)
-    this._rootKeys.managementAddress = migratedKeys.managementAddress
-    this._rootKeys.managementKey = { address: migratedKeys.managementAddress }
+    this._migratedRoot = this._deriveKeySet(rootNode)
+    this._migratedRoot.managementAddress = migratedKeys.managementAddress
+    this._migratedRoot.managementKey = { address: migratedKeys.managementAddress }
 
     Object.keys(migratedKeys.spaceSeeds).map(name => {
       const spaceNode = getHDNode(migratedKeys.spaceSeeds[name])
@@ -84,6 +82,9 @@ class Keyring {
 
   _getKeys (space) {
     if (!space) {
+      // TODO only change, if migrate keys, then use migratedRoot
+      // TODO do we actually need this?
+      if (this._migratedKeys) return this._migratedRoot
       return this._rootKeys
     } else if (!this._spaceKeys[space]) {
       // only hold during partial migration, otherwise will derive on demand

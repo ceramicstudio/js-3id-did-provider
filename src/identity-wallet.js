@@ -8,6 +8,9 @@ import { createLink } from '3id-blockchain-utils'
 import { sha256Multihash, pad, unpad, fakeIpfs, fakeEthProvider } from './utils'
 
 const DID_METHOD_NAME = '3'
+const MIGRATION = true
+
+const randomHex = (bytes) => `0x${Buffer.from(Keyring.naclRandom(bytes)).toString('hex')}`
 
 class IdentityWallet {
   /**
@@ -139,7 +142,34 @@ class IdentityWallet {
   async _initKeyring (authData, address, spaces) {
     if (this._seed) {
       await this.getLink()
+    } else if (authData && authData.length > 0 && this._externalAuth) {
+      //authData and external auth, uses externalAuth to get authSecrete and derive seed
+      const authSecret = await this._externalAuth({ address, type: '3id_auth' })
+
+      let seed, migratedKeys
+      authData.find(({ ciphertext, nonce, encMigratedKeys }) => {
+        if (ciphertext) {
+          seed = Keyring.decryptWithAuthSecret(ciphertext, nonce, authSecret)
+          return Boolean(seed)
+        }
+      })
+
+      if (!seed) throw new Error('No valid auth-secret for this identity')
+      this._keyring = new Keyring(seed)
+      this.DID = await this._get3id()
+
+      // TODO cleanup this, and format for encMigratedKeys, since differs from other auth data
+      authData.find(({ ciphertext, nonce, encMigratedKeys }) => {
+        if (encMigratedKeys) {
+          migratedKeys = this._keyring.symDecrypt(encMigratedKeys.ciphertext, encMigratedKeys.nonce )
+          return Boolean(migratedKeys )
+        }
+      })
+
+      this._keyring.importMigratedKeys(migratedKeys)
     } else if (authData && authData.length > 0) {
+      // authData, expects authSecret to derive seed
+      if (!this._authSecret) throw new Error('Authdata available, authSecret or externalAuth required to initialize')
       let seed
       authData.find(({ ciphertext, nonce }) => {
         seed = Keyring.decryptWithAuthSecret(ciphertext, nonce, this._authSecret)
@@ -149,13 +179,20 @@ class IdentityWallet {
       this._keyring = new Keyring(seed)
       this.DID = await this._get3id()
     } else if (this._externalAuth) {
-      if (!address) throw new Error('External authentication requires an address')
-      const migratedKeys = await this._externalAuth({ address, spaces, type: '3id_migration' })
-      this._keyring = new Keyring(null, migratedKeys)
+      // no authData and externalAuth - migration of legacy accounts occurs
+      if (!address) throw new Error('External authentication requires an address (for migration)')
+      const migratedKeys = await this._externalAuth({ address, spaces, type: '3id_migration', migrate: MIGRATION  })
+      const authSecret = await this._externalAuth({ address, type: '3id_auth' })
+      const seed = randomHex(32)
+      this._keyring = new Keyring(seed)
+      const encMigratedKeys = this._keyring.symEncrypt(migratedKeys)
+      await this._keyring.importMigratedKeys(migratedKeys)
+      this.events.emit('new-auth-method', { encMigratedKeys })
+      this.addAuthMethod(authSecret)
       this.DID = await this._get3id()
     } else {
       // no authData available so we create a new identity
-      const seed = '0x' + Buffer.from(Keyring.naclRandom(32)).toString('hex')
+      const seed = randomHex(32)
       this._keyring = new Keyring(seed)
       this.DID = await this._get3id()
       this.addAuthMethod(this._authSecret)
@@ -173,8 +210,9 @@ class IdentityWallet {
   async authenticate (spaces = [], { authData, address } = {}, origin) {
     let consent
     // if external auth and address, get consent first, pass address since keyring not avaiable, otherwise call after keyring
+    // TODO get consent for migration may look different, or will have slight different templating, need way to hook into additional views
     if (address) consent = await this.getConsent(spaces, origin, { address })
-    if (!this._keyring || this._externalAuth) await this._initKeyring(authData, address, spaces)
+    if (!this._keyring) await this._initKeyring(authData, address, spaces)
     if (!address) consent = this.getConsent(spaces, origin)
     if (!consent) throw new Error('Authentication not authorized by user')
 
