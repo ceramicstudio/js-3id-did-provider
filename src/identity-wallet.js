@@ -2,6 +2,7 @@ import EventEmitter from 'events'
 import store from 'store'
 import Keyring from './keyring'
 import ThreeIdProvider from './threeIdProvider'
+import IdWalletRpcConnection from './rpc-connection'
 import didJWT from 'did-jwt'
 import DidDocument from 'ipfs-did-document'
 import { createLink } from '3id-blockchain-utils'
@@ -42,7 +43,8 @@ class IdentityWallet {
    * @return    {ThreeIdProvider}                   The 3IDProvider for this IdentityWallet instance
    */
   get3idProvider () {
-    return new ThreeIdProvider(this)
+    const connection = new IdWalletRpcConnection(this)
+    return new ThreeIdProvider(connection)
   }
 
   /**
