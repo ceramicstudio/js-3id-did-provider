@@ -86,36 +86,25 @@ class Keyring {
     return this._spaceKeys[space]
   }
 
-  static asymEncrypt (msg, toPublic, { nonce } = {}) {
-    nonce = nonce || Keyring.randomNonce()
-    toPublic = nacl.util.decodeBase64(toPublic)
-    if (typeof msg === 'string') {
-      msg = nacl.util.decodeUTF8(msg)
-    }
-    const ephemneralKeypair = nacl.box.keyPair()
-    const ciphertext = nacl.box(msg, nonce, toPublic, ephemneralKeypair.secretKey)
-    return {
-      nonce: nacl.util.encodeBase64(nonce),
-      ephemeralFrom: nacl.util.encodeBase64(ephemneralKeypair.publicKey),
-      ciphertext: nacl.util.encodeBase64(ciphertext)
-    }
+  asymEncrypt (msg, toPublic, { nonce } = {}) {
+    return asymEncrypt(msg, toPublic, { nonce })
   }
 
   asymDecrypt (ciphertext, fromPublic, nonce, { space, toBuffer } = {}) {
     const secretKey = this._getKeys(space).asymEncryptionKey.secretKey
-    return asymDecrypt(ciphertext, fromPublic, nonce, secretKey, { space, toBuffer } = {})
+    return asymDecrypt(ciphertext, fromPublic, nonce, secretKey, { space, toBuffer })
   }
 
-  static asymEncryptWithAuthSecret(message, authSecret) {
+  static asymEncryptWithAuthSecret (message, authSecret) {
     const keypair = authSecretKeypair(authSecret)
     const pubkey = nacl.util.encodeBase64(keypair.publicKey)
     return {
       pubkey: pubkey,
-      box: Keyring.asymEncrypt(message, pubkey)
+      box: asymEncrypt(message, pubkey)
     }
   }
 
-  static asymDecryptWithAuthSecret(ciphertext, fromPub, nonce, authSecret) {
+  static asymDecryptWithAuthSecret (ciphertext, fromPub, nonce, authSecret) {
     const keypair = authSecretKeypair(authSecret)
     return asymDecrypt(ciphertext, fromPub, nonce, keypair.secretKey)
   }
@@ -226,12 +215,26 @@ function asymDecrypt (ciphertext, fromPublic, nonce, secretKey, { space, toBuffe
   return cleartext ? nacl.util.encodeUTF8(cleartext) : null
 }
 
-function authSecretKeypair(authSecret) {
+function authSecretKeypair (authSecret) {
   const node = HDNode.fromSeed(ensure0x(authSecret)).derivePath(AUTH_PATH_ENCRYPTION)
   return nacl.box.keyPair.fromSecretKey(new Uint8Array(
     Buffer.from(node.privateKey.slice(2), 'hex')
   ))
 }
 
+function asymEncrypt (msg, toPublic, { nonce } = {}) {
+  nonce = nonce || Keyring.randomNonce()
+  toPublic = nacl.util.decodeBase64(toPublic)
+  if (typeof msg === 'string') {
+    msg = nacl.util.decodeUTF8(msg)
+  }
+  const ephemneralKeypair = nacl.box.keyPair()
+  const ciphertext = nacl.box(msg, nonce, toPublic, ephemneralKeypair.secretKey)
+  return {
+    nonce: nacl.util.encodeBase64(nonce),
+    ephemeralFrom: nacl.util.encodeBase64(ephemneralKeypair.publicKey),
+    ciphertext: nacl.util.encodeBase64(ciphertext)
+  }
+}
 
 module.exports = Keyring

@@ -146,13 +146,13 @@ class IdentityWallet {
     if (this._seed) {
       await this.getLink()
     } else if (authData && authData.length > 0 && this._externalAuth) {
-      //authData and external auth, uses externalAuth to get authSecrete and derive seed
+      // authData and external auth, uses externalAuth to get authSecrete and derive seed
       const authSecret = await this._externalAuth({ address, type: '3id_auth' })
       let seed, migratedKeys
 
       authData.find(({ box, ciphertext, nonce }) => {
         if (box) {
-          seed = Keyring.asymDecryptWithAuthSecret(box.ciphertext,  box.ephemeralFrom, box.nonce, authSecret)
+          seed = Keyring.asymDecryptWithAuthSecret(box.ciphertext, box.ephemeralFrom, box.nonce, authSecret)
         }
         if (ciphertext) {
           seed = Keyring.decryptWithAuthSecret(ciphertext, nonce, authSecret)
@@ -178,10 +178,10 @@ class IdentityWallet {
       let seed
       authData.find(({ box, ciphertext, nonce }) => {
         if (box) {
-          seed = Keyring.asymDecryptWithAuthSecret(box.ciphertext, box.nonce, box.ephemeralFrom, authSecret)
+          seed = Keyring.asymDecryptWithAuthSecret(box.ciphertext, box.ephemeralFrom, box.nonce, this._authSecret)
         }
         if (ciphertext) {
-          seed = Keyring.decryptWithAuthSecret(ciphertext, nonce, authSecret)
+          seed = Keyring.decryptWithAuthSecret(ciphertext, nonce, this._authSecret)
         }
         return Boolean(seed)
       })
@@ -191,7 +191,7 @@ class IdentityWallet {
     } else if (this._externalAuth) {
       // no authData and externalAuth - migration of legacy accounts occurs
       if (!address) throw new Error('External authentication requires an address (for migration)')
-      const migratedKeys = await this._externalAuth({ address, spaces, type: '3id_migration'})
+      const migratedKeys = await this._externalAuth({ address, spaces, type: '3id_migration' })
       const authSecret = await this._externalAuth({ address, type: '3id_auth' })
       const seed = randomHex(32)
       this._keyring = new Keyring(seed)
@@ -258,7 +258,7 @@ class IdentityWallet {
     if (!this._keyring) throw new Error('This method can only be called after authenticate has been called')
 
     const message = this._keyring._seed
-    const encAuthData = this._keyring.asymEncryptWithAuthSecret(message, authSecret)
+    const encAuthData = Keyring.asymEncryptWithAuthSecret(message, authSecret)
     this.events.emit('new-auth-method', encAuthData)
 
     if (this._externalAuth) await this.linkAddress(address)

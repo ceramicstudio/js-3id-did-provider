@@ -4,7 +4,46 @@ exports[`IdentityWallet addAuthMethod should throw before authenticate 1`] = `[E
 
 exports[`IdentityWallet asymmetrically encrypt/decrypt works correctly 1`] = `[Error: IdentityWallet: Could not decrypt message]`;
 
-exports[`IdentityWallet authenticate externalAuth migration returns keys 1`] = `
+exports[`IdentityWallet authenticate externalAuth & migration returns keys for any space, given auth data 1`] = `
+Object {
+  "main": Object {
+    "asymEncryptionKey": "biCXSI+KN3TOLmS6zpJ1RIXz7s5zIhkittzDxzQgHA8=",
+    "managementKey": "0xA92756cDdaa1998706544D1d8b2D355D58F766b1",
+    "signingKey": "03bab9036a2ec1ed3f8397e6cf4a89f0bf1a5280c188a181afd7de0e16a07397e9",
+  },
+  "spaces": Object {
+    "anyspace1": Object {
+      "asymEncryptionKey": "JqaXlKIoJ4xNb4oAmLvzzYfsEEfIOQgrImlKpPKOsUE=",
+      "managementKey": null,
+      "signingKey": "04a7af27305e55a8870c4ef46fd889bbd1b86b50683b6e805eb0ee13ef74c105a19d2aeb3c2e771fbffb93e7a54087600ded37a7dc725d77c9805360b90657f9a1",
+    },
+  },
+}
+`;
+
+exports[`IdentityWallet authenticate externalAuth & migration returns keys for any space, given auth data 2`] = `
+Object {
+  "main": Object {
+    "asymEncryptionKey": "biCXSI+KN3TOLmS6zpJ1RIXz7s5zIhkittzDxzQgHA8=",
+    "managementKey": "0xA92756cDdaa1998706544D1d8b2D355D58F766b1",
+    "signingKey": "03bab9036a2ec1ed3f8397e6cf4a89f0bf1a5280c188a181afd7de0e16a07397e9",
+  },
+  "spaces": Object {
+    "anyspace1": Object {
+      "asymEncryptionKey": "JqaXlKIoJ4xNb4oAmLvzzYfsEEfIOQgrImlKpPKOsUE=",
+      "managementKey": null,
+      "signingKey": "04a7af27305e55a8870c4ef46fd889bbd1b86b50683b6e805eb0ee13ef74c105a19d2aeb3c2e771fbffb93e7a54087600ded37a7dc725d77c9805360b90657f9a1",
+    },
+    "anyspace2": Object {
+      "asymEncryptionKey": "DCgD7xFqscPoAs49F5LqgMBxz9wdaZHYuKdZTq+cwEk=",
+      "managementKey": null,
+      "signingKey": "04166497126053692360837bc3b7df3e7699d840768a6ee5bacb107e0eaf0b5bd8289fec16ab07d1286b667a529e85c7a7e399f0ec3cba06c02b8a19d9a6b1693b",
+    },
+  },
+}
+`;
+
+exports[`IdentityWallet authenticate externalAuth & migration returns keys for migratedKeys 1`] = `
 Object {
   "main": Object {
     "asymEncryptionKey": "12X0Ua5LDr1rDwKb34mYzNIZUGoqYZBou8h/TLo+FDk=",
@@ -15,7 +54,7 @@ Object {
 }
 `;
 
-exports[`IdentityWallet authenticate externalAuth migration returns keys 2`] = `
+exports[`IdentityWallet authenticate externalAuth & migration returns keys for migratedKeys 2`] = `
 Object {
   "main": Object {
     "asymEncryptionKey": "12X0Ua5LDr1rDwKb34mYzNIZUGoqYZBou8h/TLo+FDk=",
@@ -32,7 +71,7 @@ Object {
 }
 `;
 
-exports[`IdentityWallet authenticate externalAuth migration returns keys 3`] = `
+exports[`IdentityWallet authenticate externalAuth & migration returns keys for migratedKeys 3`] = `
 Object {
   "main": Object {
     "asymEncryptionKey": "12X0Ua5LDr1rDwKb34mYzNIZUGoqYZBou8h/TLo+FDk=",

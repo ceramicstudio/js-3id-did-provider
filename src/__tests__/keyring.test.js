@@ -10,6 +10,8 @@ const migratedKeys = JSON.stringify({
   }
 })
 
+const authSecret = '0x8934eadf47df34a254848da885531bc362b9fc23932cf9415aceb59f8e48828b'
+
 describe('Keyring', () => {
 
   let keyring1
@@ -71,4 +73,11 @@ describe('Keyring', () => {
       })
     }
   )
+
+  it('asym enc/dec with an authSecret to create authData', async () => {
+    const testSeed = '0xf0e4c2f76c58916ec258f246851bea091d14d4247a2fc3e18694461b1816e13b'
+    const authData = Keyring.asymEncryptWithAuthSecret(testSeed, authSecret)
+    const res = Keyring.asymDecryptWithAuthSecret(authData.box.ciphertext, authData.box.ephemeralFrom, authData.box.nonce, authSecret)
+    expect(res).toEqual(testSeed)
+  })
 })

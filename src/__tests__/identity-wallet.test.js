@@ -19,9 +19,14 @@ const migratedKeys = {
   }
 }
 
+const authDataTest = [{box: {nonce: "IH5QAVUrx2qxvTrpq1GN8oux/knvrsIj", ciphertext: "1+gjR9cgBrCYz7P/R1bfuxkDm2gpHmQWGPpaXmtPJCL59iFHMN+PYaqU0pBDlRihonhvt3JAanUartjtekmVnFJZylBFaG8uoCBy43uF5ECaoA==", ephemeralFrom: "dnYtpeMuvjpxOKCcuvUNQHdElJu+SI3Ey7k1m2hoxxE="},
+                  pubkey: "yrFxe1aevH4TVk3Z8tPC4u4YDscbPYY6Fdn5LXwTVSs="}]
+
 const walletExternalAuthConf = {
   externalAuth: jest.fn(({ address, spaces, type }) => {
     if (type === '3id_migration') return JSON.stringify(migratedKeys)
+    if (type === '3id_auth') return "0xc8071095fea736eaca6b8d64ab7f33fe58d86a13f5964f4f464ea1208e212607"
+    if (type === '3id_createLink') return null
   })
 }
 
@@ -194,7 +199,7 @@ describe('IdentityWallet', () => {
     })
   })
 
-  describe('authenticate externalAuth migration', () => {
+  describe('authenticate externalAuth & migration', () => {
 
     let getConsent, initKeyring
 
@@ -205,17 +210,23 @@ describe('IdentityWallet', () => {
       initKeyring =  jest.spyOn(idWalletExternalAuth, '_initKeyring')
     })
 
-    const opts = { address: migratedKeys.managementAddress }
+    const opts = {
+       authData: authDataTest,
+       address: migratedKeys.managementAddress
+    }
 
-    it('returns keys', async () => {
-      const opts = { address: migratedKeys.managementAddress }
+    it('returns keys for migratedKeys', async () => {
+      const opts = {
+        address: migratedKeys.managementAddress
+      }
       expect(await idWalletExternalAuth.authenticate([], opts)).toMatchSnapshot()
       expect(await idWalletExternalAuth.authenticate(['space1'], opts)).toMatchSnapshot()
       expect(await idWalletExternalAuth.authenticate(['space1', 'space2'], opts)).toMatchSnapshot()
     })
 
-    it('throws if request space not available in migratedKeys', async () => {
-      await expect(idWalletExternalAuth.authenticate(['notSpace '], opts)).rejects.toThrow(/not derive/)
+    it('returns keys for any space, given auth data', async () => {
+      expect(await idWalletExternalAuth.authenticate(['anyspace1'], opts)).toMatchSnapshot()
+      expect(await idWalletExternalAuth.authenticate(['anyspace1', 'anyspace2'], opts)).toMatchSnapshot()
     })
 
     it('getConsent function is called before creating keyring', async () => {
@@ -226,14 +237,7 @@ describe('IdentityWallet', () => {
 
     it('getConsent function is given address arg', async () => {
       await idWalletExternalAuth.authenticate([], opts)
-      expect(getConsent).toHaveBeenCalledWith([], undefined, opts)
-    })
-
-    it('keyring is created on every auth request', async () => {
-      await idWalletExternalAuth.authenticate([], opts)
-      await idWalletExternalAuth.authenticate([], opts)
-      await idWalletExternalAuth.authenticate([], opts)
-      expect(initKeyring).toHaveBeenCalledTimes(3)
+      expect(getConsent).toHaveBeenCalledWith([], undefined, { address: migratedKeys.managementAddress})
     })
 
     it('throws if not given address opts ', async () => {
