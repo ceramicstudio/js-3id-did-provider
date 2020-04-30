@@ -8,8 +8,6 @@ import { createLink } from '3id-blockchain-utils'
 import { sha256Multihash, pad, unpad, fakeIpfs, fakeEthProvider } from './utils'
 
 const DID_METHOD_NAME = '3'
-const MIGRATION = true
-
 const randomHex = (bytes) => `0x${Buffer.from(Keyring.naclRandom(bytes)).toString('hex')}`
 
 class IdentityWallet {
@@ -119,15 +117,20 @@ class IdentityWallet {
    */
   async linkAddress (address, provider) {
     if (!this._keyring) throw new Error('This method can only be called after authenticate has been called')
-    const proof = await createLink(this.DID, address, provider)
-    this.events.emit('new-link-proof', proof)
+    let proof
+    if (this._externalAuth) {
+      proof = await this._externalAuth({ address: address, did: this.DID, type: '3id_createLink' })
+    } else {
+      proof = await createLink(this.DID, address, provider)
+    }
+    if (proof) this.events.emit('new-link-proof', proof)
     return proof
   }
 
   async linkManagementKey () {
     // TODO - this method should be deprecated
     if (this._externalAuth) {
-      return this._externalAuth({ address: this._keyring._rootKeys.managementAddress, spaces: [], type: '3id_createLink' })
+      return null
     }
 
     const timestamp = Math.floor(new Date().getTime() / 1000)
@@ -145,34 +148,41 @@ class IdentityWallet {
     } else if (authData && authData.length > 0 && this._externalAuth) {
       //authData and external auth, uses externalAuth to get authSecrete and derive seed
       const authSecret = await this._externalAuth({ address, type: '3id_auth' })
-
       let seed, migratedKeys
-      authData.find(({ ciphertext, nonce, encMigratedKeys }) => {
+
+      authData.find(({ box, ciphertext, nonce }) => {
+        if (box) {
+          seed = Keyring.asymDecryptWithAuthSecret(box.ciphertext,  box.ephemeralFrom, box.nonce, authSecret)
+        }
         if (ciphertext) {
           seed = Keyring.decryptWithAuthSecret(ciphertext, nonce, authSecret)
-          return Boolean(seed)
         }
+        return Boolean(seed)
       })
 
       if (!seed) throw new Error('No valid auth-secret for this identity')
       this._keyring = new Keyring(seed)
       this.DID = await this._get3id()
 
-      // TODO cleanup this, and format for encMigratedKeys, since differs from other auth data
-      authData.find(({ ciphertext, nonce, encMigratedKeys }) => {
-        if (encMigratedKeys) {
-          migratedKeys = this._keyring.symDecrypt(encMigratedKeys.ciphertext, encMigratedKeys.nonce )
-          return Boolean(migratedKeys )
+      authData.find(({ box, pubkey }) => {
+        if (box && !pubkey) {
+          migratedKeys = this._keyring.symDecrypt(box.ciphertext, box.nonce)
+          return Boolean(migratedKeys)
         }
       })
 
-      this._keyring.importMigratedKeys(migratedKeys)
+      if (migratedKeys) this._keyring.importMigratedKeys(migratedKeys)
     } else if (authData && authData.length > 0) {
       // authData, expects authSecret to derive seed
       if (!this._authSecret) throw new Error('Authdata available, authSecret or externalAuth required to initialize')
       let seed
-      authData.find(({ ciphertext, nonce }) => {
-        seed = Keyring.decryptWithAuthSecret(ciphertext, nonce, this._authSecret)
+      authData.find(({ box, ciphertext, nonce }) => {
+        if (box) {
+          seed = Keyring.asymDecryptWithAuthSecret(box.ciphertext, box.nonce, box.ephemeralFrom, authSecret)
+        }
+        if (ciphertext) {
+          seed = Keyring.decryptWithAuthSecret(ciphertext, nonce, authSecret)
+        }
         return Boolean(seed)
       })
       if (!seed) throw new Error('No valid auth-secret for this identity')
@@ -181,15 +191,17 @@ class IdentityWallet {
     } else if (this._externalAuth) {
       // no authData and externalAuth - migration of legacy accounts occurs
       if (!address) throw new Error('External authentication requires an address (for migration)')
-      const migratedKeys = await this._externalAuth({ address, spaces, type: '3id_migration', migrate: MIGRATION  })
+      const migratedKeys = await this._externalAuth({ address, spaces, type: '3id_migration'})
       const authSecret = await this._externalAuth({ address, type: '3id_auth' })
       const seed = randomHex(32)
       this._keyring = new Keyring(seed)
-      const encMigratedKeys = this._keyring.symEncrypt(migratedKeys)
-      await this._keyring.importMigratedKeys(migratedKeys)
-      this.events.emit('new-auth-method', { encMigratedKeys })
-      this.addAuthMethod(authSecret)
+      if (migratedKeys) {
+        const encMigratedKeys = this._keyring.symEncrypt(migratedKeys)
+        await this._keyring.importMigratedKeys(migratedKeys)
+        this.events.emit('new-auth-method', { box: encMigratedKeys })
+      }
       this.DID = await this._get3id()
+      await this.addAuthMethod(authSecret, address)
     } else {
       // no authData available so we create a new identity
       const seed = randomHex(32)
@@ -210,7 +222,6 @@ class IdentityWallet {
   async authenticate (spaces = [], { authData, address } = {}, origin) {
     let consent
     // if external auth and address, get consent first, pass address since keyring not avaiable, otherwise call after keyring
-    // TODO get consent for migration may look different, or will have slight different templating, need way to hook into additional views
     if (address) consent = await this.getConsent(spaces, origin, { address })
     if (!this._keyring) await this._initKeyring(authData, address, spaces)
     if (!address) consent = this.getConsent(spaces, origin)
@@ -243,12 +254,14 @@ class IdentityWallet {
    *
    * @param     {String}    authSecret              A 32 byte hex string used as authentication secret
    */
-  async addAuthMethod (authSecret) {
+  async addAuthMethod (authSecret, address) {
     if (!this._keyring) throw new Error('This method can only be called after authenticate has been called')
 
     const message = this._keyring._seed
-    const encAuthData = Keyring.encryptWithAuthSecret(message, authSecret)
+    const encAuthData = this._keyring.asymEncryptWithAuthSecret(message, authSecret)
     this.events.emit('new-auth-method', encAuthData)
+
+    if (this._externalAuth) await this.linkAddress(address)
 
     // A link from the authSecret is created in order to find
     // the DID if we don't know the seed

@@ -15,8 +15,6 @@ const BASE_PATH_LEGACY = "m/7696500'/0'/0'"
 const AUTH_PATH_WALLET = BASE_PATH + '/' + ROOT_STORE_PATH + '/0'
 const AUTH_PATH_ENCRYPTION = BASE_PATH + '/' + ROOT_STORE_PATH + '/3'
 
-const MIGRATION = true
-
 const ensure0x = str => (str.startsWith('0x') ? '' : '0x') + str
 
 class Keyring {
@@ -36,7 +34,6 @@ class Keyring {
   }
 
   importMigratedKeys (migratedKeys) {
-    this._migratedKeys = true
     migratedKeys = JSON.parse(migratedKeys)
 
     const getHDNode = (seed) => {
@@ -46,9 +43,9 @@ class Keyring {
 
     const rootNode = getHDNode(migratedKeys.seed)
 
-    this._migratedRoot = this._deriveKeySet(rootNode)
-    this._migratedRoot.managementAddress = migratedKeys.managementAddress
-    this._migratedRoot.managementKey = { address: migratedKeys.managementAddress }
+    this._rootKeys = this._deriveKeySet(rootNode)
+    this._rootKeys.managementAddress = migratedKeys.managementAddress
+    this._rootKeys.managementKey = { address: migratedKeys.managementAddress }
 
     Object.keys(migratedKeys.spaceSeeds).map(name => {
       const spaceNode = getHDNode(migratedKeys.spaceSeeds[name])
@@ -82,19 +79,14 @@ class Keyring {
 
   _getKeys (space) {
     if (!space) {
-      // TODO only change, if migrate keys, then use migratedRoot
-      // TODO do we actually need this?
-      if (this._migratedKeys) return this._migratedRoot
       return this._rootKeys
     } else if (!this._spaceKeys[space]) {
-      // only hold during partial migration, otherwise will derive on demand
-      if (this._migratedKeys) throw new Error('Can not derive space keys, not given in migrated keys')
       this._deriveSpaceKeys(space)
     }
     return this._spaceKeys[space]
   }
 
-  asymEncrypt (msg, toPublic, { nonce } = {}) {
+  static asymEncrypt (msg, toPublic, { nonce } = {}) {
     nonce = nonce || Keyring.randomNonce()
     toPublic = nacl.util.decodeBase64(toPublic)
     if (typeof msg === 'string') {
@@ -110,14 +102,22 @@ class Keyring {
   }
 
   asymDecrypt (ciphertext, fromPublic, nonce, { space, toBuffer } = {}) {
-    fromPublic = nacl.util.decodeBase64(fromPublic)
-    ciphertext = nacl.util.decodeBase64(ciphertext)
-    nonce = nacl.util.decodeBase64(nonce)
-    const cleartext = nacl.box.open(ciphertext, nonce, fromPublic, this._getKeys(space).asymEncryptionKey.secretKey)
-    if (toBuffer) {
-      return cleartext ? Buffer.from(cleartext) : null
+    const secretKey = this._getKeys(space).asymEncryptionKey.secretKey
+    return asymDecrypt(ciphertext, fromPublic, nonce, secretKey, { space, toBuffer } = {})
+  }
+
+  static asymEncryptWithAuthSecret(message, authSecret) {
+    const keypair = authSecretKeypair(authSecret)
+    const pubkey = nacl.util.encodeBase64(keypair.publicKey)
+    return {
+      pubkey: pubkey,
+      box: Keyring.asymEncrypt(message, pubkey)
     }
-    return cleartext ? nacl.util.encodeUTF8(cleartext) : null
+  }
+
+  static asymDecryptWithAuthSecret(ciphertext, fromPub, nonce, authSecret) {
+    const keypair = authSecretKeypair(authSecret)
+    return asymDecrypt(ciphertext, fromPub, nonce, keypair.secretKey)
   }
 
   symEncrypt (msg, { space, nonce } = {}) {
@@ -214,5 +214,24 @@ class Keyring {
     return Keyring.naclRandom(24)
   }
 }
+
+function asymDecrypt (ciphertext, fromPublic, nonce, secretKey, { space, toBuffer } = {}) {
+  fromPublic = nacl.util.decodeBase64(fromPublic)
+  ciphertext = nacl.util.decodeBase64(ciphertext)
+  nonce = nacl.util.decodeBase64(nonce)
+  const cleartext = nacl.box.open(ciphertext, nonce, fromPublic, secretKey)
+  if (toBuffer) {
+    return cleartext ? Buffer.from(cleartext) : null
+  }
+  return cleartext ? nacl.util.encodeUTF8(cleartext) : null
+}
+
+function authSecretKeypair(authSecret) {
+  const node = HDNode.fromSeed(ensure0x(authSecret)).derivePath(AUTH_PATH_ENCRYPTION)
+  return nacl.box.keyPair.fromSecretKey(new Uint8Array(
+    Buffer.from(node.privateKey.slice(2), 'hex')
+  ))
+}
+
 
 module.exports = Keyring
