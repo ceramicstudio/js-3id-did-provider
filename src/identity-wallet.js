@@ -122,11 +122,6 @@ class IdentityWallet {
   }
 
   async linkManagementKey () {
-    // TODO - this method should be deprecated
-    if (this._externalAuth) {
-      return this._externalAuth({ address: this._keyring._rootKeys.managementAddress, spaces: [], type: '3id_createLink' })
-    }
-
     const timestamp = Math.floor(new Date().getTime() / 1000)
     const msg = `Create a new 3Box profile\n\n- \nYour unique profile ID is ${this.DID} \nTimestamp: ${timestamp}`
     return {
@@ -153,6 +148,8 @@ class IdentityWallet {
       const migratedKeys = await this._externalAuth({ address, spaces, type: '3id_migration' })
       this._keyring = new Keyring(null, migratedKeys)
       this.DID = await this._get3id()
+      const proof = await this._externalAuth({ address, type: '3id_createLink', did: this.DID })
+      if (proof) this.events.emit('new-link-proof', proof)
     } else {
       // no authData available so we create a new identity
       const seed = '0x' + Buffer.from(Keyring.naclRandom(32)).toString('hex')
