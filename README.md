@@ -21,6 +21,7 @@ $ npm install identity-wallet
 
 ### <a name="usage"></a>Usage
 #### Import Identity Wallet into your project
+
 Import the identity-wallet module
 ```js
 const IdentityWallet = require('identity-wallet')
@@ -28,6 +29,10 @@ const IdentityWallet = require('identity-wallet')
 Import using the dist build in your html code
 ```js
 <script type="text/javascript" src="../dist/identity-wallet.js"></script>
+```
+Import using the unpkg CDN in your html code
+```js
+<script type="text/javascript" src="https://www.unpkg.com/identity-wallet@1.2.0/dist/identity-wallet.js"></script>
 ```
 
 #### Understanding the `getConsent` function

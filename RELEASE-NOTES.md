@@ -1,5 +1,8 @@
 # Release Notes
 
+## v1.3.0 - 2020-05-21
+feat: 3id-connect v2 support, externalAuth link on auth
+
 ## v1.2.0 - 2020-04-13
 fix: buffer (un)encrypt (now support confidential threads)
 feat: import migrated keys, and external auth function (support 3boxjs migration)
