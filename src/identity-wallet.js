@@ -122,6 +122,7 @@ class IdentityWallet {
   }
 
   async linkManagementKey () {
+    if (this._externalAuth) return null
     const timestamp = Math.floor(new Date().getTime() / 1000)
     const msg = `Create a new 3Box profile\n\n- \nYour unique profile ID is ${this.DID} \nTimestamp: ${timestamp}`
     return {
