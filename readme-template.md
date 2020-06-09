@@ -99,4 +99,7 @@ const ethProvider = // an ethereum json-rpc provider
 await idWallet.linkAddress(ethAddress, ethProvider)
 ```
 
+## Maintainers
+[@oed](https://github.com/oed)
+
 ## <a name="api"></a> API Documentation
