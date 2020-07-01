@@ -1,7 +1,7 @@
 const IdentityWallet = require('../identity-wallet')
 const HDNode = require('@ethersproject/hdnode')
-const { decodeJWT, verifyJWT } = require('did-jwt')
-const { registerMethod } = require('did-resolver')
+const { verifyJWT } = require('did-jwt')
+const { Resolver } = require('did-resolver')
 
 const wallet1Conf = {
   seed: HDNode.mnemonicToSeed('clay rubber drama brush salute cream nerve wear stuff sentence trade conduct')
@@ -32,7 +32,7 @@ const badAuthData = [{
 }]
 const getConsentMock = jest.fn(() => false)
 
-registerMethod('3', async (_, { id }) => {
+const threeIdResolver = async (_, { id }) => {
   let key
   if (id === 'bafyreia6evyez2xdlewmbh7hfz3dz3besmlhnlrnkiounscnnvboym7q2u' || id === 'first') {
     key = '027ab5238257532f486cbeeac59a5721bbfec2f13c3d26516ca9d4c5f0ec1aa229'
@@ -54,7 +54,7 @@ registerMethod('3', async (_, { id }) => {
       'publicKey': 'did:3:' + id + '#owner'
     }]
   }
-})
+}
 
 
 describe('IdentityWallet', () => {
@@ -242,16 +242,20 @@ describe('IdentityWallet', () => {
   })
 
   it('signClaim creates JWTs correctly', async () => {
+    const resolver = new Resolver({
+      '3': threeIdResolver
+    })
     const payload = {
-      some: 'data'
+      some: 'data',
+      iat: undefined
     }
     const jwt0 = await idWallet1.signClaim(payload)
     const jwt1 = await idWallet1.signClaim(payload, { DID: 'did:3:first' })
     const jwt2 = await idWallet1.signClaim(payload, { space: 'space1' })
 
-    expect(await verifyJWT(jwt0)).toBeDefined()
-    expect(await verifyJWT(jwt1)).toBeDefined()
-    expect(await verifyJWT(jwt2)).toBeDefined()
+    expect(await verifyJWT(jwt0, { resolver })).toMatchSnapshot()
+    expect(await verifyJWT(jwt1, { resolver })).toMatchSnapshot()
+    expect(await verifyJWT(jwt2, { resolver })).toMatchSnapshot()
   })
 
   it('encrypt/decrypt works correctly', async () => {
