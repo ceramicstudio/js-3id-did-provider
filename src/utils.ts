@@ -4,19 +4,19 @@ import dagCBOR from 'ipld-dag-cbor'
 
 const ENC_BLOCK_SIZE = 24
 
-const pad = (val: string, blockSize = ENC_BLOCK_SIZE): string => {
+export const pad = (val: string, blockSize = ENC_BLOCK_SIZE): string => {
   const blockDiff = (blockSize - (val.length % blockSize)) % blockSize
   return `${val}${'\0'.repeat(blockDiff)}`
 }
 
-const unpad = (padded: string): string => padded.replace(/\0+$/, '')
+export const unpad = (padded: string): string => padded.replace(/\0+$/, '')
 
-const sha256Multihash = (str: string): string => {
+export const sha256Multihash = (str: string): string => {
   return Multihash.encode(Buffer.from(sha256(str)), 'sha2-256').toString('hex')
 }
 
 let tmpData
-const fakeIpfs = {
+export const fakeIpfs = {
   dag: {
     put: (data, opts) => {
       tmpData = data
@@ -27,7 +27,7 @@ const fakeIpfs = {
   add: () => 'empty', // used in _initMuport in 3box-js 3id, but muport fingerprint not needed here
 }
 
-const fakeEthProvider = (wallet) => ({
+export const fakeEthProvider = (wallet) => ({
   send: (request, callback) => {
     if (request.method !== 'personal_sign') {
       callback(new Error('only supports personal_sign'))
@@ -41,11 +41,6 @@ const fakeEthProvider = (wallet) => ({
   },
 })
 
-module.exports = {
-  pad,
-  unpad,
-  sha256,
-  sha256Multihash,
-  fakeIpfs,
-  fakeEthProvider,
+export function hexToUint8Array(str: string): Uint8Array {
+  return new Uint8Array(Buffer.from(str, 'hex'))
 }

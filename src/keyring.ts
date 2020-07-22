@@ -3,9 +3,17 @@ import naclutil from 'tweetnacl-util'
 import { HDNode } from '@ethersproject/hdnode'
 import { Wallet } from '@ethersproject/wallet'
 import { SimpleSigner } from 'did-jwt'
-import { sha256 } from './utils'
+import { sha256 } from 'js-sha256'
 import { ec as EC } from 'elliptic'
-nacl.util = naclutil
+
+import {
+  asymDecrypt,
+  asymEncrypt,
+  symDecryptBase,
+  symEncryptBase,
+} from './crypto'
+import { hexToUint8Array } from './utils'
+
 const ec = new EC('secp256k1')
 
 const BASE_PATH = "m/51073068'/0'"
@@ -19,7 +27,7 @@ const ensure0x = (str: string): string => {
   return (str.startsWith('0x') ? '' : '0x') + str
 }
 
-class Keyring {
+export default class Keyring {
   constructor(seed?: string | undefined, migratedKeys?: string) {
     // TODO for full migration handle two sets of 'root keys' seed and migrated
     this._spaceKeys = {}
@@ -69,7 +77,7 @@ class Keyring {
           Buffer.from(hdNode.derivePath('2').privateKey.slice(2), 'hex'),
         ),
       ),
-      symEncryptionKey: Keyring.hexToUint8Array(
+      symEncryptionKey: hexToUint8Array(
         hdNode.derivePath('3').privateKey.slice(2),
       ),
     }
@@ -106,51 +114,20 @@ class Keyring {
   }
 
   asymEncrypt(msg, toPublic, { nonce } = {}) {
-    nonce = nonce || Keyring.randomNonce()
-    toPublic = nacl.util.decodeBase64(toPublic)
-    if (typeof msg === 'string') {
-      msg = nacl.util.decodeUTF8(msg)
-    }
-    const ephemneralKeypair = nacl.box.keyPair()
-    const ciphertext = nacl.box(
-      msg,
-      nonce,
-      toPublic,
-      ephemneralKeypair.secretKey,
-    )
-    return {
-      nonce: nacl.util.encodeBase64(nonce),
-      ephemeralFrom: nacl.util.encodeBase64(ephemneralKeypair.publicKey),
-      ciphertext: nacl.util.encodeBase64(ciphertext),
-    }
+    return asymEncrypt(msg, toPublic, nonce)
   }
 
   asymDecrypt(ciphertext, fromPublic, nonce, { space, toBuffer } = {}) {
-    fromPublic = nacl.util.decodeBase64(fromPublic)
-    ciphertext = nacl.util.decodeBase64(ciphertext)
-    nonce = nacl.util.decodeBase64(nonce)
-    const cleartext = nacl.box.open(
-      ciphertext,
-      nonce,
-      fromPublic,
-      this._getKeys(space).asymEncryptionKey.secretKey,
-    )
-    if (toBuffer) {
-      return cleartext ? Buffer.from(cleartext) : null
-    }
-    return cleartext ? nacl.util.encodeUTF8(cleartext) : null
+    const key = this._getKeys(space).asymEncryptionKey.secretKey
+    return asymDecrypt(ciphertext, fromPublic, key, nonce, toBuffer)
   }
 
   symEncrypt(msg, { space, nonce } = {}) {
-    return Keyring.symEncryptBase(
-      msg,
-      this._getKeys(space).symEncryptionKey,
-      nonce,
-    )
+    return symEncryptBase(msg, this._getKeys(space).symEncryptionKey, nonce)
   }
 
   symDecrypt(ciphertext, nonce, { space, toBuffer } = {}) {
-    return Keyring.symDecryptBase(
+    return symDecryptBase(
       ciphertext,
       this._getKeys(space).symEncryptionKey,
       nonce,
@@ -189,7 +166,7 @@ class Keyring {
     return {
       signingKey,
       managementKey,
-      asymEncryptionKey: nacl.util.encodeBase64(
+      asymEncryptionKey: naclutil.encodeBase64(
         keys.asymEncryptionKey.publicKey,
       ),
     }
@@ -203,16 +180,16 @@ class Keyring {
     const node = HDNode.fromSeed(ensure0x(authSecret)).derivePath(
       AUTH_PATH_ENCRYPTION,
     )
-    const key = Keyring.hexToUint8Array(node.privateKey.slice(2))
-    return Keyring.symEncryptBase(message, key)
+    const key = hexToUint8Array(node.privateKey.slice(2))
+    return symEncryptBase(message, key)
   }
 
   static decryptWithAuthSecret(ciphertext, nonce, authSecret) {
     const node = HDNode.fromSeed(ensure0x(authSecret)).derivePath(
       AUTH_PATH_ENCRYPTION,
     )
-    const key = Keyring.hexToUint8Array(node.privateKey.slice(2))
-    return Keyring.symDecryptBase(ciphertext, key, nonce)
+    const key = hexToUint8Array(node.privateKey.slice(2))
+    return symDecryptBase(ciphertext, key, nonce)
   }
 
   static walletForAuthSecret(authSecret) {
@@ -221,40 +198,4 @@ class Keyring {
     )
     return new Wallet(node.privateKey)
   }
-
-  static hexToUint8Array(str) {
-    return new Uint8Array(Buffer.from(str, 'hex'))
-  }
-
-  static symEncryptBase(msg, symKey, nonce) {
-    nonce = nonce || Keyring.randomNonce()
-    if (typeof msg === 'string') {
-      msg = nacl.util.decodeUTF8(msg)
-    }
-    const ciphertext = nacl.secretbox(msg, nonce, symKey)
-    return {
-      nonce: nacl.util.encodeBase64(nonce),
-      ciphertext: nacl.util.encodeBase64(ciphertext),
-    }
-  }
-
-  static symDecryptBase(ciphertext, symKey, nonce, toBuffer) {
-    ciphertext = nacl.util.decodeBase64(ciphertext)
-    nonce = nacl.util.decodeBase64(nonce)
-    const cleartext = nacl.secretbox.open(ciphertext, nonce, symKey)
-    if (toBuffer) {
-      return cleartext ? Buffer.from(cleartext) : null
-    }
-    return cleartext ? nacl.util.encodeUTF8(cleartext) : null
-  }
-
-  static naclRandom(length) {
-    return nacl.randomBytes(length)
-  }
-
-  static randomNonce() {
-    return Keyring.naclRandom(24)
-  }
 }
-
-module.exports = Keyring

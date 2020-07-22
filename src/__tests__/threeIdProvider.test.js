@@ -1,4 +1,4 @@
-const ThreeIdProvider = require('../threeIdProvider')
+import ThreeIdProvider from '../threeIdProvider'
 
 let authCB, linkCB
 const IDW_MOCK = {
@@ -14,20 +14,20 @@ const IDW_MOCK = {
     on: jest.fn((name, cb) => {
       if (name === 'new-auth-method') authCB = cb
       else linkCB = cb
-    })
-  }
+    }),
+  },
 }
 
-function formatCall (method, params) {
+function formatCall(method, params) {
   return {
-    'id': 1,
+    id: 1,
     'json-rpc': '2.0',
     method: `3id_${method}`,
-    params
+    params,
   }
 }
 
-async function callWithCB (rpc, payload, origin) {
+async function callWithCB(rpc, payload, origin) {
   return new Promise((resolve, reject) => {
     const callback = (err, resp) => {
       if (err) reject(err)
@@ -79,7 +79,11 @@ describe('ThreeIdProvider', () => {
     const payload = formatCall('authenticate', { spaces, authData })
     expect(await rpc.send(payload, origin)).toMatchSnapshot()
     expect(IDW_MOCK.authenticate).toHaveBeenCalledTimes(1)
-    expect(IDW_MOCK.authenticate).toHaveBeenCalledWith(spaces, { authData }, origin)
+    expect(IDW_MOCK.authenticate).toHaveBeenCalledWith(
+      spaces,
+      { authData },
+      origin,
+    )
     expect(await callWithCB(rpc, payload, origin)).toMatchSnapshot()
     expect(IDW_MOCK.authenticate).toHaveBeenCalledTimes(2)
   })
@@ -113,7 +117,9 @@ describe('ThreeIdProvider', () => {
     const payload = formatCall('encrypt', { message, space })
     expect(await rpc.send(payload)).toMatchSnapshot()
     expect(IDW_MOCK.encrypt).toHaveBeenCalledTimes(1)
-    expect(IDW_MOCK.encrypt).toHaveBeenCalledWith(message, space, { blockSize: undefined })
+    expect(IDW_MOCK.encrypt).toHaveBeenCalledWith(message, space, {
+      blockSize: undefined,
+    })
     expect(await callWithCB(rpc, payload)).toMatchSnapshot()
     expect(IDW_MOCK.encrypt).toHaveBeenCalledTimes(2)
   })
@@ -124,7 +130,10 @@ describe('ThreeIdProvider', () => {
     const payload = formatCall('encrypt', { message, to })
     expect(await rpc.send(payload)).toMatchSnapshot()
     expect(IDW_MOCK.encrypt).toHaveBeenCalledTimes(1)
-    expect(IDW_MOCK.encrypt).toHaveBeenCalledWith(message, undefined, { to, blockSize: undefined })
+    expect(IDW_MOCK.encrypt).toHaveBeenCalledWith(message, undefined, {
+      to,
+      blockSize: undefined,
+    })
     expect(await callWithCB(rpc, payload)).toMatchSnapshot()
     expect(IDW_MOCK.encrypt).toHaveBeenCalledTimes(2)
   })
@@ -136,7 +145,11 @@ describe('ThreeIdProvider', () => {
     const payload = formatCall('decrypt', { ciphertext, nonce, space })
     expect(await rpc.send(payload)).toMatchSnapshot()
     expect(IDW_MOCK.decrypt).toHaveBeenCalledTimes(1)
-    expect(IDW_MOCK.decrypt).toHaveBeenCalledWith({ ciphertext, nonce }, space, undefined)
+    expect(IDW_MOCK.decrypt).toHaveBeenCalledWith(
+      { ciphertext, nonce },
+      space,
+      undefined,
+    )
     expect(await callWithCB(rpc, payload)).toMatchSnapshot()
     expect(IDW_MOCK.decrypt).toHaveBeenCalledTimes(2)
   })
@@ -146,10 +159,19 @@ describe('ThreeIdProvider', () => {
     const nonce = 'nonce'
     const space = 'space1'
     const ephemeralFrom = 'publicKey'
-    const payload = formatCall('decrypt', { ciphertext, nonce, space, ephemeralFrom })
+    const payload = formatCall('decrypt', {
+      ciphertext,
+      nonce,
+      space,
+      ephemeralFrom,
+    })
     expect(await rpc.send(payload)).toMatchSnapshot()
     expect(IDW_MOCK.decrypt).toHaveBeenCalledTimes(1)
-    expect(IDW_MOCK.decrypt).toHaveBeenCalledWith({ ciphertext, ephemeralFrom, nonce }, space, undefined)
+    expect(IDW_MOCK.decrypt).toHaveBeenCalledWith(
+      { ciphertext, ephemeralFrom, nonce },
+      space,
+      undefined,
+    )
     expect(await callWithCB(rpc, payload)).toMatchSnapshot()
     expect(IDW_MOCK.decrypt).toHaveBeenCalledTimes(2)
   })

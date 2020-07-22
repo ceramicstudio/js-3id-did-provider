@@ -1,52 +1,43 @@
-import DidDocument from 'ipfs-did-document'
+import {
+  HandlerMethods,
+  RequestHandler,
+  RPCConnection,
+  RPCError,
+  RPCRequest,
+  RPCResponse,
+  createHandler,
+} from 'rpc-utils'
 
-import { Keyring } from './did-keyring'
-import { fakeIpfs } from './utils'
+import IdentityWallet from './identity-wallet'
 
-const DID_METHOD_NAME = '3'
-
-export interface DIDContext {
-  DID?: string
-  keyring?: Keyring
+const methods: HandlerMethods<IdentityWallet> = {
+  did_authenticate: async (wallet) => {
+    await wallet.authenticate([], {}, null)
+    return { accounts: [wallet.DID] }
+  },
+  did_createJWS: () => {
+    throw new RPCError(0, 'Not implemented')
+  },
 }
 
-export async function createDID(keyring: Keyring): Promise<string> {
-  const pubkeys = keyring.getPublicKeys({ uncompressed: true })
-  const doc = new DidDocument(fakeIpfs, DID_METHOD_NAME)
-  doc.addPublicKey(
-    'signingKey',
-    'Secp256k1VerificationKey2018',
-    'publicKeyHex',
-    pubkeys.signingKey,
-  )
-  doc.addPublicKey(
-    'encryptionKey',
-    'Curve25519EncryptionPublicKey',
-    'publicKeyBase64',
-    pubkeys.asymEncryptionKey,
-  )
-  doc.addPublicKey(
-    'managementKey',
-    'Secp256k1VerificationKey2018',
-    'ethereumAddress',
-    pubkeys.managementKey,
-  )
-  doc.addAuthentication('Secp256k1SignatureAuthentication2018', 'signingKey')
-  await doc.commit({ noTimestamp: true })
-  return doc.DID
-}
+export class DidProvider implements RPCConnection {
+  protected _handle: RequestHandler
+  protected _wallet: IdentityWallet
 
-export const methods = {
-  did_authenticate: async (ctx: DIDContext) => {
-    if (ctx.DID == null) {
-      if (ctx.keyring == null) {
-        ctx.keyring = Keyring.create()
-      }
-      ctx.DID = await createDID(ctx.keyring)
-    }
-    return { did: ctx.DID }
-  },
-  did_createJWS: async () => {
-    throw new Error('Not implemented')
-  },
+  constructor(wallet: IdentityWallet) {
+    this._handle = createHandler<IdentityWallet>(methods, {
+      onHandlerError: this._onHandlerError.bind(this),
+    })
+    this._wallet = wallet
+  }
+
+  protected _onHandlerError() {}
+
+  public get isDidProvider(): boolean {
+    return true
+  }
+
+  public async send(msg: RPCRequest): Promise<RPCResponse | null> {
+    return await this._handle(this._wallet, msg)
+  }
 }

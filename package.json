@@ -50,6 +50,7 @@
     "ipld-dag-cbor": "^0.15.3",
     "js-sha256": "^0.9.0",
     "multihashes": "^0.4.21",
+    "rpc-utils": "^0.1.1",
     "store": "^2.0.12",
     "tweetnacl": "^1.0.3",
     "tweetnacl-util": "^0.15.1"
@@ -64,6 +65,7 @@
     "@babel/preset-env": "^7.10.4",
     "@babel/preset-typescript": "^7.10.4",
     "@types/elliptic": "^6.4.12",
+    "@types/jest": "^26.0.5",
     "babel-core": "7.0.0-bridge.0",
     "babel-loader": "^8.1.0",
     "jest": "^26.1.0",

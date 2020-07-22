@@ -1,40 +1,53 @@
-const IdentityWallet = require('../identity-wallet')
-const HDNode = require('@ethersproject/hdnode')
-const { decodeJWT, verifyJWT } = require('did-jwt')
-const { registerMethod } = require('did-resolver')
+import IdentityWallet from '../identity-wallet'
+import { mnemonicToSeed } from '@ethersproject/hdnode'
+import { verifyJWT } from 'did-jwt'
+import { registerMethod } from 'did-resolver'
 
 const wallet1Conf = {
-  seed: HDNode.mnemonicToSeed('clay rubber drama brush salute cream nerve wear stuff sentence trade conduct')
+  seed: mnemonicToSeed(
+    'clay rubber drama brush salute cream nerve wear stuff sentence trade conduct',
+  ),
 }
 const wallet2Conf = {
-  authSecret: '24a0bc3a2a1d1404c0ab24bef9bb0618938ee892fbf62f63f82f015eddf1729e'
+  authSecret:
+    '24a0bc3a2a1d1404c0ab24bef9bb0618938ee892fbf62f63f82f015eddf1729e',
 }
 
 const migratedKeys = {
-  managementAddress: "0x8fef7ac873dec3cc8a112ea20cd25d4f01cb3e6a",
-  seed: "0x8e641c0dc77f6916cc7f743dad774cdf9f6f7bcb880b11395149dd878377cd398650bbfd4607962b49953c87da4d7f3ff247ed734b06f96bdd69479377bc612b",
-  spaceSeeds:{
-    space1: "0xcaf77e39b1e480fabffded1f53b60d6f3ade208205f84021e5cdad7e34c1177d5bf8ef9cf55b053f32e704027259e5c7de89ca871558715985e859b4ea522666",
-    space2: "0x4799b693d258582dc0439ede87e007fa853b78678e4ba87811bb6044b84c411ba6cf64232448ddc3c72bb9ecc200e17ebf739187967c0f18c48f5f3f1dd0375b"
-  }
+  managementAddress: '0x8fef7ac873dec3cc8a112ea20cd25d4f01cb3e6a',
+  seed:
+    '0x8e641c0dc77f6916cc7f743dad774cdf9f6f7bcb880b11395149dd878377cd398650bbfd4607962b49953c87da4d7f3ff247ed734b06f96bdd69479377bc612b',
+  spaceSeeds: {
+    space1:
+      '0xcaf77e39b1e480fabffded1f53b60d6f3ade208205f84021e5cdad7e34c1177d5bf8ef9cf55b053f32e704027259e5c7de89ca871558715985e859b4ea522666',
+    space2:
+      '0x4799b693d258582dc0439ede87e007fa853b78678e4ba87811bb6044b84c411ba6cf64232448ddc3c72bb9ecc200e17ebf739187967c0f18c48f5f3f1dd0375b',
+  },
 }
 
 const walletExternalAuthConf = {
   externalAuth: jest.fn(({ address, spaces, type }) => {
     if (type === '3id_migration') return JSON.stringify(migratedKeys)
-  })
+  }),
 }
 
-const secondaryAuthSecret = '4567898765434567c0ab24bef9bb0618938ee892fbf62f63f82f015eddf1729e'
-const badAuthData = [{
-  nonce: 'Lxcd05Yk4aC8LCLbFjowzD3W6Uqx+v+n',
-  ciphertext: 'elxT3d5Cxx4N9kIzRnJx0U1iKB1wLQu2u4pebshF3xXUEhw72rbCCfTsnNEKY3185MhRok0/t23Iyel5r6HJx/YOfj1XaKb4t9Ci8y21Bs38rQ=='
-}]
+const secondaryAuthSecret =
+  '4567898765434567c0ab24bef9bb0618938ee892fbf62f63f82f015eddf1729e'
+const badAuthData = [
+  {
+    nonce: 'Lxcd05Yk4aC8LCLbFjowzD3W6Uqx+v+n',
+    ciphertext:
+      'elxT3d5Cxx4N9kIzRnJx0U1iKB1wLQu2u4pebshF3xXUEhw72rbCCfTsnNEKY3185MhRok0/t23Iyel5r6HJx/YOfj1XaKb4t9Ci8y21Bs38rQ==',
+  },
+]
 const getConsentMock = jest.fn(() => false)
 
 registerMethod('3', async (_, { id }) => {
   let key
-  if (id === 'bafyreia6evyez2xdlewmbh7hfz3dz3besmlhnlrnkiounscnnvboym7q2u' || id === 'first') {
+  if (
+    id === 'bafyreia6evyez2xdlewmbh7hfz3dz3besmlhnlrnkiounscnnvboym7q2u' ||
+    id === 'first'
+  ) {
     key = '027ab5238257532f486cbeeac59a5721bbfec2f13c3d26516ca9d4c5f0ec1aa229'
   } else {
     // key for 'space1'
@@ -42,29 +55,34 @@ registerMethod('3', async (_, { id }) => {
   }
   return {
     '@context': 'https://w3id.org/did/v1',
-    'id': 'did:3:' + id,
-    'publicKey': [{
-      'id': 'did:3:' + id + '#owner',
-      'type': 'Secp256k1VerificationKey2018',
-      'owner': 'did:3:' + id,
-      'publicKeyHex': key
-    }],
-    'authentication': [{
-      'type': 'Secp256k1SignatureAuthentication2018',
-      'publicKey': 'did:3:' + id + '#owner'
-    }]
+    id: 'did:3:' + id,
+    publicKey: [
+      {
+        id: 'did:3:' + id + '#owner',
+        type: 'Secp256k1VerificationKey2018',
+        owner: 'did:3:' + id,
+        publicKeyHex: key,
+      },
+    ],
+    authentication: [
+      {
+        type: 'Secp256k1SignatureAuthentication2018',
+        publicKey: 'did:3:' + id + '#owner',
+      },
+    ],
   }
 })
 
-
 describe('IdentityWallet', () => {
-
   let idWallet1, idWallet2, idWalletExternalAuth
 
   beforeAll(() => {
     idWallet1 = new IdentityWallet(getConsentMock, wallet1Conf)
     idWallet2 = new IdentityWallet(getConsentMock, wallet2Conf)
-    idWalletExternalAuth = new IdentityWallet(getConsentMock, walletExternalAuthConf)
+    idWalletExternalAuth = new IdentityWallet(
+      getConsentMock,
+      walletExternalAuthConf,
+    )
   })
 
   it('should be correctly constructed', async () => {
@@ -91,20 +109,32 @@ describe('IdentityWallet', () => {
     })
 
     it('should throw if getConsent param not passed to constructor', async () => {
-      expect(() => new IdentityWallet(wallet1Conf)).toThrow('getConsent parameter has to be a function')
+      expect(() => new IdentityWallet(wallet1Conf)).toThrow(
+        'getConsent parameter has to be a function',
+      )
     })
 
     it('returns false if no consent given', async () => {
       expect(await idWallet1.getConsent([], origin)).toBeFalsy()
       expect(getConsentMock).toHaveBeenCalledTimes(1)
-      expect(getConsentMock).toHaveBeenCalledWith({ type, spaces: [], origin, opts: {address: undefined}})
+      expect(getConsentMock).toHaveBeenCalledWith({
+        type,
+        spaces: [],
+        origin,
+        opts: { address: undefined },
+      })
     })
 
     it('works without spaces', async () => {
       getConsentMock.mockImplementationOnce(() => true)
       expect(await idWallet1.getConsent([], origin)).toBeTruthy()
       expect(getConsentMock).toHaveBeenCalledTimes(1)
-      expect(getConsentMock).toHaveBeenCalledWith({ type, spaces: [], origin, opts: {address: undefined} })
+      expect(getConsentMock).toHaveBeenCalledWith({
+        type,
+        spaces: [],
+        origin,
+        opts: { address: undefined },
+      })
     })
 
     it('should not call consent fn if consent already given', async () => {
@@ -113,7 +143,9 @@ describe('IdentityWallet', () => {
     })
 
     it('should not have consent for different origin', async () => {
-      expect(await idWallet1.hasConsent([], 'https://my.other.origin')).toBeFalsy()
+      expect(
+        await idWallet1.hasConsent([], 'https://my.other.origin'),
+      ).toBeFalsy()
     })
 
     it('works with spaces', async () => {
@@ -121,7 +153,12 @@ describe('IdentityWallet', () => {
       getConsentMock.mockImplementationOnce(() => true)
       expect(await idWallet1.getConsent(spaces, origin)).toBeTruthy()
       expect(getConsentMock).toHaveBeenCalledTimes(1)
-      expect(getConsentMock).toHaveBeenCalledWith({ type, spaces, origin, opts: {address: undefined} })
+      expect(getConsentMock).toHaveBeenCalledWith({
+        type,
+        spaces,
+        origin,
+        opts: { address: undefined },
+      })
     })
 
     it('works with spaces, already have consent', async () => {
@@ -136,7 +173,6 @@ describe('IdentityWallet', () => {
   })
 
   describe('authenticate', () => {
-
     let authPubKeys
     let authData = []
 
@@ -147,9 +183,15 @@ describe('IdentityWallet', () => {
 
     it('works correctly w/ seed only wallet', async () => {
       expect(await idWallet1.authenticate()).toMatchSnapshot()
-      expect(await idWallet1.authenticate(['space1', 'space2'])).toMatchSnapshot()
-      expect(await idWallet1.authenticate(['space3', 'space4'])).toMatchSnapshot()
-      expect(await idWallet1.authenticate(['space2', 'space3'])).toMatchSnapshot()
+      expect(
+        await idWallet1.authenticate(['space1', 'space2']),
+      ).toMatchSnapshot()
+      expect(
+        await idWallet1.authenticate(['space3', 'space4']),
+      ).toMatchSnapshot()
+      expect(
+        await idWallet1.authenticate(['space2', 'space3']),
+      ).toMatchSnapshot()
     })
 
     it('should generate seed if no auth data passed', async () => {
@@ -167,18 +209,24 @@ describe('IdentityWallet', () => {
 
     it('should auth if auth-data is passed', async () => {
       expect(idWallet2._keyring).toBeUndefined()
-      expect(await idWallet2.authenticate([], { authData })).toEqual(authPubKeys)
+      expect(await idWallet2.authenticate([], { authData })).toEqual(
+        authPubKeys,
+      )
     })
 
     it('should throw if no valid authSecrets', async () => {
-      await expect(idWallet2.authenticate([], { authData: badAuthData })).rejects.toMatchSnapshot()
+      await expect(
+        idWallet2.authenticate([], { authData: badAuthData }),
+      ).rejects.toMatchSnapshot()
     })
 
     it('addAuthMethod works correctly', async () => {
       const authDataPromise = new Promise((resolve, reject) => {
         idWallet2.events.on('new-auth-method', resolve)
       })
-      expect(await idWallet2.authenticate([], { authData })).toEqual(authPubKeys)
+      expect(await idWallet2.authenticate([], { authData })).toEqual(
+        authPubKeys,
+      )
       const linkProofPromise = new Promise((resolve, reject) => {
         idWallet2.events.on('new-link-proof', resolve)
       })
@@ -187,35 +235,47 @@ describe('IdentityWallet', () => {
       const linkAddress = (await linkProofPromise).address
 
       const idWallet3 = new IdentityWallet(getConsentMock, {
-        authSecret: secondaryAuthSecret
+        authSecret: secondaryAuthSecret,
       })
       expect((await idWallet3.getLink()).toLowerCase()).toEqual(linkAddress)
-      expect(await idWallet3.authenticate([], { authData })).toEqual(authPubKeys)
+      expect(await idWallet3.authenticate([], { authData })).toEqual(
+        authPubKeys,
+      )
     })
   })
 
   describe('authenticate externalAuth migration', () => {
-
     let getConsent, initKeyring
 
     beforeEach(() => {
       getConsentMock.mockImplementation(() => true)
-      idWalletExternalAuth = new IdentityWallet(getConsentMock, walletExternalAuthConf)
-      getConsent =  jest.spyOn(idWalletExternalAuth, 'getConsent')
-      initKeyring =  jest.spyOn(idWalletExternalAuth, '_initKeyring')
+      idWalletExternalAuth = new IdentityWallet(
+        getConsentMock,
+        walletExternalAuthConf,
+      )
+      getConsent = jest.spyOn(idWalletExternalAuth, 'getConsent')
+      initKeyring = jest.spyOn(idWalletExternalAuth, '_initKeyring')
     })
 
     const opts = { address: migratedKeys.managementAddress }
 
     it('returns keys', async () => {
       const opts = { address: migratedKeys.managementAddress }
-      expect(await idWalletExternalAuth.authenticate([], opts)).toMatchSnapshot()
-      expect(await idWalletExternalAuth.authenticate(['space1'], opts)).toMatchSnapshot()
-      expect(await idWalletExternalAuth.authenticate(['space1', 'space2'], opts)).toMatchSnapshot()
+      expect(
+        await idWalletExternalAuth.authenticate([], opts),
+      ).toMatchSnapshot()
+      expect(
+        await idWalletExternalAuth.authenticate(['space1'], opts),
+      ).toMatchSnapshot()
+      expect(
+        await idWalletExternalAuth.authenticate(['space1', 'space2'], opts),
+      ).toMatchSnapshot()
     })
 
     it('throws if request space not available in migratedKeys', async () => {
-      await expect(idWalletExternalAuth.authenticate(['notSpace '], opts)).rejects.toThrow(/not derive/)
+      await expect(
+        idWalletExternalAuth.authenticate(['notSpace '], opts),
+      ).rejects.toThrow(/not derive/)
     })
 
     it('getConsent function is called before creating keyring', async () => {
@@ -237,13 +297,15 @@ describe('IdentityWallet', () => {
     })
 
     it('throws if not given address opts ', async () => {
-      await expect(idWalletExternalAuth.authenticate([])).rejects.toThrow(/requires an address/)
+      await expect(idWalletExternalAuth.authenticate([])).rejects.toThrow(
+        /requires an address/,
+      )
     })
   })
 
   it('signClaim creates JWTs correctly', async () => {
     const payload = {
-      some: 'data'
+      some: 'data',
     }
     const jwt0 = await idWallet1.signClaim(payload)
     const jwt1 = await idWallet1.signClaim(payload, { DID: 'did:3:first' })
@@ -272,8 +334,12 @@ describe('IdentityWallet', () => {
   it('asymmetrically encrypt/decrypt works correctly', async () => {
     // encrypt and decrypt should work
     const msg1 = 'secret message'
-    const { asymEncryptionKey } = idWallet1._keyring.getPublicKeys({ space: 'space1' })
-    const encObj1 = await idWallet1.encrypt(msg1, null, { to: asymEncryptionKey })
+    const { asymEncryptionKey } = idWallet1._keyring.getPublicKeys({
+      space: 'space1',
+    })
+    const encObj1 = await idWallet1.encrypt(msg1, null, {
+      to: asymEncryptionKey,
+    })
     expect(await idWallet1.decrypt(encObj1, 'space1')).toEqual(msg1)
 
     // decrypt with wrong key should fail
