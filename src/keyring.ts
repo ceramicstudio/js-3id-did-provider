@@ -1,4 +1,4 @@
-import nacl from 'tweetnacl'
+import nacl, { BoxKeyPair } from 'tweetnacl'
 import naclutil from 'tweetnacl-util'
 import { HDNode } from '@ethersproject/hdnode'
 import { Wallet } from '@ethersproject/wallet'
@@ -7,6 +7,8 @@ import { sha256 } from 'js-sha256'
 import { ec as EC } from 'elliptic'
 
 import {
+  AsymEncryptedMessage,
+  EncryptedMessage,
   asymDecrypt,
   asymEncrypt,
   symDecryptBase,
@@ -27,16 +29,50 @@ const ensure0x = (str: string): string => {
   return (str.startsWith('0x') ? '' : '0x') + str
 }
 
-export default class Keyring {
-  constructor(seed?: string | undefined, migratedKeys?: string) {
-    // TODO for full migration handle two sets of 'root keys' seed and migrated
-    this._spaceKeys = {}
+interface DecryptOptions {
+  space?: string
+  toBuffer?: boolean | undefined
+}
 
+interface MigratedKeys {
+  managementAddress: string
+  seed: string
+  spaceSeeds: Record<string, string>
+}
+
+export interface PublicKeys {
+  signingKey: string
+  managementKey: string | null
+  asymEncryptionKey: string
+}
+
+export interface KeySet {
+  signingKey: HDNode
+  asymEncryptionKey: BoxKeyPair
+  symEncryptionKey: Uint8Array
+}
+
+export interface RootKeySet extends KeySet {
+  managementKey: HDNode | { address: string }
+  managementAddress?: string
+}
+
+export type Signature = { r: string; s: string; recoveryParam: number }
+
+export default class Keyring {
+  protected _seed: string | undefined
+  protected _baseNode: HDNode | undefined
+  protected _rootKeys: RootKeySet | undefined
+  protected _spaceKeys: Record<string, KeySet> = {}
+  protected _migratedKeys = false
+
+  constructor(seed?: string | null, migratedKeys?: string) {
+    // TODO for full migration handle two sets of 'root keys' seed and migrated
     if (seed) {
       this._seed = seed
       this._baseNode = HDNode.fromSeed(this._seed).derivePath(BASE_PATH)
       const rootNode = this._baseNode.derivePath(ROOT_STORE_PATH)
-      this._rootKeys = this._deriveKeySet(rootNode, true)
+      this._rootKeys = this._deriveRootKeySet(rootNode)
     }
 
     if (migratedKeys) {
@@ -49,17 +85,16 @@ export default class Keyring {
   }
 
   //  Import and load legacy keys
-  _importMigratedKeys(migratedKeys) {
-    migratedKeys = JSON.parse(migratedKeys)
+  _importMigratedKeys(migratedKeysString: string) {
+    const migratedKeys: MigratedKeys = JSON.parse(migratedKeysString)
 
-    const getHDNode = (seed) => {
+    const getHDNode = (seed: string): HDNode => {
       const seedNode = HDNode.fromSeed(seed)
       return seedNode.derivePath(BASE_PATH_LEGACY)
     }
 
     const rootNode = getHDNode(migratedKeys.seed)
-
-    this._rootKeys = this._deriveKeySet(rootNode)
+    this._rootKeys = this._deriveRootKeySet(rootNode)
     this._rootKeys.managementAddress = migratedKeys.managementAddress
     this._rootKeys.managementKey = { address: migratedKeys.managementAddress }
 
@@ -69,8 +104,8 @@ export default class Keyring {
     })
   }
 
-  _deriveKeySet(hdNode, deriveManagementKey) {
-    const keys = {
+  _deriveKeySet(hdNode: HDNode): KeySet {
+    return {
       signingKey: hdNode.derivePath('0'),
       asymEncryptionKey: nacl.box.keyPair.fromSecretKey(
         new Uint8Array(
@@ -81,29 +116,34 @@ export default class Keyring {
         hdNode.derivePath('3').privateKey.slice(2),
       ),
     }
-    if (deriveManagementKey) keys.managementKey = hdNode.derivePath('1')
-    return keys
   }
 
-  _deriveSpaceKeys(space) {
+  _deriveRootKeySet(hdNode: HDNode): RootKeySet {
+    return {
+      ...this._deriveKeySet(hdNode),
+      managementKey: hdNode.derivePath('1'),
+    }
+  }
+
+  _deriveSpaceKeys(space: string) {
     const spaceHash = sha256(`${space}.3box`)
     // convert hash to path
     const spacePath =
       spaceHash
         .match(/.{1,12}/g) // chunk hex string
-        .map((n) => parseInt(n, 16).toString(2)) // convert to binary
+        ?.map((n) => parseInt(n, 16).toString(2)) // convert to binary
         .map((n) => (n.length === 47 ? '0' : '') + n) // make sure that binary strings have the right length
         .join('')
         .match(/.{1,31}/g) // chunk binary string for path encoding
-        .map((n) => parseInt(n, 2))
+        ?.map((n) => parseInt(n, 2))
         .join("'/") + "'" // convert to uints and create path
-    const spaceNode = this._baseNode.derivePath(spacePath)
+    const spaceNode = this._baseNode!.derivePath(spacePath)
     this._spaceKeys[space] = this._deriveKeySet(spaceNode)
   }
 
-  _getKeys(space) {
+  _getKeys(space?: string): KeySet {
     if (!space) {
-      return this._rootKeys
+      return this._rootKeys as KeySet
     } else if (!this._spaceKeys[space]) {
       // only hold during partial migration, otherwise will derive on demand
       if (this._migratedKeys)
@@ -113,51 +153,90 @@ export default class Keyring {
     return this._spaceKeys[space]
   }
 
-  asymEncrypt(msg, toPublic, { nonce } = {}) {
+  asymEncrypt(
+    msg: string | Uint8Array,
+    toPublic: string,
+    { nonce }: { nonce?: Uint8Array } = {},
+  ): AsymEncryptedMessage {
     return asymEncrypt(msg, toPublic, nonce)
   }
 
-  asymDecrypt(ciphertext, fromPublic, nonce, { space, toBuffer } = {}) {
+  // @ts-ignore issue: https://github.com/microsoft/TypeScript/issues/14107
+  asymDecrypt(
+    ciphertext: string,
+    fromPublic: string,
+    nonce: string,
+    { space, toBuffer }: { space?: string; toBuffer?: false },
+  ): string
+  asymDecrypt(
+    ciphertext: string,
+    fromPublic: string,
+    nonce: string,
+    { space, toBuffer }: { space?: string; toBuffer: true },
+  ): Buffer
+  asymDecrypt(
+    ciphertext: string,
+    fromPublic: string,
+    nonce: string,
+    { space, toBuffer }: DecryptOptions = {},
+  ) {
     const key = this._getKeys(space).asymEncryptionKey.secretKey
+    // @ts-ignore issue: https://github.com/microsoft/TypeScript/issues/14107
     return asymDecrypt(ciphertext, fromPublic, key, nonce, toBuffer)
   }
 
-  symEncrypt(msg, { space, nonce } = {}) {
+  symEncrypt(
+    msg: string | Uint8Array,
+    { space, nonce }: { space?: string; nonce?: Uint8Array } = {},
+  ): EncryptedMessage {
     return symEncryptBase(msg, this._getKeys(space).symEncryptionKey, nonce)
   }
 
-  symDecrypt(ciphertext, nonce, { space, toBuffer } = {}) {
+  symDecrypt(
+    ciphertext: string,
+    nonce: string,
+    { space, toBuffer }: DecryptOptions = {},
+  ) {
     return symDecryptBase(
       ciphertext,
       this._getKeys(space).symEncryptionKey,
       nonce,
+      // @ts-ignore issue: https://github.com/microsoft/TypeScript/issues/14107
       toBuffer,
     )
   }
 
-  managementPersonalSign(message) {
+  async managementPersonalSign(
+    message: ArrayLike<number> | string,
+  ): Promise<string> {
     const wallet = this.managementWallet()
-    return wallet.signMessage(message)
+    return await wallet.signMessage(message)
   }
 
-  managementWallet() {
-    return new Wallet(this._rootKeys.managementKey.privateKey)
+  managementWallet(): Wallet {
+    const node = this._rootKeys!.managementKey as HDNode
+    return new Wallet(node.privateKey)
   }
 
-  getJWTSigner(space) {
+  getJWTSigner(space?: string): (data: any) => Promise<Signature> {
     return SimpleSigner(this._getKeys(space).signingKey.privateKey.slice(2))
   }
 
-  getDBSalt(space) {
+  getDBSalt(space?: string): string {
     return sha256(
       this._getKeys(space).signingKey.derivePath('0').privateKey.slice(2),
     )
   }
 
-  getPublicKeys({ space, uncompressed } = {}) {
+  getPublicKeys({
+    space,
+    uncompressed,
+  }: { space?: string; uncompressed?: boolean } = {}): PublicKeys {
     const keys = this._getKeys(space)
     let signingKey = keys.signingKey.publicKey.slice(2)
-    const managementKey = space ? null : keys.managementKey.address
+    const managementKey = space
+      ? null
+      : (keys as RootKeySet).managementKey.address
     if (uncompressed) {
       signingKey = ec
         .keyFromPublic(Buffer.from(signingKey, 'hex'))
@@ -172,11 +251,14 @@ export default class Keyring {
     }
   }
 
-  serialize() {
+  serialize(): string | undefined {
     return this._seed
   }
 
-  static encryptWithAuthSecret(message, authSecret) {
+  static encryptWithAuthSecret(
+    message: string | Uint8Array,
+    authSecret: string,
+  ): EncryptedMessage {
     const node = HDNode.fromSeed(ensure0x(authSecret)).derivePath(
       AUTH_PATH_ENCRYPTION,
     )
@@ -184,7 +266,11 @@ export default class Keyring {
     return symEncryptBase(message, key)
   }
 
-  static decryptWithAuthSecret(ciphertext, nonce, authSecret) {
+  static decryptWithAuthSecret(
+    ciphertext: string,
+    nonce: string,
+    authSecret: string,
+  ): string | null {
     const node = HDNode.fromSeed(ensure0x(authSecret)).derivePath(
       AUTH_PATH_ENCRYPTION,
     )
@@ -192,7 +278,7 @@ export default class Keyring {
     return symDecryptBase(ciphertext, key, nonce)
   }
 
-  static walletForAuthSecret(authSecret) {
+  static walletForAuthSecret(authSecret: string): Wallet {
     const node = HDNode.fromSeed(ensure0x(authSecret)).derivePath(
       AUTH_PATH_WALLET,
     )

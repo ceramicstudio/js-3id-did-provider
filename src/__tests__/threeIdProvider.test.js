@@ -21,7 +21,7 @@ const IDW_MOCK = {
 function formatCall(method, params) {
   return {
     id: 1,
-    'json-rpc': '2.0',
+    jsonrpc: '2.0',
     method: `3id_${method}`,
     params,
   }

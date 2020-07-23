@@ -1,18 +1,41 @@
-import EventEmitter from 'events'
+import { EventEmitter } from 'events'
 import store from 'store'
 import didJWT from 'did-jwt'
 import DidDocument from 'ipfs-did-document'
-import { createLink } from '3id-blockchain-utils'
+import { LinkProof, createLink } from '3id-blockchain-utils'
 
-import { naclRandom } from './crypto'
+import { AsymEncryptedMessage, EncryptedMessage, naclRandom } from './crypto'
 import { DidProvider } from './did-provider'
-import Keyring from './keyring'
+import Keyring, { PublicKeys } from './keyring'
 import ThreeIdProvider from './threeIdProvider'
 import { sha256Multihash, pad, unpad, fakeIpfs, fakeEthProvider } from './utils'
 
 const DID_METHOD_NAME = '3'
 
+interface ConsentRequest {
+  type: string
+  spaces: Array<string>
+  origin?: string | null
+  opts?: Record<string, any>
+}
+type GetConsentFunc = (req: ConsentRequest) => Promise<boolean>
+
+interface Config {
+  seed?: string
+  authSecret?: string
+  externalAuth?: (req: any) => Promise<any>
+}
+
 export default class IdentityWallet {
+  protected _getConsent: GetConsentFunc
+  protected _seed: string | undefined
+  protected _authSecret: string | undefined
+  protected _externalAuth: ((req: any) => Promise<any>) | undefined
+  protected _keyring: Keyring | undefined
+
+  public DID: string | undefined
+  public events = new EventEmitter()
+
   /**
    * Creates an instance of IdentityWallet
    *
@@ -23,12 +46,11 @@ export default class IdentityWallet {
    * @param     {String}    config.externalAuth     External auth function, directly returns key material, used to migrate legacy 3box accounts
    * @return    {this}                              An IdentityWallet instance
    */
-  constructor(getConsent, config = {}) {
+  constructor(getConsent: GetConsentFunc, config: Config = {}) {
     if (typeof getConsent !== 'function')
       throw new Error('getConsent parameter has to be a function')
     // TODO - getConsent should remember past consents
     this._getConsent = getConsent
-    this.events = new EventEmitter()
     if (config.seed) {
       this._seed = config.seed
     } else if (config.authSecret) {
@@ -63,10 +85,14 @@ export default class IdentityWallet {
    * @param     {String}            opt.address     Optional address (managementKey) if keyring not available yet
    * @return    {Boolean}                           True if consent has already been given
    */
-  hasConsent(spaces = [], origin, { address } = {}) {
-    const key = address || this._keyring.getPublicKeys().managementKey
+  hasConsent(
+    spaces: Array<string> = [],
+    origin?: string | null,
+    { address }: { address?: string } = {},
+  ): boolean {
+    const key = address || this._keyring!.getPublicKeys().managementKey
     const prefix = `3id_consent_${key}_${origin}_`
-    const consentExists = (space) => Boolean(store.get(prefix + space))
+    const consentExists = (space?: string) => Boolean(store.get(prefix + space))
     return spaces.reduce(
       (acc, space) => acc && consentExists(space),
       consentExists(),
@@ -81,7 +107,11 @@ export default class IdentityWallet {
    * @param     {String}            opt.address     Optional address (managementKey) if keyring not available yet
    * @return    {Boolean}                           True consent was given
    */
-  async getConsent(spaces = [], origin, { address } = {}) {
+  async getConsent(
+    spaces: Array<string> = [],
+    origin?: string | null,
+    { address }: { address?: string } = {},
+  ) {
     if (!this.hasConsent(spaces, origin, { address })) {
       const consent = await this._getConsent({
         type: 'authenticate',
@@ -92,16 +122,16 @@ export default class IdentityWallet {
         },
       })
       if (!consent) return false
-      const key = address || this._keyring.getPublicKeys().managementKey
+      const key = address || this._keyring!.getPublicKeys().managementKey
       const prefix = `3id_consent_${key}_${origin}_`
-      const saveConsent = (space) => store.set(prefix + space, true)
+      const saveConsent = (space?: string) => store.set(prefix + space, true)
       saveConsent()
       spaces.map(saveConsent)
     }
     return true
   }
 
-  async getLink() {
+  async getLink(): Promise<string> {
     if (this._seed) {
       this._keyring = new Keyring(this._seed)
       this.DID = await this._get3id()
@@ -110,16 +140,16 @@ export default class IdentityWallet {
     }
     // for external auth keyring will already exist at this point
     return this._keyring
-      ? this._keyring.getPublicKeys().managementKey
-      : Keyring.walletForAuthSecret(this._authSecret).address
+      ? (this._keyring.getPublicKeys().managementKey as string)
+      : Keyring.walletForAuthSecret(this._authSecret!).address
   }
 
   async _linkManagementAddress() {
-    const managementWallet = this._keyring.managementWallet()
+    const managementWallet = this._keyring!.managementWallet()
     this.events.emit(
       'new-link-proof',
       await createLink(
-        this.DID,
+        this.DID!,
         managementWallet.address,
         fakeEthProvider(managementWallet),
       ),
@@ -136,12 +166,12 @@ export default class IdentityWallet {
    * @param     {Object}        provider         The provider that can sign a message for the given address
    * @return    {Object}                         The link proof object
    */
-  async linkAddress(address, provider) {
+  async linkAddress(address: string, provider: any): Promise<LinkProof> {
     if (!this._keyring)
       throw new Error(
         'This method can only be called after authenticate has been called',
       )
-    const proof = await createLink(this.DID, address, provider)
+    const proof = await createLink(this.DID!, address, provider)
     this.events.emit('new-link-proof', proof)
     return proof
   }
@@ -153,11 +183,15 @@ export default class IdentityWallet {
     return {
       msg,
       timestamp,
-      sig: await this._keyring.managementPersonalSign(msg),
+      sig: await this._keyring!.managementPersonalSign(msg),
     }
   }
 
-  async _initKeyring(authData, address, spaces) {
+  async _initKeyring(
+    authData?: Array<EncryptedMessage>,
+    address?: string,
+    spaces?: Array<string>,
+  ) {
     if (this._seed) {
       await this.getLink()
     } else if (authData && authData.length > 0) {
@@ -166,7 +200,7 @@ export default class IdentityWallet {
         seed = Keyring.decryptWithAuthSecret(
           ciphertext,
           nonce,
-          this._authSecret,
+          this._authSecret as string,
         )
         return Boolean(seed)
       })
@@ -194,7 +228,7 @@ export default class IdentityWallet {
       const seed = '0x' + Buffer.from(naclRandom(32)).toString('hex')
       this._keyring = new Keyring(seed)
       this.DID = await this._get3id()
-      this.addAuthMethod(this._authSecret)
+      this.addAuthMethod(this._authSecret!)
     }
   }
 
@@ -206,7 +240,14 @@ export default class IdentityWallet {
    * @param     {Array<Object>}     opts.authData   The authData for this identity
    * @return    {Object}                            The public keys for the requested spaces of this identity
    */
-  async authenticate(spaces = [], { authData, address } = {}, origin) {
+  async authenticate(
+    spaces: Array<string> = [],
+    {
+      authData,
+      address,
+    }: { authData?: Array<EncryptedMessage>; address?: string } = {},
+    origin?: string | null,
+  ): Promise<{ main: PublicKeys; spaces: Record<string, PublicKeys> }> {
     let consent
     // if external auth and address, get consent first, pass address since keyring not avaiable, otherwise call after keyring
     if (address) consent = await this.getConsent(spaces, origin, { address })
@@ -215,17 +256,16 @@ export default class IdentityWallet {
     if (!address) consent = this.getConsent(spaces, origin)
     if (!consent) throw new Error('Authentication not authorized by user')
 
-    const result = {
-      main: this._keyring.getPublicKeys(),
-      spaces: {},
+    return {
+      main: this._keyring!.getPublicKeys(),
+      spaces: spaces.reduce((acc, space) => {
+        acc[space] = this._keyring!.getPublicKeys({
+          space,
+          uncompressed: true,
+        })
+        return acc
+      }, {} as Record<string, PublicKeys>),
     }
-    spaces.map((space) => {
-      result.spaces[space] = this._keyring.getPublicKeys({
-        space,
-        uncompressed: true,
-      })
-    })
-    return result
   }
 
   /**
@@ -236,7 +276,11 @@ export default class IdentityWallet {
    * @param     {String}            opt.address     Optional address (managementKey) if keyring not available yet
    * @return    {Boolean}                           True if authenticated
    */
-  async isAuthenticated(spaces = [], origin, { address } = {}) {
+  async isAuthenticated(
+    spaces: Array<string> = [],
+    origin?: string | null,
+    { address }: { address?: string } = {},
+  ) {
     return (
       Boolean(this._keyring) && this.hasConsent(spaces, origin, { address })
     )
@@ -247,13 +291,13 @@ export default class IdentityWallet {
    *
    * @param     {String}    authSecret              A 32 byte hex string used as authentication secret
    */
-  async addAuthMethod(authSecret) {
+  async addAuthMethod(authSecret: string): Promise<void> {
     if (!this._keyring)
       throw new Error(
         'This method can only be called after authenticate has been called',
       )
 
-    const message = this._keyring._seed
+    const message = this._keyring.serialize() as string
     const encAuthData = Keyring.encryptWithAuthSecret(message, authSecret)
     this.events.emit('new-auth-method', encAuthData)
 
@@ -263,7 +307,7 @@ export default class IdentityWallet {
     this.events.emit(
       'new-link-proof',
       await createLink(
-        this.DID,
+        this.DID!,
         authWallet.address,
         fakeEthProvider(authWallet),
       ),
@@ -279,11 +323,19 @@ export default class IdentityWallet {
    * @param     {String}    opts.expiresIn          Set an expiry date for the claim as unix timestamp
    * @return    {String}                            The signed claim encoded as a JWT
    */
-  async signClaim(payload, { DID, space, expiresIn } = {}) {
-    if (!this._keyring)
+  async signClaim(
+    payload: any,
+    {
+      DID,
+      space,
+      expiresIn,
+    }: { DID?: string; space?: string; expiresIn?: number } = {},
+  ): Promise<string> {
+    if (!this._keyring) {
       throw new Error(
         'This method can only be called after authenticate has been called',
       )
+    }
 
     const issuer = DID || (await this._get3id(space))
     const settings = {
@@ -305,7 +357,15 @@ export default class IdentityWallet {
    * @param     {String}    opts.blockSize          The blockSize used for padding (default 24)
    * @return    {Object}                            The encrypted object (ciphertext and nonce)
    */
-  async encrypt(message, space, { nonce, blockSize, to } = {}) {
+  async encrypt(
+    message: string | Uint8Array,
+    space?: string,
+    {
+      nonce,
+      blockSize,
+      to,
+    }: { nonce?: Uint8Array; blockSize?: number; to?: string } = {},
+  ) {
     if (!this._keyring)
       throw new Error(
         'This method can only be called after authenticate has been called',
@@ -327,7 +387,22 @@ export default class IdentityWallet {
    * @param     {String}    space                   The space used for encryption
    * @return    {String}                            The decrypted message
    */
-  async decrypt(encObj, space, toBuffer) {
+  // @ts-ignore issue: https://github.com/microsoft/TypeScript/issues/14107
+  async decrypt(
+    encObj: AsymEncryptedMessage,
+    space: string | undefined,
+    toBuffer: true,
+  ): Promise<Buffer | null>
+  async decrypt(
+    encObj: AsymEncryptedMessage,
+    space?: string,
+    toBuffer?: false,
+  ): Promise<string | null>
+  async decrypt(
+    encObj: AsymEncryptedMessage,
+    space?: string,
+    toBuffer?: boolean,
+  ) {
     if (!this._keyring)
       throw new Error(
         'This method can only be called after authenticate has been called',
@@ -339,6 +414,7 @@ export default class IdentityWallet {
         encObj.ciphertext,
         encObj.ephemeralFrom,
         encObj.nonce,
+        // @ts-ignore issue: https://github.com/microsoft/TypeScript/issues/14107
         { space, toBuffer },
       )
     } else {
@@ -351,13 +427,13 @@ export default class IdentityWallet {
     return toBuffer ? paddedMsg : unpad(paddedMsg)
   }
 
-  async hashDBKey(key, space) {
-    const salt = this._keyring.getDBSalt(space)
+  hashDBKey(key: string, space?: string): string {
+    const salt = this._keyring!.getDBSalt(space)
     return sha256Multihash(salt + key)
   }
 
-  async _get3id(space) {
-    const pubkeys = this._keyring.getPublicKeys({ space, uncompressed: true })
+  async _get3id(space?: string): Promise<string> {
+    const pubkeys = this._keyring!.getPublicKeys({ space, uncompressed: true })
     const doc = new DidDocument(fakeIpfs, DID_METHOD_NAME)
     if (!space) {
       if (this.DID) return this.DID
@@ -377,7 +453,7 @@ export default class IdentityWallet {
         'managementKey',
         'Secp256k1VerificationKey2018',
         'ethereumAddress',
-        pubkeys.managementKey,
+        pubkeys.managementKey!,
       )
       doc.addAuthentication(
         'Secp256k1SignatureAuthentication2018',

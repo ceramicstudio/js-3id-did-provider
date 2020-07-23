@@ -12,8 +12,8 @@ import IdentityWallet from './identity-wallet'
 
 const methods: HandlerMethods<IdentityWallet> = {
   did_authenticate: async (wallet) => {
-    await wallet.authenticate([], {}, null)
-    return { accounts: [wallet.DID] }
+    await wallet.authenticate([], {})
+    return { did: wallet.DID }
   },
   did_createJWS: () => {
     throw new RPCError(0, 'Not implemented')

@@ -89,6 +89,13 @@ export function asymDecrypt(
   fromPublic: string,
   toSecret: Uint8Array,
   nonce: string,
+  toBuffer: true,
+): Buffer | null
+export function asymDecrypt(
+  ciphertext: string,
+  fromPublic: string,
+  toSecret: Uint8Array,
+  nonce: string,
   toBuffer?: false,
 ): string | null
 export function asymDecrypt(
@@ -96,14 +103,7 @@ export function asymDecrypt(
   fromPublic: string,
   toSecret: Uint8Array,
   nonce: string,
-  toBuffer?: true,
-): Buffer | null
-export function asymDecrypt(
-  ciphertext: string,
-  fromPublic: string,
-  toSecret: Uint8Array,
-  nonce: string,
-  toBuffer = false,
+  toBuffer?: boolean,
 ) {
   const cleartext = nacl.box.open(
     naclutil.decodeBase64(ciphertext),

@@ -22,7 +22,7 @@ describe('DidProvider', () => {
     await expectRPC(
       new DidProvider(wallet),
       { method: 'did_authenticate' },
-      { result: { accounts: ['did:3:test'] } },
+      { result: { did: 'did:3:test' } },
     )
   })
 

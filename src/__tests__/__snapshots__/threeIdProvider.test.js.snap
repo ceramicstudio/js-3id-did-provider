@@ -1,13 +1,13 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
-exports[`ThreeIdProvider Unsupported method should throw 1`] = `[Error: Unsupported method: 3id_notSupported]`;
+exports[`ThreeIdProvider Unsupported method should throw 1`] = `[Error: Method not found]`;
 
-exports[`ThreeIdProvider Unsupported method should throw 2`] = `"Unsupported method: 3id_notSupported"`;
+exports[`ThreeIdProvider Unsupported method should throw 2`] = `[Error: Method not found]`;
 
 exports[`ThreeIdProvider asymmetrically decrypt correctly 1`] = `
 Object {
   "id": 1,
-  "json-rpc": "2.0",
+  "jsonrpc": "2.0",
   "result": "decrypted data",
 }
 `;
@@ -15,7 +15,7 @@ Object {
 exports[`ThreeIdProvider asymmetrically decrypt correctly 2`] = `
 Object {
   "id": 1,
-  "json-rpc": "2.0",
+  "jsonrpc": "2.0",
   "result": "decrypted data",
 }
 `;
@@ -23,7 +23,7 @@ Object {
 exports[`ThreeIdProvider asymmetrically encrypt correctly 1`] = `
 Object {
   "id": 1,
-  "json-rpc": "2.0",
+  "jsonrpc": "2.0",
   "result": "encrypted data",
 }
 `;
@@ -31,7 +31,7 @@ Object {
 exports[`ThreeIdProvider asymmetrically encrypt correctly 2`] = `
 Object {
   "id": 1,
-  "json-rpc": "2.0",
+  "jsonrpc": "2.0",
   "result": "encrypted data",
 }
 `;
@@ -39,7 +39,7 @@ Object {
 exports[`ThreeIdProvider authenticate correctly 1`] = `
 Object {
   "id": 1,
-  "json-rpc": "2.0",
+  "jsonrpc": "2.0",
   "result": "auth data",
 }
 `;
@@ -47,7 +47,7 @@ Object {
 exports[`ThreeIdProvider authenticate correctly 2`] = `
 Object {
   "id": 1,
-  "json-rpc": "2.0",
+  "jsonrpc": "2.0",
   "result": "auth data",
 }
 `;
@@ -55,7 +55,7 @@ Object {
 exports[`ThreeIdProvider decrypt correctly 1`] = `
 Object {
   "id": 1,
-  "json-rpc": "2.0",
+  "jsonrpc": "2.0",
   "result": "decrypted data",
 }
 `;
@@ -63,7 +63,7 @@ Object {
 exports[`ThreeIdProvider decrypt correctly 2`] = `
 Object {
   "id": 1,
-  "json-rpc": "2.0",
+  "jsonrpc": "2.0",
   "result": "decrypted data",
 }
 `;
@@ -71,7 +71,7 @@ Object {
 exports[`ThreeIdProvider encrypt correctly 1`] = `
 Object {
   "id": 1,
-  "json-rpc": "2.0",
+  "jsonrpc": "2.0",
   "result": "encrypted data",
 }
 `;
@@ -79,7 +79,7 @@ Object {
 exports[`ThreeIdProvider encrypt correctly 2`] = `
 Object {
   "id": 1,
-  "json-rpc": "2.0",
+  "jsonrpc": "2.0",
   "result": "encrypted data",
 }
 `;
@@ -87,7 +87,7 @@ Object {
 exports[`ThreeIdProvider getLink correctly 1`] = `
 Object {
   "id": 1,
-  "json-rpc": "2.0",
+  "jsonrpc": "2.0",
   "result": "link",
 }
 `;
@@ -95,7 +95,7 @@ Object {
 exports[`ThreeIdProvider getLink correctly 2`] = `
 Object {
   "id": 1,
-  "json-rpc": "2.0",
+  "jsonrpc": "2.0",
   "result": "link",
 }
 `;
@@ -103,7 +103,7 @@ Object {
 exports[`ThreeIdProvider hash entry key correctly 1`] = `
 Object {
   "id": 1,
-  "json-rpc": "2.0",
+  "jsonrpc": "2.0",
   "result": "hashed data",
 }
 `;
@@ -111,7 +111,7 @@ Object {
 exports[`ThreeIdProvider hash entry key correctly 2`] = `
 Object {
   "id": 1,
-  "json-rpc": "2.0",
+  "jsonrpc": "2.0",
   "result": "hashed data",
 }
 `;
@@ -119,7 +119,7 @@ Object {
 exports[`ThreeIdProvider isAuthenticated correctly 1`] = `
 Object {
   "id": 1,
-  "json-rpc": "2.0",
+  "jsonrpc": "2.0",
   "result": true,
 }
 `;
@@ -127,7 +127,7 @@ Object {
 exports[`ThreeIdProvider isAuthenticated correctly 2`] = `
 Object {
   "id": 1,
-  "json-rpc": "2.0",
+  "jsonrpc": "2.0",
   "result": true,
 }
 `;
@@ -135,7 +135,7 @@ Object {
 exports[`ThreeIdProvider linkManagementKey correctly 1`] = `
 Object {
   "id": 1,
-  "json-rpc": "2.0",
+  "jsonrpc": "2.0",
   "result": "link data",
 }
 `;
@@ -143,7 +143,7 @@ Object {
 exports[`ThreeIdProvider linkManagementKey correctly 2`] = `
 Object {
   "id": 1,
-  "json-rpc": "2.0",
+  "jsonrpc": "2.0",
   "result": "link data",
 }
 `;
@@ -151,7 +151,7 @@ Object {
 exports[`ThreeIdProvider sign claim correctly 1`] = `
 Object {
   "id": 1,
-  "json-rpc": "2.0",
+  "jsonrpc": "2.0",
   "result": "signed claim",
 }
 `;
@@ -159,7 +159,7 @@ Object {
 exports[`ThreeIdProvider sign claim correctly 2`] = `
 Object {
   "id": 1,
-  "json-rpc": "2.0",
+  "jsonrpc": "2.0",
   "result": "signed claim",
 }
 `;
