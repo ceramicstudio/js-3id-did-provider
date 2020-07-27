@@ -2,7 +2,7 @@ import nacl, { BoxKeyPair } from 'tweetnacl'
 import naclutil from 'tweetnacl-util'
 import { HDNode } from '@ethersproject/hdnode'
 import { Wallet } from '@ethersproject/wallet'
-import { SimpleSigner } from 'did-jwt'
+import { Signer, SimpleSigner } from 'did-jwt'
 import { sha256 } from 'js-sha256'
 import { ec as EC } from 'elliptic'
 
@@ -109,11 +109,11 @@ export default class Keyring {
       signingKey: hdNode.derivePath('0'),
       asymEncryptionKey: nacl.box.keyPair.fromSecretKey(
         new Uint8Array(
-          Buffer.from(hdNode.derivePath('2').privateKey.slice(2), 'hex'),
-        ),
+          Buffer.from(hdNode.derivePath('2').privateKey.slice(2), 'hex')
+        )
       ),
       symEncryptionKey: hexToUint8Array(
-        hdNode.derivePath('3').privateKey.slice(2),
+        hdNode.derivePath('3').privateKey.slice(2)
       ),
     }
   }
@@ -128,16 +128,15 @@ export default class Keyring {
   _deriveSpaceKeys(space: string) {
     const spaceHash = sha256(`${space}.3box`)
     // convert hash to path
-    const spacePath =
-      spaceHash
-        .match(/.{1,12}/g) // chunk hex string
-        ?.map((n) => parseInt(n, 16).toString(2)) // convert to binary
-        .map((n) => (n.length === 47 ? '0' : '') + n) // make sure that binary strings have the right length
-        .join('')
-        .match(/.{1,31}/g) // chunk binary string for path encoding
-        ?.map((n) => parseInt(n, 2))
-        .join("'/") + "'" // convert to uints and create path
-    const spaceNode = this._baseNode!.derivePath(spacePath)
+    const spacePath = spaceHash
+      .match(/.{1,12}/g) // chunk hex string
+      ?.map((n) => parseInt(n, 16).toString(2)) // convert to binary
+      .map((n) => `${n.length === 47 ? '0' : ''}${n}`) // make sure that binary strings have the right length
+      .join('')
+      .match(/.{1,31}/g) // chunk binary string for path encoding
+      ?.map((n) => parseInt(n, 2))
+      .join("'/") // convert to uints and create path
+    const spaceNode = this._baseNode!.derivePath(`${spacePath!}'`)
     this._spaceKeys[space] = this._deriveKeySet(spaceNode)
   }
 
@@ -156,7 +155,7 @@ export default class Keyring {
   asymEncrypt(
     msg: string | Uint8Array,
     toPublic: string,
-    { nonce }: { nonce?: Uint8Array } = {},
+    { nonce }: { nonce?: Uint8Array } = {}
   ): AsymEncryptedMessage {
     return asymEncrypt(msg, toPublic, nonce)
   }
@@ -166,19 +165,19 @@ export default class Keyring {
     ciphertext: string,
     fromPublic: string,
     nonce: string,
-    { space, toBuffer }: { space?: string; toBuffer?: false },
+    { space, toBuffer }: { space?: string; toBuffer?: false }
   ): string
   asymDecrypt(
     ciphertext: string,
     fromPublic: string,
     nonce: string,
-    { space, toBuffer }: { space?: string; toBuffer: true },
+    { space, toBuffer }: { space?: string; toBuffer: true }
   ): Buffer
   asymDecrypt(
     ciphertext: string,
     fromPublic: string,
     nonce: string,
-    { space, toBuffer }: DecryptOptions = {},
+    { space, toBuffer }: DecryptOptions = {}
   ) {
     const key = this._getKeys(space).asymEncryptionKey.secretKey
     // @ts-ignore issue: https://github.com/microsoft/TypeScript/issues/14107
@@ -187,7 +186,7 @@ export default class Keyring {
 
   symEncrypt(
     msg: string | Uint8Array,
-    { space, nonce }: { space?: string; nonce?: Uint8Array } = {},
+    { space, nonce }: { space?: string; nonce?: Uint8Array } = {}
   ): EncryptedMessage {
     return symEncryptBase(msg, this._getKeys(space).symEncryptionKey, nonce)
   }
@@ -195,19 +194,19 @@ export default class Keyring {
   symDecrypt(
     ciphertext: string,
     nonce: string,
-    { space, toBuffer }: DecryptOptions = {},
+    { space, toBuffer }: DecryptOptions = {}
   ) {
     return symDecryptBase(
       ciphertext,
       this._getKeys(space).symEncryptionKey,
       nonce,
       // @ts-ignore issue: https://github.com/microsoft/TypeScript/issues/14107
-      toBuffer,
+      toBuffer
     )
   }
 
   async managementPersonalSign(
-    message: ArrayLike<number> | string,
+    message: ArrayLike<number> | string
   ): Promise<string> {
     const wallet = this.managementWallet()
     return await wallet.signMessage(message)
@@ -218,13 +217,24 @@ export default class Keyring {
     return new Wallet(node.privateKey)
   }
 
-  getJWTSigner(space?: string): (data: any) => Promise<Signature> {
+  getJWTSigner(space?: string): Signer {
     return SimpleSigner(this._getKeys(space).signingKey.privateKey.slice(2))
+  }
+
+  getRootSigner(keyId?: string): Signer {
+    const key =
+      keyId === 'managementKey'
+        ? this._rootKeys?.managementKey
+        : this._rootKeys?.signingKey
+    if (key == null || !(key instanceof HDNode)) {
+      throw new Error('Invalid key')
+    }
+    return SimpleSigner(key.privateKey.slice(2))
   }
 
   getDBSalt(space?: string): string {
     return sha256(
-      this._getKeys(space).signingKey.derivePath('0').privateKey.slice(2),
+      this._getKeys(space).signingKey.derivePath('0').privateKey.slice(2)
     )
   }
 
@@ -246,7 +256,7 @@ export default class Keyring {
       signingKey,
       managementKey,
       asymEncryptionKey: naclutil.encodeBase64(
-        keys.asymEncryptionKey.publicKey,
+        keys.asymEncryptionKey.publicKey
       ),
     }
   }
@@ -257,10 +267,10 @@ export default class Keyring {
 
   static encryptWithAuthSecret(
     message: string | Uint8Array,
-    authSecret: string,
+    authSecret: string
   ): EncryptedMessage {
     const node = HDNode.fromSeed(ensure0x(authSecret)).derivePath(
-      AUTH_PATH_ENCRYPTION,
+      AUTH_PATH_ENCRYPTION
     )
     const key = hexToUint8Array(node.privateKey.slice(2))
     return symEncryptBase(message, key)
@@ -269,10 +279,10 @@ export default class Keyring {
   static decryptWithAuthSecret(
     ciphertext: string,
     nonce: string,
-    authSecret: string,
+    authSecret: string
   ): string | null {
     const node = HDNode.fromSeed(ensure0x(authSecret)).derivePath(
-      AUTH_PATH_ENCRYPTION,
+      AUTH_PATH_ENCRYPTION
     )
     const key = hexToUint8Array(node.privateKey.slice(2))
     return symDecryptBase(ciphertext, key, nonce)
@@ -280,7 +290,7 @@ export default class Keyring {
 
   static walletForAuthSecret(authSecret: string): Wallet {
     const node = HDNode.fromSeed(ensure0x(authSecret)).derivePath(
-      AUTH_PATH_WALLET,
+      AUTH_PATH_WALLET
     )
     return new Wallet(node.privateKey)
   }

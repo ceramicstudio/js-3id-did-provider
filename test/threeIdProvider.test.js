@@ -1,4 +1,4 @@
-import ThreeIdProvider from '../threeIdProvider'
+import ThreeIdProvider from '../src/threeIdProvider'
 
 let authCB, linkCB
 const IDW_MOCK = {
@@ -82,7 +82,7 @@ describe('ThreeIdProvider', () => {
     expect(IDW_MOCK.authenticate).toHaveBeenCalledWith(
       spaces,
       { authData },
-      origin,
+      origin
     )
     expect(await callWithCB(rpc, payload, origin)).toMatchSnapshot()
     expect(IDW_MOCK.authenticate).toHaveBeenCalledTimes(2)
@@ -148,7 +148,7 @@ describe('ThreeIdProvider', () => {
     expect(IDW_MOCK.decrypt).toHaveBeenCalledWith(
       { ciphertext, nonce },
       space,
-      undefined,
+      undefined
     )
     expect(await callWithCB(rpc, payload)).toMatchSnapshot()
     expect(IDW_MOCK.decrypt).toHaveBeenCalledTimes(2)
@@ -170,7 +170,7 @@ describe('ThreeIdProvider', () => {
     expect(IDW_MOCK.decrypt).toHaveBeenCalledWith(
       { ciphertext, ephemeralFrom, nonce },
       space,
-      undefined,
+      undefined
     )
     expect(await callWithCB(rpc, payload)).toMatchSnapshot()
     expect(IDW_MOCK.decrypt).toHaveBeenCalledTimes(2)

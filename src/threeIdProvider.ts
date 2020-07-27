@@ -2,7 +2,6 @@ import { LinkProof } from '3id-blockchain-utils'
 import {
   HandlerMethods,
   RequestHandler,
-  RPCConnection,
   RPCError,
   RPCRequest,
   RPCResponse,
@@ -30,7 +29,7 @@ const methods: HandlerMethods<Context> = {
     return await ctx.provider.wallet.authenticate(
       params.spaces,
       { authData: params.authData, address: params.address },
-      ctx.origin,
+      ctx.origin
     )
   },
   '3id_isAuthenticated': async (ctx, params) => {
@@ -57,7 +56,7 @@ const methods: HandlerMethods<Context> = {
         nonce: params.nonce,
       },
       params.space,
-      params.buffer,
+      params.buffer
     )
   },
   '3id_hashEntryKey': async (ctx, params) => {
@@ -69,7 +68,7 @@ const methods: HandlerMethods<Context> = {
 
 type Callback = (
   err: Error | null | undefined,
-  res?: RPCResponse | null,
+  res?: RPCResponse | null
 ) => void
 
 export default class ThreeIdProvider {
@@ -81,9 +80,7 @@ export default class ThreeIdProvider {
   public wallet: IdentityWallet
 
   constructor(wallet: IdentityWallet) {
-    this._handle = createHandler<Context>(methods, {
-      onHandlerError: this._onHandlerError.bind(this),
-    })
+    this._handle = createHandler<Context>(methods)
     this.wallet = wallet
 
     wallet.events.on('new-auth-method', (authBlob: EncryptedMessage) => {
@@ -93,8 +90,6 @@ export default class ThreeIdProvider {
       this._newLinks.push(linkProof)
     })
   }
-
-  protected _onHandlerError() {}
 
   public get is3idProvider(): boolean {
     return true
@@ -115,7 +110,7 @@ export default class ThreeIdProvider {
   async send(
     req: RPCRequest,
     origin: Origin | Callback,
-    callback?: Callback,
+    callback?: Callback
   ): Promise<RPCResponse | null> {
     if (typeof origin === 'function') {
       callback = origin

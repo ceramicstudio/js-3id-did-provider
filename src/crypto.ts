@@ -21,7 +21,7 @@ export function randomNonce(): Uint8Array {
 export function symEncryptBase(
   message: Uint8Array | string,
   symKey: Uint8Array,
-  providedNonce?: Uint8Array,
+  providedNonce?: Uint8Array
 ): EncryptedMessage {
   const nonce = providedNonce ?? randomNonce()
   const msg =
@@ -37,24 +37,24 @@ export function symDecryptBase(
   ciphertext: string,
   symKey: Uint8Array,
   nonce: string,
-  toBuffer?: false,
+  toBuffer?: false
 ): string | null
 export function symDecryptBase(
   ciphertext: string,
   symKey: Uint8Array,
   nonce: string,
-  toBuffer?: true,
+  toBuffer?: true
 ): Buffer | null
 export function symDecryptBase(
   ciphertext: string,
   symKey: Uint8Array,
   nonce: string,
-  toBuffer = false,
+  toBuffer = false
 ) {
   const cleartext = nacl.secretbox.open(
     naclutil.decodeBase64(ciphertext),
     naclutil.decodeBase64(nonce),
-    symKey,
+    symKey
   )
   if (cleartext == null) {
     return null
@@ -65,7 +65,7 @@ export function symDecryptBase(
 export function asymEncrypt(
   message: Uint8Array | string,
   toPublic: string,
-  providedNonce?: Uint8Array,
+  providedNonce?: Uint8Array
 ): AsymEncryptedMessage {
   const nonce = providedNonce ?? randomNonce()
   const msg =
@@ -75,7 +75,7 @@ export function asymEncrypt(
     msg,
     nonce,
     naclutil.decodeBase64(toPublic),
-    ephemneralKeypair.secretKey,
+    ephemneralKeypair.secretKey
   )
   return {
     nonce: naclutil.encodeBase64(nonce),
@@ -89,27 +89,27 @@ export function asymDecrypt(
   fromPublic: string,
   toSecret: Uint8Array,
   nonce: string,
-  toBuffer: true,
+  toBuffer: true
 ): Buffer | null
 export function asymDecrypt(
   ciphertext: string,
   fromPublic: string,
   toSecret: Uint8Array,
   nonce: string,
-  toBuffer?: false,
+  toBuffer?: false
 ): string | null
 export function asymDecrypt(
   ciphertext: string,
   fromPublic: string,
   toSecret: Uint8Array,
   nonce: string,
-  toBuffer?: boolean,
+  toBuffer?: boolean
 ) {
   const cleartext = nacl.box.open(
     naclutil.decodeBase64(ciphertext),
     naclutil.decodeBase64(nonce),
     naclutil.decodeBase64(fromPublic),
-    toSecret,
+    toSecret
   )
   if (cleartext == null) {
     return null

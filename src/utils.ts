@@ -31,7 +31,7 @@ export const fakeIpfs = {
 export const fakeEthProvider = (wallet: Wallet) => ({
   send: (
     request: { method: string; params: Array<any> },
-    callback: (err: Error | null | undefined, res?: any) => void,
+    callback: (err: Error | null | undefined, res?: any) => void
   ) => {
     if (request.method !== 'personal_sign') {
       callback(new Error('only supports personal_sign'))

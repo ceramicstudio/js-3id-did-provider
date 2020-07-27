@@ -1,7 +1,7 @@
 import { mnemonicToSeed } from '@ethersproject/hdnode'
 
-import { naclRandom } from '../crypto'
-import Keyring from '../keyring'
+import { naclRandom } from '../src/crypto'
+import Keyring from '../src/keyring'
 
 const migratedKeys = JSON.stringify({
   managementAddress: '0x8fef7ac873dec3cc8a112ea20cd25d4f01cb3e6a',
@@ -18,7 +18,7 @@ const migratedKeys = JSON.stringify({
 describe('Keyring', () => {
   let keyring
   const seed = mnemonicToSeed(
-    'clay rubber drama brush salute cream nerve wear stuff sentence trade conduct',
+    'clay rubber drama brush salute cream nerve wear stuff sentence trade conduct'
   )
 
   it('throws error if no seed', async () => {
@@ -27,11 +27,11 @@ describe('Keyring', () => {
 
   it('derives correct keys from entropy', async () => {
     keyring = new Keyring(
-      '0xf0e4c2f76c58916ec258f246851bea091d14d4247a2fc3e18694461b1816e13b',
+      '0xf0e4c2f76c58916ec258f246851bea091d14d4247a2fc3e18694461b1816e13b'
     )
     // keyring3 = new Keyring('0x24a0bc3a2a1d1404c0ab24bef9bb0618938ee892fbf62f63f82f015eddf1729e')
     expect(keyring._seed).toEqual(
-      '0xf0e4c2f76c58916ec258f246851bea091d14d4247a2fc3e18694461b1816e13b',
+      '0xf0e4c2f76c58916ec258f246851bea091d14d4247a2fc3e18694461b1816e13b'
     )
   })
 
@@ -57,15 +57,15 @@ describe('Keyring', () => {
 
     it('encrypts and decrypts correctly', () => {
       const testMsg = 'Very secret test message'
-      let box = keyring1.asymEncrypt(
+      const box = keyring1.asymEncrypt(
         testMsg,
-        keyring.getPublicKeys().asymEncryptionKey,
+        keyring.getPublicKeys().asymEncryptionKey
       )
 
-      let cleartext = keyring.asymDecrypt(
+      const cleartext = keyring.asymDecrypt(
         box.ciphertext,
         box.ephemeralFrom,
-        box.nonce,
+        box.nonce
       )
       expect(cleartext).toEqual(testMsg)
     })
@@ -85,7 +85,7 @@ describe('Keyring', () => {
       const cleartext = Keyring.decryptWithAuthSecret(
         box.ciphertext,
         box.nonce,
-        authSecret,
+        authSecret
       )
       expect(cleartext).toEqual(testMsg)
     })

@@ -14,25 +14,8 @@ declare module '3id-blockchain-utils' {
   export function createLink(
     did: string,
     account: string,
-    provider: any,
+    provider: any
   ): Promise<LinkProof>
-}
-
-declare module 'did-jwt' {
-  type SignFunc = (
-    data: any,
-  ) => Promise<{ r: string; s: string; recoveryParam: number }>
-
-  export function SimpleSigner(hexPrivateKey: string): SignFunc
-
-  type CreateJWTOptions = {
-    issuer: string
-    signer: SignFunc
-    alg?: string
-    expiresIn?: number
-  }
-
-  export function createJWT(payload: any, options: CreateJWTOptions): string
 }
 
 declare module 'ipfs-did-document' {
@@ -47,7 +30,7 @@ declare module 'ipfs-did-document' {
       type: string,
       encoding: string,
       key: string,
-      owner?: string,
+      owner?: string
     ): void
     addCustomProperty(propName: string, propValue: any): void
     commit(options: { noTimestamp?: boolean }): Promise<CID>
@@ -71,6 +54,6 @@ declare module 'multihashes' {
   export function encode(
     digest: Buffer,
     code: number | string,
-    length?: number,
+    length?: number
   ): Buffer
 }
