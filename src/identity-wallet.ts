@@ -299,11 +299,12 @@ export default class IdentityWallet {
    * @param     {String}            opt.address     Optional address (managementKey) if keyring not available yet
    * @return    {Boolean}                           True if authenticated
    */
-  isAuthenticated(
+  // eslint-disable-next-line @typescript-eslint/require-await
+  async isAuthenticated(
     spaces: Array<string> = [],
     origin?: string | null,
     { address }: { address?: string } = {}
-  ): boolean {
+  ): Promise<boolean> {
     return (
       Boolean(this._keyring) && this.hasConsent(spaces, origin, { address })
     )
@@ -458,7 +459,8 @@ export default class IdentityWallet {
     return toBuffer ? paddedMsg : unpad(paddedMsg)
   }
 
-  hashDBKey(key: string, space?: string): string {
+  // eslint-disable-next-line @typescript-eslint/require-await
+  async hashDBKey(key: string, space?: string): Promise<string> {
     const salt = this._keyring!.getDBSalt(space)
     return sha256Multihash(salt + key)
   }

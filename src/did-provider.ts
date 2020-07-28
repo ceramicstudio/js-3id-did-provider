@@ -23,7 +23,7 @@ const methods: HandlerMethods<IdentityWallet> = {
     return { did: wallet.DID }
   },
   did_createJWS: async (wallet, params: CreateJWSParams) => {
-    if (!wallet.isAuthenticated()) {
+    if (!(await wallet.isAuthenticated())) {
       throw new RPCError(0, 'Authentication required')
     }
     const signer = wallet.getRootSigner(params.pubKeyId)

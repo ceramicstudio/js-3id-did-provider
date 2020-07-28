@@ -50,7 +50,7 @@
     "ipld-dag-cbor": "^0.15.3",
     "js-sha256": "^0.9.0",
     "multihashes": "^1.0.1",
-    "rpc-utils": "^0.1.1",
+    "rpc-utils": "^0.1.2",
     "store": "^2.0.12",
     "tweetnacl": "^1.0.3",
     "tweetnacl-util": "^0.15.1"
