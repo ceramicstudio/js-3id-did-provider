@@ -24,29 +24,11 @@ Object {
 }
 `;
 
-exports[`Keyring Keyring from migratedKeys signs data correctly 1`] = `
-Object {
-  "r": "748f55a9e203e250a3588ae85a917eba48081f9917bc58b98767894e6dd59cc3",
-  "recoveryParam": 0,
-  "s": "64de7bccf367a8e0138e9f0ddfa957c828d0b52c3c869d552286be02c5a001fd",
-}
-`;
+exports[`Keyring Keyring from migratedKeys signs data correctly 1`] = `"dI9VqeID4lCjWIroWpF-ukgIH5kXvFi5h2eJTm3VnMNk3nvM82eo4BOOnw3fqVfIKNC1LDyGnVUihr4CxaAB_Q"`;
 
-exports[`Keyring Keyring from migratedKeys signs data correctly 2`] = `
-Object {
-  "r": "d07a7cf122e73f47369a749e7d57c0a4adcd0d9bf4f1698e3625ecdb1ec14a44",
-  "recoveryParam": 1,
-  "s": "30c6985ab5e51816932af3fcabc560a4e210dd5483823c438b2d361cc6c05e8c",
-}
-`;
+exports[`Keyring Keyring from migratedKeys signs data correctly 2`] = `"0Hp88SLnP0c2mnSefVfApK3NDZv08WmONiXs2x7BSkQwxphateUYFpMq8_yrxWCk4hDdVIOCPEOLLTYcxsBejA"`;
 
-exports[`Keyring Keyring from migratedKeys signs data correctly 3`] = `
-Object {
-  "r": "33d84c18973376a0f605571ac412f36f6ade48de1ff93e41e2523308defe221f",
-  "recoveryParam": 0,
-  "s": "a60f4477a482623dcf109087a1c397ed88b5a2d2424238990138262c0b042a23",
-}
-`;
+exports[`Keyring Keyring from migratedKeys signs data correctly 3`] = `"M9hMGJczdqD2BVcaxBLzb2reSN4f-T5B4lIzCN7-Ih-mD0R3pIJiPc8QkIehw5ftiLWi0kJCOJkBOCYsCwQqIw"`;
 
 exports[`Keyring Keyring from seed derives correct keys from 1`] = `
 Object {
@@ -72,26 +54,8 @@ Object {
 }
 `;
 
-exports[`Keyring Keyring from seed signs data correctly 1`] = `
-Object {
-  "r": "c896c3198ae31e3038bb22bf1a7da49c3f3a77a5e8a41fc19cdb275532583205",
-  "recoveryParam": 0,
-  "s": "bd1387127e4a31b89ac8e103be6d7939c26adb13b6450968b10049f662b407ce",
-}
-`;
+exports[`Keyring Keyring from seed signs data correctly 1`] = `"yJbDGYrjHjA4uyK_Gn2knD86d6XopB_BnNsnVTJYMgW9E4cSfkoxuJrI4QO-bXk5wmrbE7ZFCWixAEn2YrQHzg"`;
 
-exports[`Keyring Keyring from seed signs data correctly 2`] = `
-Object {
-  "r": "244a23056eba642037ab0606f08ce5a077ab6041e92977a9f65727a6be1b3497",
-  "recoveryParam": 1,
-  "s": "fb984e09a3eb1358fea41858e1fbfd3b453e1d8204f800ddf53ee81eaf0d30f6",
-}
-`;
+exports[`Keyring Keyring from seed signs data correctly 2`] = `"JEojBW66ZCA3qwYG8IzloHerYEHpKXep9lcnpr4bNJf7mE4Jo-sTWP6kGFjh-_07RT4dggT4AN31Pugerw0w9g"`;
 
-exports[`Keyring Keyring from seed signs data correctly 3`] = `
-Object {
-  "r": "b04fb687a16254cff30acee7f41fe3bf5e5d1d583c34ab869abae46e2dafa16c",
-  "recoveryParam": 0,
-  "s": "15d604fe58f44d349591ed36fb386f7b211c8e337bb115651d64199268ef752b",
-}
-`;
+exports[`Keyring Keyring from seed signs data correctly 3`] = `"sE-2h6FiVM_zCs7n9B_jv15dHVg8NKuGmrrkbi2voWwV1gT-WPRNNJWR7Tb7OG97IRyOM3uxFWUdZBmSaO91Kw"`;

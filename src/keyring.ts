@@ -2,7 +2,7 @@ import nacl, { BoxKeyPair } from 'tweetnacl'
 import naclutil from 'tweetnacl-util'
 import { HDNode } from '@ethersproject/hdnode'
 import { Wallet } from '@ethersproject/wallet'
-import { Signer, SimpleSigner } from 'did-jwt'
+import { EllipticSigner, Signer } from 'did-jwt'
 import { sha256 } from 'js-sha256'
 import { ec as EC } from 'elliptic'
 
@@ -222,7 +222,7 @@ export default class Keyring {
     const key = useMgmt
       ? (pubkeys as RootKeySet).managementKey
       : pubkeys.signingKey
-    return SimpleSigner((key as HDNode).privateKey.slice(2))
+    return EllipticSigner((key as HDNode).privateKey.slice(2))
   }
 
   getRootSigner(keyId?: string): Signer {
@@ -233,7 +233,7 @@ export default class Keyring {
     if (key == null || !(key instanceof HDNode)) {
       throw new Error('Invalid key')
     }
-    return SimpleSigner(key.privateKey.slice(2))
+    return EllipticSigner(key.privateKey.slice(2))
   }
 
   getDBSalt(space?: string): string {

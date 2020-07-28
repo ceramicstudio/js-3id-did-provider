@@ -42,12 +42,10 @@ declare module 'ipld-dag-cbor' {
 
   export type UserOptions = { cidVersion?: number; hashAlg?: number }
 
-  namespace util {
+  export namespace util {
     function cid(binaryBlob: any, userOptions?: UserOptions): Promise<CID>
     function serialize(node: any): Buffer
   }
-
-  export { util }
 }
 
 declare module 'multihashes' {

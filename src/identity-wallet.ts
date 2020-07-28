@@ -73,6 +73,11 @@ export default class IdentityWallet {
     return new ThreeIdProvider(this)
   }
 
+  /**
+   * Get the DIDProvider
+   *
+   * @return    {DidProvider}                   The DIDProvider for this IdentityWallet instance
+   */
   getDidProvider() {
     return new DidProvider(this)
   }

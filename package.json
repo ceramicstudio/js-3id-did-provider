@@ -16,7 +16,7 @@
     "build": "npm run build:es5; npm run build:dist; npm run build:dist:prod",
     "prepublishOnly": "npm run build; npm run generate-readme",
     "prepare": "npm run build",
-    "generate-readme": "cp readme-template.md README.md; ./node_modules/.bin/jsdoc2md -g none -d 3 'src/**/*.js' >> README.md"
+    "generate-readme": "cp readme-template.md README.md; jsdoc2md --configure ./jsdoc2md.json -g none -d 3 'src/**/*.ts' >> README.md"
   },
   "browser": {
     "fs": false,
@@ -65,8 +65,8 @@
     "@babel/preset-env": "^7.10.4",
     "@babel/preset-typescript": "^7.10.4",
     "@types/elliptic": "^6.4.12",
-    "@types/jest": "^26.0.5",
-    "@types/node": "^14.0.24",
+    "@types/jest": "^26.0.7",
+    "@types/node": "^14.0.26",
     "@types/store": "^2.0.2",
     "babel-core": "7.0.0-bridge.0",
     "babel-loader": "^8.1.0",
@@ -74,10 +74,11 @@
     "eslint": "^7.5.0",
     "eslint-config-3box": "^0.1.1",
     "jest": "^26.1.0",
-    "jsdoc-to-markdown": "^5.0.3",
+    "jsdoc-babel": "^0.5.0",
+    "jsdoc-to-markdown": "^6.0.1",
     "prettier": "^2.0.5",
     "typescript": "^3.9.7",
-    "webpack": "^4.43.0",
+    "webpack": "^4.44.0",
     "webpack-cli": "^3.3.12"
   }
 }
