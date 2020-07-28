@@ -133,8 +133,124 @@ Object {
 }
 `;
 
+exports[`IdentityWallet authenticate works correctly w/ seed only wallet 5`] = `
+Object {
+  "main": Object {
+    "asymEncryptionKey": "jRKRy3oPhXpUBrFJefO2CJnWw/IoalOPuepAwvTqrEk=",
+    "managementKey": "0350966498e802a007513d518dc12a0a0ab1e48addcec1beaa989c6ff5f5ed226c",
+    "signingKey": "027ab5238257532f486cbeeac59a5721bbfec2f13c3d26516ca9d4c5f0ec1aa229",
+  },
+  "spaces": Object {},
+}
+`;
+
 exports[`IdentityWallet encrypt/decrypt works correctly 1`] = `[Error: IdentityWallet: Could not decrypt message]`;
 
 exports[`IdentityWallet getLink correctly 1`] = `"0xa7b76379659b6c19E4DFf46e0DfEa48AFEBA8fe3"`;
 
 exports[`IdentityWallet getLink correctly 2`] = `"0xE72E6c37c15986C86Aa94007451750176E9a999F"`;
+
+exports[`IdentityWallet signClaim creates JWTs correctly 1`] = `
+Object {
+  "doc": Object {
+    "@context": "https://w3id.org/did/v1",
+    "authentication": Array [
+      Object {
+        "publicKey": "did:3:bafyreia6evyez2xdlewmbh7hfz3dz3besmlhnlrnkiounscnnvboym7q2u#owner",
+        "type": "Secp256k1SignatureAuthentication2018",
+      },
+    ],
+    "id": "did:3:bafyreia6evyez2xdlewmbh7hfz3dz3besmlhnlrnkiounscnnvboym7q2u",
+    "publicKey": Array [
+      Object {
+        "id": "did:3:bafyreia6evyez2xdlewmbh7hfz3dz3besmlhnlrnkiounscnnvboym7q2u#owner",
+        "owner": "did:3:bafyreia6evyez2xdlewmbh7hfz3dz3besmlhnlrnkiounscnnvboym7q2u",
+        "publicKeyHex": "027ab5238257532f486cbeeac59a5721bbfec2f13c3d26516ca9d4c5f0ec1aa229",
+        "type": "Secp256k1VerificationKey2018",
+      },
+    ],
+  },
+  "issuer": "did:3:bafyreia6evyez2xdlewmbh7hfz3dz3besmlhnlrnkiounscnnvboym7q2u",
+  "jwt": "eyJ0eXAiOiJKV1QiLCJhbGciOiJFUzI1NksifQ.eyJzb21lIjoiZGF0YSIsImlzcyI6ImRpZDozOmJhZnlyZWlhNmV2eWV6MnhkbGV3bWJoN2hmejNkejNiZXNtbGhubHJua2lvdW5zY25udmJveW03cTJ1In0.O05vkK8B5QGogFrySBPcbxg9ULaxQnOVKyKeBe2EDy3kRNqCMw3BetIVc9IRP3GTpLe6pDQknrijn2Eef3RQzg",
+  "payload": Object {
+    "iss": "did:3:bafyreia6evyez2xdlewmbh7hfz3dz3besmlhnlrnkiounscnnvboym7q2u",
+    "some": "data",
+  },
+  "signer": Object {
+    "id": "did:3:bafyreia6evyez2xdlewmbh7hfz3dz3besmlhnlrnkiounscnnvboym7q2u#owner",
+    "owner": "did:3:bafyreia6evyez2xdlewmbh7hfz3dz3besmlhnlrnkiounscnnvboym7q2u",
+    "publicKeyHex": "027ab5238257532f486cbeeac59a5721bbfec2f13c3d26516ca9d4c5f0ec1aa229",
+    "type": "Secp256k1VerificationKey2018",
+  },
+}
+`;
+
+exports[`IdentityWallet signClaim creates JWTs correctly 2`] = `
+Object {
+  "doc": Object {
+    "@context": "https://w3id.org/did/v1",
+    "authentication": Array [
+      Object {
+        "publicKey": "did:3:first#owner",
+        "type": "Secp256k1SignatureAuthentication2018",
+      },
+    ],
+    "id": "did:3:first",
+    "publicKey": Array [
+      Object {
+        "id": "did:3:first#owner",
+        "owner": "did:3:first",
+        "publicKeyHex": "027ab5238257532f486cbeeac59a5721bbfec2f13c3d26516ca9d4c5f0ec1aa229",
+        "type": "Secp256k1VerificationKey2018",
+      },
+    ],
+  },
+  "issuer": "did:3:first",
+  "jwt": "eyJ0eXAiOiJKV1QiLCJhbGciOiJFUzI1NksifQ.eyJzb21lIjoiZGF0YSIsImlzcyI6ImRpZDozOmZpcnN0In0.xJm0jCEMp6XNWG-SCA8dcf_oFMrTF8H0-2nUJluxasw00Uq9CyYXKQQVtsAdKgK2OlO_MvNl017C9cECuNqH8w",
+  "payload": Object {
+    "iss": "did:3:first",
+    "some": "data",
+  },
+  "signer": Object {
+    "id": "did:3:first#owner",
+    "owner": "did:3:first",
+    "publicKeyHex": "027ab5238257532f486cbeeac59a5721bbfec2f13c3d26516ca9d4c5f0ec1aa229",
+    "type": "Secp256k1VerificationKey2018",
+  },
+}
+`;
+
+exports[`IdentityWallet signClaim creates JWTs correctly 3`] = `
+Object {
+  "doc": Object {
+    "@context": "https://w3id.org/did/v1",
+    "authentication": Array [
+      Object {
+        "publicKey": "did:3:bafyreigv4zbzkcfn2xyqhehj2en563osf4ucyzpbwkxb3wtgtr2hsrvy7i#owner",
+        "type": "Secp256k1SignatureAuthentication2018",
+      },
+    ],
+    "id": "did:3:bafyreigv4zbzkcfn2xyqhehj2en563osf4ucyzpbwkxb3wtgtr2hsrvy7i",
+    "publicKey": Array [
+      Object {
+        "id": "did:3:bafyreigv4zbzkcfn2xyqhehj2en563osf4ucyzpbwkxb3wtgtr2hsrvy7i#owner",
+        "owner": "did:3:bafyreigv4zbzkcfn2xyqhehj2en563osf4ucyzpbwkxb3wtgtr2hsrvy7i",
+        "publicKeyHex": "0283441873077702f08a9e84d0ff869b5d08cb37361d77c7e5c57777e953670a0d",
+        "type": "Secp256k1VerificationKey2018",
+      },
+    ],
+  },
+  "issuer": "did:3:bafyreigv4zbzkcfn2xyqhehj2en563osf4ucyzpbwkxb3wtgtr2hsrvy7i",
+  "jwt": "eyJ0eXAiOiJKV1QiLCJhbGciOiJFUzI1NksifQ.eyJzb21lIjoiZGF0YSIsImlzcyI6ImRpZDozOmJhZnlyZWlndjR6YnprY2ZuMnh5cWhlaGoyZW41NjNvc2Y0dWN5enBid2t4YjN3dGd0cjJoc3J2eTdpIn0.fPl39RqBMZahZk5M9NQNPZIxwkSVHfCc5dJ785vwrXfwvvtH2G-IcCWkrkyW5ycNTa9cfulB7xFilZe9Veg0aQ",
+  "payload": Object {
+    "iss": "did:3:bafyreigv4zbzkcfn2xyqhehj2en563osf4ucyzpbwkxb3wtgtr2hsrvy7i",
+    "some": "data",
+  },
+  "signer": Object {
+    "id": "did:3:bafyreigv4zbzkcfn2xyqhehj2en563osf4ucyzpbwkxb3wtgtr2hsrvy7i#owner",
+    "owner": "did:3:bafyreigv4zbzkcfn2xyqhehj2en563osf4ucyzpbwkxb3wtgtr2hsrvy7i",
+    "publicKeyHex": "0283441873077702f08a9e84d0ff869b5d08cb37361d77c7e5c57777e953670a0d",
+    "type": "Secp256k1VerificationKey2018",
+  },
+}
+`;

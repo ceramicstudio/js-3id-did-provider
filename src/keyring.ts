@@ -53,7 +53,7 @@ export interface KeySet {
 }
 
 export interface RootKeySet extends KeySet {
-  managementKey: HDNode | { address: string }
+  managementKey: HDNode | { address: string; publicKey?: string }
   managementAddress?: string
 }
 
@@ -217,8 +217,12 @@ export default class Keyring {
     return new Wallet(node.privateKey)
   }
 
-  getJWTSigner(space?: string): Signer {
-    return SimpleSigner(this._getKeys(space).signingKey.privateKey.slice(2))
+  getJWTSigner(space?: string, useMgmt?: boolean): Signer {
+    const pubkeys = this._getKeys(space)
+    const key = useMgmt
+      ? (pubkeys as RootKeySet).managementKey
+      : pubkeys.signingKey
+    return SimpleSigner((key as HDNode).privateKey.slice(2))
   }
 
   getRootSigner(keyId?: string): Signer {
@@ -241,11 +245,18 @@ export default class Keyring {
   getPublicKeys({
     space,
     uncompressed,
-  }: { space?: string; uncompressed?: boolean } = {}): PublicKeys {
+    mgmtPub,
+  }: {
+    space?: string
+    uncompressed?: boolean
+    mgmtPub?: string
+  } = {}): PublicKeys {
     const keys = this._getKeys(space)
     let signingKey = keys.signingKey.publicKey.slice(2)
     const managementKey = space
       ? null
+      : mgmtPub && (keys as RootKeySet).managementKey.publicKey
+      ? (keys as RootKeySet).managementKey.publicKey!.slice(2)
       : (keys as RootKeySet).managementKey.address
     if (uncompressed) {
       signingKey = ec

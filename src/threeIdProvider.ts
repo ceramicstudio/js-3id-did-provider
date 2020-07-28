@@ -28,7 +28,11 @@ const methods: HandlerMethods<Context> = {
   '3id_authenticate': async (ctx, params) => {
     return await ctx.provider.wallet.authenticate(
       params.spaces,
-      { authData: params.authData, address: params.address },
+      {
+        authData: params.authData,
+        address: params.address,
+        mgmtPub: params.mgmtPub,
+      },
       ctx.origin
     )
   },
@@ -40,6 +44,7 @@ const methods: HandlerMethods<Context> = {
       DID: params.did,
       space: params.space,
       expiresIn: params.expiresIn,
+      useMgmt: params.useMgmt,
     })
   },
   '3id_encrypt': async (ctx, params) => {

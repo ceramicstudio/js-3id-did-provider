@@ -42,38 +42,36 @@ const badAuthData = [
 ]
 const getConsentMock = jest.fn(() => false)
 
-const resolver = new Resolver({
-  '3': async (did, { id }) => {
-    let key
-    if (
-      id === 'bafyreia6evyez2xdlewmbh7hfz3dz3besmlhnlrnkiounscnnvboym7q2u' ||
-      id === 'first'
-    ) {
-      key = '027ab5238257532f486cbeeac59a5721bbfec2f13c3d26516ca9d4c5f0ec1aa229'
-    } else {
-      // key for 'space1'
-      key = '0283441873077702f08a9e84d0ff869b5d08cb37361d77c7e5c57777e953670a0d'
-    }
-    return {
-      '@context': 'https://w3id.org/did/v1',
-      id: 'did:3:' + id,
-      publicKey: [
-        {
-          id: 'did:3:' + id + '#owner',
-          type: 'Secp256k1VerificationKey2018',
-          owner: 'did:3:' + id,
-          publicKeyHex: key,
-        },
-      ],
-      authentication: [
-        {
-          type: 'Secp256k1SignatureAuthentication2018',
-          publicKey: 'did:3:' + id + '#owner',
-        },
-      ],
-    }
-  },
-})
+const threeIdResolver = async (_, { id }) => {
+  let key
+  if (
+    id === 'bafyreia6evyez2xdlewmbh7hfz3dz3besmlhnlrnkiounscnnvboym7q2u' ||
+    id === 'first'
+  ) {
+    key = '027ab5238257532f486cbeeac59a5721bbfec2f13c3d26516ca9d4c5f0ec1aa229'
+  } else {
+    // key for 'space1'
+    key = '0283441873077702f08a9e84d0ff869b5d08cb37361d77c7e5c57777e953670a0d'
+  }
+  return {
+    '@context': 'https://w3id.org/did/v1',
+    id: 'did:3:' + id,
+    publicKey: [
+      {
+        id: 'did:3:' + id + '#owner',
+        type: 'Secp256k1VerificationKey2018',
+        owner: 'did:3:' + id,
+        publicKeyHex: key,
+      },
+    ],
+    authentication: [
+      {
+        type: 'Secp256k1SignatureAuthentication2018',
+        publicKey: 'did:3:' + id + '#owner',
+      },
+    ],
+  }
+}
 
 describe('IdentityWallet', () => {
   let idWallet1, idWallet2, idWalletExternalAuth
@@ -194,6 +192,9 @@ describe('IdentityWallet', () => {
       expect(
         await idWallet1.authenticate(['space2', 'space3'])
       ).toMatchSnapshot()
+      expect(
+        await idWallet1.authenticate([], { mgmtPub: true })
+      ).toMatchSnapshot()
     })
 
     it('should generate seed if no auth data passed', async () => {
@@ -306,16 +307,20 @@ describe('IdentityWallet', () => {
   })
 
   it('signClaim creates JWTs correctly', async () => {
+    const resolver = new Resolver({
+      '3': threeIdResolver,
+    })
     const payload = {
       some: 'data',
+      iat: undefined,
     }
     const jwt0 = await idWallet1.signClaim(payload)
     const jwt1 = await idWallet1.signClaim(payload, { DID: 'did:3:first' })
     const jwt2 = await idWallet1.signClaim(payload, { space: 'space1' })
 
-    expect(await verifyJWT(jwt0, { resolver })).toBeDefined()
-    expect(await verifyJWT(jwt1, { resolver })).toBeDefined()
-    expect(await verifyJWT(jwt2, { resolver })).toBeDefined()
+    expect(await verifyJWT(jwt0, { resolver })).toMatchSnapshot()
+    expect(await verifyJWT(jwt1, { resolver })).toMatchSnapshot()
+    expect(await verifyJWT(jwt2, { resolver })).toMatchSnapshot()
   })
 
   it('encrypt/decrypt works correctly', async () => {

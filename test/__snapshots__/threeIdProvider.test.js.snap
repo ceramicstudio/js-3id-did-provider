@@ -52,6 +52,14 @@ Object {
 }
 `;
 
+exports[`ThreeIdProvider authenticate correctly 3`] = `
+Object {
+  "id": 1,
+  "jsonrpc": "2.0",
+  "result": "auth data",
+}
+`;
+
 exports[`ThreeIdProvider decrypt correctly 1`] = `
 Object {
   "id": 1,

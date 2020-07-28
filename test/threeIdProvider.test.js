@@ -86,6 +86,10 @@ describe('ThreeIdProvider', () => {
     )
     expect(await callWithCB(rpc, payload, origin)).toMatchSnapshot()
     expect(IDW_MOCK.authenticate).toHaveBeenCalledTimes(2)
+    const payload2 = formatCall('authenticate', { spaces, authData, mgmtPub: true })
+    expect(await rpc.send(payload2, origin)).toMatchSnapshot()
+    expect(IDW_MOCK.authenticate).toHaveBeenCalledTimes(3)
+    expect(IDW_MOCK.authenticate).toHaveBeenCalledWith(spaces, { authData, mgmtPub: true }, origin)
   })
 
   it('isAuthenticated correctly', async () => {

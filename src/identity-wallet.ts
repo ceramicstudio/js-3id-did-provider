@@ -258,7 +258,12 @@ export default class IdentityWallet {
     {
       authData,
       address,
-    }: { authData?: Array<EncryptedMessage>; address?: string } = {},
+      mgmtPub,
+    }: {
+      authData?: Array<EncryptedMessage>
+      address?: string
+      mgmtPub?: string
+    } = {},
     origin?: string | null
   ): Promise<{ main: PublicKeys; spaces: Record<string, PublicKeys> }> {
     let consent
@@ -270,7 +275,7 @@ export default class IdentityWallet {
     if (!consent) throw new Error('Authentication not authorized by user')
 
     return {
-      main: this._keyring!.getPublicKeys(),
+      main: this._keyring!.getPublicKeys({ mgmtPub }),
       spaces: spaces.reduce((acc, space) => {
         acc[space] = this._keyring!.getPublicKeys({
           space,
@@ -342,7 +347,13 @@ export default class IdentityWallet {
       DID,
       space,
       expiresIn,
-    }: { DID?: string; space?: string; expiresIn?: number } = {}
+      useMgmt,
+    }: {
+      DID?: string
+      space?: string
+      expiresIn?: number
+      useMgmt?: boolean
+    } = {}
   ): Promise<string> {
     if (!this._keyring) {
       throw new Error(
@@ -352,7 +363,7 @@ export default class IdentityWallet {
 
     const issuer = DID || (await this._get3id(space))
     const settings = {
-      signer: this._keyring.getJWTSigner(space),
+      signer: this._keyring.getJWTSigner(space, useMgmt),
       issuer,
       expiresIn,
     }
