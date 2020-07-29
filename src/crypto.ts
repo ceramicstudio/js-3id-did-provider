@@ -24,8 +24,7 @@ export function symEncryptBase(
   providedNonce?: Uint8Array
 ): EncryptedMessage {
   const nonce = providedNonce ?? randomNonce()
-  const msg =
-    typeof message === 'string' ? naclutil.decodeUTF8(message) : message
+  const msg = typeof message === 'string' ? naclutil.decodeUTF8(message) : message
   const ciphertext = nacl.secretbox(msg, nonce, symKey)
   return {
     nonce: naclutil.encodeBase64(nonce),
@@ -68,8 +67,7 @@ export function asymEncrypt(
   providedNonce?: Uint8Array
 ): AsymEncryptedMessage {
   const nonce = providedNonce ?? randomNonce()
-  const msg =
-    typeof message === 'string' ? naclutil.decodeUTF8(message) : message
+  const msg = typeof message === 'string' ? naclutil.decodeUTF8(message) : message
   const ephemneralKeypair = nacl.box.keyPair()
   const ciphertext = nacl.box(
     msg,

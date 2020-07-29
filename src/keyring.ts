@@ -80,8 +80,7 @@ export default class Keyring {
       this._importMigratedKeys(migratedKeys)
     }
 
-    if (!(seed || migratedKeys))
-      throw new Error('One or both of seed or migratedKeys required')
+    if (!(seed || migratedKeys)) throw new Error('One or both of seed or migratedKeys required')
   }
 
   //  Import and load legacy keys
@@ -108,13 +107,9 @@ export default class Keyring {
     return {
       signingKey: hdNode.derivePath('0'),
       asymEncryptionKey: nacl.box.keyPair.fromSecretKey(
-        new Uint8Array(
-          Buffer.from(hdNode.derivePath('2').privateKey.slice(2), 'hex')
-        )
+        new Uint8Array(Buffer.from(hdNode.derivePath('2').privateKey.slice(2), 'hex'))
       ),
-      symEncryptionKey: hexToUint8Array(
-        hdNode.derivePath('3').privateKey.slice(2)
-      ),
+      symEncryptionKey: hexToUint8Array(hdNode.derivePath('3').privateKey.slice(2)),
     }
   }
 
@@ -191,11 +186,7 @@ export default class Keyring {
     return symEncryptBase(msg, this._getKeys(space).symEncryptionKey, nonce)
   }
 
-  symDecrypt(
-    ciphertext: string,
-    nonce: string,
-    { space, toBuffer }: DecryptOptions = {}
-  ) {
+  symDecrypt(ciphertext: string, nonce: string, { space, toBuffer }: DecryptOptions = {}) {
     return symDecryptBase(
       ciphertext,
       this._getKeys(space).symEncryptionKey,
@@ -205,9 +196,7 @@ export default class Keyring {
     )
   }
 
-  async managementPersonalSign(
-    message: ArrayLike<number> | string
-  ): Promise<string> {
+  async managementPersonalSign(message: ArrayLike<number> | string): Promise<string> {
     const wallet = this.managementWallet()
     return await wallet.signMessage(message)
   }
@@ -219,17 +208,13 @@ export default class Keyring {
 
   getJWTSigner(space?: string, useMgmt?: boolean): Signer {
     const pubkeys = this._getKeys(space)
-    const key = useMgmt
-      ? (pubkeys as RootKeySet).managementKey
-      : pubkeys.signingKey
+    const key = useMgmt ? (pubkeys as RootKeySet).managementKey : pubkeys.signingKey
     return EllipticSigner((key as HDNode).privateKey.slice(2))
   }
 
   getRootSigner(keyId?: string): Signer {
     const key =
-      keyId === 'managementKey'
-        ? this._rootKeys?.managementKey
-        : this._rootKeys?.signingKey
+      keyId === 'managementKey' ? this._rootKeys?.managementKey : this._rootKeys?.signingKey
     if (key == null || !(key instanceof HDNode)) {
       throw new Error('Invalid key')
     }
@@ -237,9 +222,7 @@ export default class Keyring {
   }
 
   getDBSalt(space?: string): string {
-    return sha256(
-      this._getKeys(space).signingKey.derivePath('0').privateKey.slice(2)
-    )
+    return sha256(this._getKeys(space).signingKey.derivePath('0').privateKey.slice(2))
   }
 
   getPublicKeys({
@@ -259,16 +242,12 @@ export default class Keyring {
       ? (keys as RootKeySet).managementKey.publicKey!.slice(2)
       : (keys as RootKeySet).managementKey.address
     if (uncompressed) {
-      signingKey = ec
-        .keyFromPublic(Buffer.from(signingKey, 'hex'))
-        .getPublic(false, 'hex')
+      signingKey = ec.keyFromPublic(Buffer.from(signingKey, 'hex')).getPublic(false, 'hex')
     }
     return {
       signingKey,
       managementKey,
-      asymEncryptionKey: naclutil.encodeBase64(
-        keys.asymEncryptionKey.publicKey
-      ),
+      asymEncryptionKey: naclutil.encodeBase64(keys.asymEncryptionKey.publicKey),
     }
   }
 
@@ -276,13 +255,8 @@ export default class Keyring {
     return this._seed
   }
 
-  static encryptWithAuthSecret(
-    message: string | Uint8Array,
-    authSecret: string
-  ): EncryptedMessage {
-    const node = HDNode.fromSeed(ensure0x(authSecret)).derivePath(
-      AUTH_PATH_ENCRYPTION
-    )
+  static encryptWithAuthSecret(message: string | Uint8Array, authSecret: string): EncryptedMessage {
+    const node = HDNode.fromSeed(ensure0x(authSecret)).derivePath(AUTH_PATH_ENCRYPTION)
     const key = hexToUint8Array(node.privateKey.slice(2))
     return symEncryptBase(message, key)
   }
@@ -292,17 +266,13 @@ export default class Keyring {
     nonce: string,
     authSecret: string
   ): string | null {
-    const node = HDNode.fromSeed(ensure0x(authSecret)).derivePath(
-      AUTH_PATH_ENCRYPTION
-    )
+    const node = HDNode.fromSeed(ensure0x(authSecret)).derivePath(AUTH_PATH_ENCRYPTION)
     const key = hexToUint8Array(node.privateKey.slice(2))
     return symDecryptBase(ciphertext, key, nonce)
   }
 
   static walletForAuthSecret(authSecret: string): Wallet {
-    const node = HDNode.fromSeed(ensure0x(authSecret)).derivePath(
-      AUTH_PATH_WALLET
-    )
+    const node = HDNode.fromSeed(ensure0x(authSecret)).derivePath(AUTH_PATH_WALLET)
     return new Wallet(node.privateKey)
   }
 }

@@ -71,10 +71,7 @@ const methods: HandlerMethods<Context> = {
   '3id_newLinkPoll': (ctx) => ctx.provider.pollLinks(),
 }
 
-type Callback = (
-  err: Error | null | undefined,
-  res?: RPCResponse | null
-) => void
+type Callback = (err: Error | null | undefined, res?: RPCResponse | null) => void
 
 export default class ThreeIdProvider {
   private _newAuthMethods: Array<EncryptedMessage> = []

@@ -79,11 +79,7 @@ describe('ThreeIdProvider', () => {
     const payload = formatCall('authenticate', { spaces, authData })
     expect(await rpc.send(payload, origin)).toMatchSnapshot()
     expect(IDW_MOCK.authenticate).toHaveBeenCalledTimes(1)
-    expect(IDW_MOCK.authenticate).toHaveBeenCalledWith(
-      spaces,
-      { authData },
-      origin
-    )
+    expect(IDW_MOCK.authenticate).toHaveBeenCalledWith(spaces, { authData }, origin)
     expect(await callWithCB(rpc, payload, origin)).toMatchSnapshot()
     expect(IDW_MOCK.authenticate).toHaveBeenCalledTimes(2)
     const payload2 = formatCall('authenticate', { spaces, authData, mgmtPub: true })
@@ -149,11 +145,7 @@ describe('ThreeIdProvider', () => {
     const payload = formatCall('decrypt', { ciphertext, nonce, space })
     expect(await rpc.send(payload)).toMatchSnapshot()
     expect(IDW_MOCK.decrypt).toHaveBeenCalledTimes(1)
-    expect(IDW_MOCK.decrypt).toHaveBeenCalledWith(
-      { ciphertext, nonce },
-      space,
-      undefined
-    )
+    expect(IDW_MOCK.decrypt).toHaveBeenCalledWith({ ciphertext, nonce }, space, undefined)
     expect(await callWithCB(rpc, payload)).toMatchSnapshot()
     expect(IDW_MOCK.decrypt).toHaveBeenCalledTimes(2)
   })

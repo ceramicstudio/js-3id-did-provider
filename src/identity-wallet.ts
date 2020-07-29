@@ -98,10 +98,7 @@ export default class IdentityWallet {
     const key = address ?? this._keyring!.getPublicKeys().managementKey ?? ''
     const prefix = `3id_consent_${key}_${origin ?? ''}_`
     const consentExists = (space = '') => Boolean(store.get(prefix + space))
-    return spaces.reduce(
-      (acc, space) => acc && consentExists(space),
-      consentExists()
-    )
+    return spaces.reduce((acc, space) => acc && consentExists(space), consentExists())
   }
 
   /**
@@ -165,11 +162,7 @@ export default class IdentityWallet {
     const managementWallet = this._keyring!.managementWallet()
     this.events.emit(
       'new-link-proof',
-      await createLink(
-        this.DID!,
-        managementWallet.address,
-        fakeEthProvider(managementWallet)
-      )
+      await createLink(this.DID!, managementWallet.address, fakeEthProvider(managementWallet))
     )
   }
 
@@ -185,9 +178,7 @@ export default class IdentityWallet {
    */
   async linkAddress(address: string, provider: any): Promise<LinkProof> {
     if (!this._keyring)
-      throw new Error(
-        'This method can only be called after authenticate has been called'
-      )
+      throw new Error('This method can only be called after authenticate has been called')
     const proof = await createLink(this.DID!, address, provider)
     this.events.emit('new-link-proof', proof)
     return proof
@@ -205,29 +196,20 @@ export default class IdentityWallet {
     }
   }
 
-  async _initKeyring(
-    authData?: Array<EncryptedMessage>,
-    address?: string,
-    spaces?: Array<string>
-  ) {
+  async _initKeyring(authData?: Array<EncryptedMessage>, address?: string, spaces?: Array<string>) {
     if (this._seed) {
       await this.getLink()
     } else if (authData && authData.length > 0) {
       let seed
       authData.find(({ ciphertext, nonce }) => {
-        seed = Keyring.decryptWithAuthSecret(
-          ciphertext,
-          nonce,
-          this._authSecret as string
-        )
+        seed = Keyring.decryptWithAuthSecret(ciphertext, nonce, this._authSecret as string)
         return Boolean(seed)
       })
       if (!seed) throw new Error('No valid auth-secret for this identity')
       this._keyring = new Keyring(seed)
       this.DID = await this._get3id()
     } else if (this._externalAuth) {
-      if (!address)
-        throw new Error('External authentication requires an address')
+      if (!address) throw new Error('External authentication requires an address')
       const migratedKeys = await this._externalAuth({
         address,
         spaces,
@@ -274,8 +256,7 @@ export default class IdentityWallet {
     let consent
     // if external auth and address, get consent first, pass address since keyring not avaiable, otherwise call after keyring
     if (address) consent = await this.getConsent(spaces, origin, { address })
-    if (!this._keyring || this._externalAuth)
-      await this._initKeyring(authData, address, spaces)
+    if (!this._keyring || this._externalAuth) await this._initKeyring(authData, address, spaces)
     if (!address) consent = this.getConsent(spaces, origin)
     if (!consent) throw new Error('Authentication not authorized by user')
 
@@ -305,9 +286,7 @@ export default class IdentityWallet {
     origin?: string | null,
     { address }: { address?: string } = {}
   ): Promise<boolean> {
-    return (
-      Boolean(this._keyring) && this.hasConsent(spaces, origin, { address })
-    )
+    return Boolean(this._keyring) && this.hasConsent(spaces, origin, { address })
   }
 
   /**
@@ -317,9 +296,7 @@ export default class IdentityWallet {
    */
   async addAuthMethod(authSecret: string): Promise<void> {
     if (!this._keyring)
-      throw new Error(
-        'This method can only be called after authenticate has been called'
-      )
+      throw new Error('This method can only be called after authenticate has been called')
 
     const message = this._keyring.serialize() as string
     const encAuthData = Keyring.encryptWithAuthSecret(message, authSecret)
@@ -330,11 +307,7 @@ export default class IdentityWallet {
     const authWallet = Keyring.walletForAuthSecret(authSecret)
     this.events.emit(
       'new-link-proof',
-      await createLink(
-        this.DID!,
-        authWallet.address,
-        fakeEthProvider(authWallet)
-      )
+      await createLink(this.DID!, authWallet.address, fakeEthProvider(authWallet))
     )
   }
 
@@ -362,9 +335,7 @@ export default class IdentityWallet {
     } = {}
   ): Promise<string> {
     if (!this._keyring) {
-      throw new Error(
-        'This method can only be called after authenticate has been called'
-      )
+      throw new Error('This method can only be called after authenticate has been called')
     }
 
     const issuer = DID || (await this._get3id(space))
@@ -391,19 +362,12 @@ export default class IdentityWallet {
   async encrypt(
     message: string | Uint8Array,
     space?: string,
-    {
-      nonce,
-      blockSize,
-      to,
-    }: { nonce?: Uint8Array; blockSize?: number; to?: string } = {}
+    { nonce, blockSize, to }: { nonce?: Uint8Array; blockSize?: number; to?: string } = {}
   ) {
     if (!this._keyring)
-      throw new Error(
-        'This method can only be called after authenticate has been called'
-      )
+      throw new Error('This method can only be called after authenticate has been called')
 
-    const paddedMsg =
-      typeof message === 'string' ? pad(message, blockSize) : message
+    const paddedMsg = typeof message === 'string' ? pad(message, blockSize) : message
     if (to) {
       return this._keyring.asymEncrypt(paddedMsg, to, { nonce })
     } else {
@@ -436,9 +400,7 @@ export default class IdentityWallet {
     toBuffer?: boolean
   ) {
     if (!this._keyring)
-      throw new Error(
-        'This method can only be called after authenticate has been called'
-      )
+      throw new Error('This method can only be called after authenticate has been called')
 
     let paddedMsg
     if ((encObj as AsymEncryptedMessage).ephemeralFrom) {
@@ -488,10 +450,7 @@ export default class IdentityWallet {
         'ethereumAddress',
         pubkeys.managementKey!
       )
-      doc.addAuthentication(
-        'Secp256k1SignatureAuthentication2018',
-        'signingKey'
-      )
+      doc.addAuthentication('Secp256k1SignatureAuthentication2018', 'signingKey')
     } else {
       doc.addPublicKey(
         'subSigningKey',
@@ -505,10 +464,7 @@ export default class IdentityWallet {
         'publicKeyBase64',
         pubkeys.asymEncryptionKey
       )
-      doc.addAuthentication(
-        'Secp256k1SignatureAuthentication2018',
-        'subSigningKey'
-      )
+      doc.addAuthentication('Secp256k1SignatureAuthentication2018', 'subSigningKey')
       doc.addCustomProperty('space', space)
       doc.addCustomProperty('root', this.DID)
       const payload = {

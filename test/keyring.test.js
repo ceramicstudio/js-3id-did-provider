@@ -26,9 +26,7 @@ describe('Keyring', () => {
   })
 
   it('derives correct keys from entropy', async () => {
-    keyring = new Keyring(
-      '0xf0e4c2f76c58916ec258f246851bea091d14d4247a2fc3e18694461b1816e13b'
-    )
+    keyring = new Keyring('0xf0e4c2f76c58916ec258f246851bea091d14d4247a2fc3e18694461b1816e13b')
     // keyring3 = new Keyring('0x24a0bc3a2a1d1404c0ab24bef9bb0618938ee892fbf62f63f82f015eddf1729e')
     expect(keyring._seed).toEqual(
       '0xf0e4c2f76c58916ec258f246851bea091d14d4247a2fc3e18694461b1816e13b'
@@ -58,16 +56,9 @@ describe('Keyring', () => {
 
     it('encrypts and decrypts correctly', () => {
       const testMsg = 'Very secret test message'
-      const box = keyring1.asymEncrypt(
-        testMsg,
-        keyring.getPublicKeys().asymEncryptionKey
-      )
+      const box = keyring1.asymEncrypt(testMsg, keyring.getPublicKeys().asymEncryptionKey)
 
-      const cleartext = keyring.asymDecrypt(
-        box.ciphertext,
-        box.ephemeralFrom,
-        box.nonce
-      )
+      const cleartext = keyring.asymDecrypt(box.ciphertext, box.ephemeralFrom, box.nonce)
       expect(cleartext).toEqual(testMsg)
     })
 
@@ -83,11 +74,7 @@ describe('Keyring', () => {
       const authSecret = Buffer.from(naclRandom(32)).toString('hex')
 
       const box = Keyring.encryptWithAuthSecret(testMsg, authSecret)
-      const cleartext = Keyring.decryptWithAuthSecret(
-        box.ciphertext,
-        box.nonce,
-        authSecret
-      )
+      const cleartext = Keyring.decryptWithAuthSecret(box.ciphertext, box.nonce, authSecret)
       expect(cleartext).toEqual(testMsg)
     })
   })

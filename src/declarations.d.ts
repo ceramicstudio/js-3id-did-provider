@@ -11,11 +11,7 @@ declare module '3id-blockchain-utils' {
     chainId?: number
   }
 
-  export function createLink(
-    did: string,
-    account: string,
-    provider: any
-  ): Promise<LinkProof>
+  export function createLink(did: string, account: string, provider: any): Promise<LinkProof>
 }
 
 declare module 'ipfs-did-document' {
@@ -25,13 +21,7 @@ declare module 'ipfs-did-document' {
     constructor(ipfs: any, method: string)
     get DID(): string
     addAuthentication(type: string, id: string): void
-    addPublicKey(
-      id: string,
-      type: string,
-      encoding: string,
-      key: string,
-      owner?: string
-    ): void
+    addPublicKey(id: string, type: string, encoding: string, key: string, owner?: string): void
     addCustomProperty(propName: string, propValue: any): void
     commit(options: { noTimestamp?: boolean }): Promise<CID>
   }
@@ -49,9 +39,5 @@ declare module 'ipld-dag-cbor' {
 }
 
 declare module 'multihashes' {
-  export function encode(
-    digest: Buffer,
-    code: number | string,
-    length?: number
-  ): Buffer
+  export function encode(digest: Buffer, code: number | string, length?: number): Buffer
 }

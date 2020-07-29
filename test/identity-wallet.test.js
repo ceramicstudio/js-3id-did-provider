@@ -9,8 +9,7 @@ const wallet1Conf = {
   ),
 }
 const wallet2Conf = {
-  authSecret:
-    '24a0bc3a2a1d1404c0ab24bef9bb0618938ee892fbf62f63f82f015eddf1729e',
+  authSecret: '24a0bc3a2a1d1404c0ab24bef9bb0618938ee892fbf62f63f82f015eddf1729e',
 }
 
 const migratedKeys = {
@@ -31,8 +30,7 @@ const walletExternalAuthConf = {
   }),
 }
 
-const secondaryAuthSecret =
-  '4567898765434567c0ab24bef9bb0618938ee892fbf62f63f82f015eddf1729e'
+const secondaryAuthSecret = '4567898765434567c0ab24bef9bb0618938ee892fbf62f63f82f015eddf1729e'
 const badAuthData = [
   {
     nonce: 'Lxcd05Yk4aC8LCLbFjowzD3W6Uqx+v+n',
@@ -44,10 +42,7 @@ const getConsentMock = jest.fn(() => false)
 
 const threeIdResolver = async (_, { id }) => {
   let key
-  if (
-    id === 'bafyreia6evyez2xdlewmbh7hfz3dz3besmlhnlrnkiounscnnvboym7q2u' ||
-    id === 'first'
-  ) {
+  if (id === 'bafyreia6evyez2xdlewmbh7hfz3dz3besmlhnlrnkiounscnnvboym7q2u' || id === 'first') {
     key = '027ab5238257532f486cbeeac59a5721bbfec2f13c3d26516ca9d4c5f0ec1aa229'
   } else {
     // key for 'space1'
@@ -79,10 +74,7 @@ describe('IdentityWallet', () => {
   beforeAll(() => {
     idWallet1 = new IdentityWallet(getConsentMock, wallet1Conf)
     idWallet2 = new IdentityWallet(getConsentMock, wallet2Conf)
-    idWalletExternalAuth = new IdentityWallet(
-      getConsentMock,
-      walletExternalAuthConf
-    )
+    idWalletExternalAuth = new IdentityWallet(getConsentMock, walletExternalAuthConf)
   })
 
   it('should be correctly constructed', async () => {
@@ -143,9 +135,7 @@ describe('IdentityWallet', () => {
     })
 
     it('should not have consent for different origin', async () => {
-      expect(
-        await idWallet1.hasConsent([], 'https://my.other.origin')
-      ).toBeFalsy()
+      expect(await idWallet1.hasConsent([], 'https://my.other.origin')).toBeFalsy()
     })
 
     it('works with spaces', async () => {
@@ -183,18 +173,10 @@ describe('IdentityWallet', () => {
 
     it('works correctly w/ seed only wallet', async () => {
       expect(await idWallet1.authenticate()).toMatchSnapshot()
-      expect(
-        await idWallet1.authenticate(['space1', 'space2'])
-      ).toMatchSnapshot()
-      expect(
-        await idWallet1.authenticate(['space3', 'space4'])
-      ).toMatchSnapshot()
-      expect(
-        await idWallet1.authenticate(['space2', 'space3'])
-      ).toMatchSnapshot()
-      expect(
-        await idWallet1.authenticate([], { mgmtPub: true })
-      ).toMatchSnapshot()
+      expect(await idWallet1.authenticate(['space1', 'space2'])).toMatchSnapshot()
+      expect(await idWallet1.authenticate(['space3', 'space4'])).toMatchSnapshot()
+      expect(await idWallet1.authenticate(['space2', 'space3'])).toMatchSnapshot()
+      expect(await idWallet1.authenticate([], { mgmtPub: true })).toMatchSnapshot()
     })
 
     it('should generate seed if no auth data passed', async () => {
@@ -212,24 +194,18 @@ describe('IdentityWallet', () => {
 
     it('should auth if auth-data is passed', async () => {
       expect(idWallet2._keyring).toBeUndefined()
-      expect(await idWallet2.authenticate([], { authData })).toEqual(
-        authPubKeys
-      )
+      expect(await idWallet2.authenticate([], { authData })).toEqual(authPubKeys)
     })
 
     it('should throw if no valid authSecrets', async () => {
-      await expect(
-        idWallet2.authenticate([], { authData: badAuthData })
-      ).rejects.toMatchSnapshot()
+      await expect(idWallet2.authenticate([], { authData: badAuthData })).rejects.toMatchSnapshot()
     })
 
     it('addAuthMethod works correctly', async () => {
       const authDataPromise = new Promise((resolve, reject) => {
         idWallet2.events.on('new-auth-method', resolve)
       })
-      expect(await idWallet2.authenticate([], { authData })).toEqual(
-        authPubKeys
-      )
+      expect(await idWallet2.authenticate([], { authData })).toEqual(authPubKeys)
       const linkProofPromise = new Promise((resolve, reject) => {
         idWallet2.events.on('new-link-proof', resolve)
       })
@@ -241,9 +217,7 @@ describe('IdentityWallet', () => {
         authSecret: secondaryAuthSecret,
       })
       expect((await idWallet3.getLink()).toLowerCase()).toEqual(linkAddress)
-      expect(await idWallet3.authenticate([], { authData })).toEqual(
-        authPubKeys
-      )
+      expect(await idWallet3.authenticate([], { authData })).toEqual(authPubKeys)
     })
   })
 
@@ -252,10 +226,7 @@ describe('IdentityWallet', () => {
 
     beforeEach(() => {
       getConsentMock.mockImplementation(() => true)
-      idWalletExternalAuth = new IdentityWallet(
-        getConsentMock,
-        walletExternalAuthConf
-      )
+      idWalletExternalAuth = new IdentityWallet(getConsentMock, walletExternalAuthConf)
       getConsent = jest.spyOn(idWalletExternalAuth, 'getConsent')
       initKeyring = jest.spyOn(idWalletExternalAuth, '_initKeyring')
     })
@@ -264,21 +235,15 @@ describe('IdentityWallet', () => {
 
     it('returns keys', async () => {
       const opts = { address: migratedKeys.managementAddress }
-      expect(
-        await idWalletExternalAuth.authenticate([], opts)
-      ).toMatchSnapshot()
-      expect(
-        await idWalletExternalAuth.authenticate(['space1'], opts)
-      ).toMatchSnapshot()
-      expect(
-        await idWalletExternalAuth.authenticate(['space1', 'space2'], opts)
-      ).toMatchSnapshot()
+      expect(await idWalletExternalAuth.authenticate([], opts)).toMatchSnapshot()
+      expect(await idWalletExternalAuth.authenticate(['space1'], opts)).toMatchSnapshot()
+      expect(await idWalletExternalAuth.authenticate(['space1', 'space2'], opts)).toMatchSnapshot()
     })
 
     it('throws if request space not available in migratedKeys', async () => {
-      await expect(
-        idWalletExternalAuth.authenticate(['notSpace '], opts)
-      ).rejects.toThrow(/not derive/)
+      await expect(idWalletExternalAuth.authenticate(['notSpace '], opts)).rejects.toThrow(
+        /not derive/
+      )
     })
 
     it('getConsent function is called before creating keyring', async () => {
@@ -300,9 +265,7 @@ describe('IdentityWallet', () => {
     })
 
     it('throws if not given address opts ', async () => {
-      await expect(idWalletExternalAuth.authenticate([])).rejects.toThrow(
-        /requires an address/
-      )
+      await expect(idWalletExternalAuth.authenticate([])).rejects.toThrow(/requires an address/)
     })
   })
 
