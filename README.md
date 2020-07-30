@@ -111,6 +111,7 @@ await idWallet.linkAddress(ethAddress, ethProvider)
 * [IdentityWallet](#IdentityWallet)
     * [new IdentityWallet(getConsent, config)](#new_IdentityWallet_new)
     * [.get3idProvider()](#IdentityWallet+get3idProvider) ⇒ <code>ThreeIdProvider</code>
+    * [.getDidProvider()](#IdentityWallet+getDidProvider) ⇒ <code>DidProvider</code>
     * [.hasConsent(spaces, origin)](#IdentityWallet+hasConsent) ⇒ <code>Boolean</code>
     * [.getConsent(spaces, origin)](#IdentityWallet+getConsent) ⇒ <code>Boolean</code>
     * [.linkAddress(address, provider)](#IdentityWallet+linkAddress) ⇒ <code>Object</code>
@@ -143,6 +144,13 @@ Get the 3IDProvider
 
 **Kind**: instance method of [<code>IdentityWallet</code>](#IdentityWallet)  
 **Returns**: <code>ThreeIdProvider</code> - The 3IDProvider for this IdentityWallet instance  
+<a name="IdentityWallet+getDidProvider"></a>
+
+#### identityWallet.getDidProvider() ⇒ <code>DidProvider</code>
+Get the DIDProvider
+
+**Kind**: instance method of [<code>IdentityWallet</code>](#IdentityWallet)  
+**Returns**: <code>DidProvider</code> - The DIDProvider for this IdentityWallet instance  
 <a name="IdentityWallet+hasConsent"></a>
 
 #### identityWallet.hasConsent(spaces, origin) ⇒ <code>Boolean</code>
