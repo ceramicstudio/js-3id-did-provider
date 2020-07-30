@@ -10,6 +10,7 @@ import {
 } from 'rpc-utils'
 
 import IdentityWallet from './identity-wallet'
+import { toStableObject } from './utils'
 
 type Origin = string | null | undefined
 
@@ -34,7 +35,8 @@ const methods: HandlerMethods<Context> = {
       throw new RPCError(0, 'Authentication required')
     }
     const signer = wallet.getRootSigner(params.pubKeyId)
-    const jws = await createJWS(params.payload, signer, params.protected)
+    const header = params.protected ? toStableObject(params.protected) : undefined
+    const jws = await createJWS(toStableObject(params.payload), signer, header)
     return { jws }
   },
 }

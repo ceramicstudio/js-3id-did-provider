@@ -2,6 +2,7 @@ import { sha256 } from 'js-sha256'
 import Multihash from 'multihashes'
 import dagCBOR from 'ipld-dag-cbor'
 import { Wallet } from '@ethersproject/wallet'
+import stringify from 'fast-json-stable-stringify'
 
 const ENC_BLOCK_SIZE = 24
 
@@ -47,4 +48,8 @@ export const fakeEthProvider = (wallet: Wallet) => ({
 
 export function hexToUint8Array(str: string): Uint8Array {
   return new Uint8Array(Buffer.from(str, 'hex'))
+}
+
+export function toStableObject(obj: any): any {
+  return JSON.parse(stringify(obj))
 }
