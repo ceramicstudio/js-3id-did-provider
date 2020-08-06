@@ -1,5 +1,10 @@
 # Release Notes
 
+## v1.4.0 - 2020-08-07
+feat: add DID provider
+feat: typescript support
+chore: dependency up, eslint
+
 ## v1.3.0 - 2020-05-21
 feat: 3id-connect v2 support, externalAuth link on auth
 
