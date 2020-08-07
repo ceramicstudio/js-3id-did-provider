@@ -21,7 +21,6 @@ $ npm install identity-wallet
 
 ### <a name="usage"></a>Usage
 #### Import Identity Wallet into your project
-
 Import the identity-wallet module
 ```js
 const IdentityWallet = require('identity-wallet')
@@ -29,10 +28,6 @@ const IdentityWallet = require('identity-wallet')
 Import using the dist build in your html code
 ```js
 <script type="text/javascript" src="../dist/identity-wallet.js"></script>
-```
-Import using the unpkg CDN in your html code
-```js
-<script type="text/javascript" src="https://www.unpkg.com/identity-wallet@1.2.0/dist/identity-wallet.js"></script>
 ```
 
 #### Understanding the `getConsent` function
@@ -104,6 +99,9 @@ const ethProvider = // an ethereum json-rpc provider
 await idWallet.linkAddress(ethAddress, ethProvider)
 ```
 
+## Maintainers
+[@oed](https://github.com/oed)
+
 ## <a name="api"></a> API Documentation
 <a name="IdentityWallet"></a>
 
@@ -113,9 +111,12 @@ await idWallet.linkAddress(ethAddress, ethProvider)
 * [IdentityWallet](#IdentityWallet)
     * [new IdentityWallet(getConsent, config)](#new_IdentityWallet_new)
     * [.get3idProvider()](#IdentityWallet+get3idProvider) ⇒ <code>ThreeIdProvider</code>
+    * [.getDidProvider()](#IdentityWallet+getDidProvider) ⇒ <code>DidProvider</code>
+    * [.hasConsent(spaces, origin)](#IdentityWallet+hasConsent) ⇒ <code>Boolean</code>
+    * [.getConsent(spaces, origin)](#IdentityWallet+getConsent) ⇒ <code>Boolean</code>
     * [.linkAddress(address, provider)](#IdentityWallet+linkAddress) ⇒ <code>Object</code>
     * [.authenticate(spaces, opts)](#IdentityWallet+authenticate) ⇒ <code>Object</code>
-    * [.isAuthenticated(spaces)](#IdentityWallet+isAuthenticated) ⇒ <code>Boolean</code>
+    * [.isAuthenticated(spaces, origin)](#IdentityWallet+isAuthenticated) ⇒ <code>Boolean</code>
     * [.addAuthMethod(authSecret)](#IdentityWallet+addAuthMethod)
     * [.signClaim(payload, opts)](#IdentityWallet+signClaim) ⇒ <code>String</code>
     * [.encrypt(message, space, opts)](#IdentityWallet+encrypt) ⇒ <code>Object</code>
@@ -134,6 +135,7 @@ Creates an instance of IdentityWallet
 | config | <code>Object</code> | The configuration to be used |
 | config.seed | <code>String</code> | The seed of the identity, 32 hex string |
 | config.authSecret | <code>String</code> | The authSecret to use, 32 hex string |
+| config.externalAuth | <code>String</code> | External auth function, directly returns key material, used to migrate legacy 3box accounts |
 
 <a name="IdentityWallet+get3idProvider"></a>
 
@@ -142,6 +144,41 @@ Get the 3IDProvider
 
 **Kind**: instance method of [<code>IdentityWallet</code>](#IdentityWallet)  
 **Returns**: <code>ThreeIdProvider</code> - The 3IDProvider for this IdentityWallet instance  
+<a name="IdentityWallet+getDidProvider"></a>
+
+#### identityWallet.getDidProvider() ⇒ <code>DidProvider</code>
+Get the DIDProvider
+
+**Kind**: instance method of [<code>IdentityWallet</code>](#IdentityWallet)  
+**Returns**: <code>DidProvider</code> - The DIDProvider for this IdentityWallet instance  
+<a name="IdentityWallet+hasConsent"></a>
+
+#### identityWallet.hasConsent(spaces, origin) ⇒ <code>Boolean</code>
+Determine if consent has been given for spaces for a given origin
+
+**Kind**: instance method of [<code>IdentityWallet</code>](#IdentityWallet)  
+**Returns**: <code>Boolean</code> - True if consent has already been given  
+
+| Param | Type | Description |
+| --- | --- | --- |
+| spaces | <code>Array.&lt;String&gt;</code> | The desired spaces |
+| origin | <code>String</code> | Application domain |
+| opt.address | <code>String</code> | Optional address (managementKey) if keyring not available yet |
+
+<a name="IdentityWallet+getConsent"></a>
+
+#### identityWallet.getConsent(spaces, origin) ⇒ <code>Boolean</code>
+Get consent for given spaces for a given origin
+
+**Kind**: instance method of [<code>IdentityWallet</code>](#IdentityWallet)  
+**Returns**: <code>Boolean</code> - True consent was given  
+
+| Param | Type | Description |
+| --- | --- | --- |
+| spaces | <code>Array.&lt;String&gt;</code> | The desired spaces |
+| origin | <code>String</code> | Application domain |
+| opt.address | <code>String</code> | Optional address (managementKey) if keyring not available yet |
+
 <a name="IdentityWallet+linkAddress"></a>
 
 #### identityWallet.linkAddress(address, provider) ⇒ <code>Object</code>
@@ -174,7 +211,7 @@ Authenticate to given spaces
 
 <a name="IdentityWallet+isAuthenticated"></a>
 
-#### identityWallet.isAuthenticated(spaces) ⇒ <code>Boolean</code>
+#### identityWallet.isAuthenticated(spaces, origin) ⇒ <code>Boolean</code>
 Check if authenticated to given spaces
 
 **Kind**: instance method of [<code>IdentityWallet</code>](#IdentityWallet)  
@@ -183,6 +220,8 @@ Check if authenticated to given spaces
 | Param | Type | Description |
 | --- | --- | --- |
 | spaces | <code>Array.&lt;String&gt;</code> | The desired spaces |
+| origin | <code>String</code> | Application domain |
+| opt.address | <code>String</code> | Optional address (managementKey) if keyring not available yet |
 
 <a name="IdentityWallet+addAuthMethod"></a>
 
