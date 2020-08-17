@@ -19,13 +19,13 @@ export const sha256Multihash = (str: string): string => {
   return Multihash.encode(Buffer.from(sha256(str)), 'sha2-256').toString('hex')
 }
 
-const multicodecPubkeyTable = {
-  'secp256k1': 0xe7,
-  'x25519': 0xec,
-  'ed25519': 0xed
+const multicodecPubkeyTable: Record<string, number> = {
+  secp256k1: 0xe7,
+  x25519: 0xec,
+  ed25519: 0xed,
 }
 
-function encodeKey(key: Uint8Array, keyType: string) {
+function encodeKey(key: Uint8Array, keyType: string): string {
   const buf = new Uint8Array(key.length + 2)
   if (!multicodecPubkeyTable[keyType]) {
     throw new Error(`Key type "${keyType}" not supported.`)
@@ -35,7 +35,7 @@ function encodeKey(key: Uint8Array, keyType: string) {
   // See js-multicodec for a general implementation
   buf[1] = 0x01
   buf.set(key, 2)
-  return `z${bs58.encode(buf)}`
+  return `z${bs58.encode(buf) as string}`
 }
 
 export const gen3IDgenesis = (pubkeys: any): any => {
@@ -46,9 +46,9 @@ export const gen3IDgenesis = (pubkeys: any): any => {
     content: {
       publicKeys: {
         signing: encodeKey(hexToUint8Array(pubkeys.signingKey), 'secp256k1'),
-        encryption: encodeKey(naclutil.decodeBase64(pubkeys.asymEncryptionKey), 'x25519')
-      }
-    }
+        encryption: encodeKey(naclutil.decodeBase64(pubkeys.asymEncryptionKey), 'x25519'),
+      },
+    },
   }
 }
 

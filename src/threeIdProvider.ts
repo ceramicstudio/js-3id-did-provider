@@ -34,7 +34,7 @@ const methods: HandlerMethods<Context> = {
     }
   },
   '3id_isAuthenticated': async ({ permissions, origin }, params) => {
-    return permissions.has(origin, params.spaces)
+    return Promise.resolve(permissions.has(origin, params.spaces))
   },
   '3id_signClaim': async ({ threeIdx, permissions, keyring, origin }, params) => {
     if (!permissions.has(origin, params.spaces)) {
@@ -54,9 +54,9 @@ const methods: HandlerMethods<Context> = {
     const { to, blockSize, message, space } = params
     const paddedMsg = typeof message === 'string' ? pad(message, blockSize) : message
     if (to) {
-      return keyring.asymEncrypt(paddedMsg, to)
+      return Promise.resolve(keyring.asymEncrypt(paddedMsg, to))
     } else {
-      return keyring.symEncrypt(paddedMsg, { space })
+      return Promise.resolve(keyring.symEncrypt(paddedMsg, { space }))
     }
   },
   '3id_decrypt': async ({ origin, keyring, permissions }, params) => {
@@ -77,14 +77,15 @@ const methods: HandlerMethods<Context> = {
       paddedMsg = keyring.symDecrypt(ciphertext, nonce, { space })
     }
     if (!paddedMsg) throw new RPCError('Could not decrypt message')
-    return unpad(paddedMsg)
+    return Promise.resolve(unpad(paddedMsg))
   },
   '3id_hashEntryKey': async ({ origin, keyring, permissions }, params) => {
     if (!permissions.has(origin, params.spaces)) {
       throw new RPCError(0, 'Authentication required')
     }
-    const salt = keyring.getDBSalt(params.space)
-    return sha256Multihash(salt + params.key)
+    const salt: string = keyring.getDBSalt(params.space)
+    const key: string = params.key
+    return Promise.resolve(sha256Multihash(salt + key))
   },
   '3id_newAuthMethodPoll': () => [],
   '3id_newLinkPoll': () => [],
@@ -96,13 +97,17 @@ export default class ThreeIdProvider {
   protected _handle: RequestHandler
 
   constructor({ permissions, threeIdx, keyring, forcedOrigin }: ProviderConfig) {
+    const handler = createHandler<Context>(Object.assign(methods, didMethods))
     this._handle = (origin: string, req: RPCRequest) => {
-      return createHandler<Context>(Object.assign(methods, didMethods))({
-        origin: forcedOrigin || origin,
-        permissions,
-        threeIdx,
-        keyring
-      }, req)
+      return handler(
+        {
+          origin: forcedOrigin || origin,
+          permissions,
+          threeIdx,
+          keyring,
+        },
+        req
+      )
     }
   }
 

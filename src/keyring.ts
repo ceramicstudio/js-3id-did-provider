@@ -213,8 +213,7 @@ export default class Keyring {
   }
 
   getSigner(keyId?: string): Signer {
-    const key =
-      keyId === 'management' ? this._rootKeys?.managementKey : this._rootKeys?.signingKey
+    const key = keyId === 'management' ? this._rootKeys?.managementKey : this._rootKeys?.signingKey
     if (key == null || !(key instanceof HDNode)) {
       throw new Error('Invalid key')
     }

@@ -1,17 +1,10 @@
-import DidDocument from 'ipfs-did-document'
-import { LinkProof, createLink } from '3id-blockchain-utils'
 import { CeramicApi } from '@ceramicnetwork/ceramic-common'
 
-import { AsymEncryptedMessage, EncryptedMessage, naclRandom } from './crypto'
 import { DidProvider } from './did-provider'
-import Keyring, { PublicKeys } from './keyring'
+import Keyring from './keyring'
 import ThreeIdProvider from './threeIdProvider'
 import { ThreeIDX } from './three-idx'
-import { sha256Multihash, pad, unpad, fakeIpfs, fakeEthProvider } from './utils'
-
 import Permissions, { GetPermissionFn, SELF_ORIGIN } from './permissions'
-
-const DID_METHOD_NAME = '3'
 
 interface IDWConfig {
   getPermission: GetPermissionFn
@@ -58,7 +51,7 @@ export default class IdentityWallet {
   static async create(config: IDWConfig) {
     // the next two lines will likely change soon
     const idw = new IdentityWallet(config)
-    idw._init(config.ceramic)
+    await idw._init(config.ceramic)
   }
 
   /**
@@ -80,7 +73,12 @@ export default class IdentityWallet {
    * @return    {ThreeIdProvider}                   The 3IDProvider for this IdentityWallet instance
    */
   get3idProvider(forcedOrigin?: string) {
-    return new ThreeIdProvider(this)
+    return new ThreeIdProvider({
+      keyring: this._keyring,
+      permissions: this.permissions,
+      threeIdx: this.threeIdx,
+      forcedOrigin,
+    })
   }
 
   /**
@@ -93,7 +91,7 @@ export default class IdentityWallet {
       keyring: this._keyring,
       permissions: this.permissions,
       threeIdx: this.threeIdx,
-      forcedOrigin
+      forcedOrigin,
     })
   }
 }

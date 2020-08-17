@@ -13,14 +13,13 @@ export const SELF_ORIGIN = '__IDW_ORIGIN'
 const storageKey = (origin: string, did: string) => `3id_permission_${did}_${origin}`
 
 export default class Permissions {
-
   constructor(protected getPermission: GetPermissionFn) {
     if (typeof this.getPermission !== 'function') {
       throw new Error('getPermission parameter has to be a function')
     }
   }
 
-  setDID(did: string) {
+  setDID(did: string): void {
     this._did = did
   }
 
@@ -31,14 +30,14 @@ export default class Permissions {
    * @param     {Array<String>}     paths           The desired paths
    * @return    {Array<String>}                     The paths that where granted permission for
    */
-  async request(origin: string, paths: Array<string> = []): Array<string> | null {
+  async request(origin: string, paths: Array<string> = []): Promise<Array<string> | null> {
     if (this.has(origin, paths)) {
       return paths
     } else {
       const given = await this.getPermission({
         type: 'authenticate',
         origin,
-        payload: { paths }
+        payload: { paths },
       })
       this.set(origin, given)
       return given

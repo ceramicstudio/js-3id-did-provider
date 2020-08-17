@@ -10,7 +10,7 @@ import {
 } from 'rpc-utils'
 
 import Keyring from './keyring'
-import ThreeIDX from './three-idx'
+import { ThreeIDX } from './three-idx'
 import Permissions from './permissions'
 import { toStableObject } from './utils'
 
@@ -34,7 +34,7 @@ interface AuthParams {
 }
 
 export const didMethods: HandlerMethods<Context> = {
-  did_authenticate: async ({ permissions, keyring, threeIdx, origin }, params: AuthParams) => {
+  did_authenticate: async ({ permissions, threeIdx, origin }, params: AuthParams) => {
     const paths = await permissions.request(origin, params.paths || [])
     // paths should be an array if permission granted
     // may be a subset or requested paths or empty array
@@ -66,13 +66,17 @@ export class DidProvider implements RPCConnection {
   protected _wallet: IdentityWallet
 
   constructor({ permissions, threeIdx, keyring, forcedOrigin }: ProviderConfig) {
+    const handler = createHandler<Context>(didMethods)
     this._handle = (origin: string, msg: RPCRequest) => {
-      return createHandler<Context>(didMethods)({
-        origin: forcedOrigin || origin,
-        permissions,
-        threeIdx,
-        keyring
-      }, msg)
+      return handler(
+        {
+          origin: forcedOrigin || origin,
+          permissions,
+          threeIdx,
+          keyring,
+        },
+        msg
+      )
     }
   }
 
