@@ -1,22 +1,5 @@
 import ThreeIdProvider from '../src/threeIdProvider'
-
-let authCB, linkCB
-const IDW_MOCK = {
-  getLink: jest.fn(() => 'link'),
-  linkManagementKey: jest.fn(() => 'link data'),
-  authenticate: jest.fn(() => 'auth data'),
-  isAuthenticated: jest.fn(() => true),
-  signClaim: jest.fn(() => 'signed claim'),
-  encrypt: jest.fn(() => 'encrypted data'),
-  decrypt: jest.fn(() => 'decrypted data'),
-  hashDBKey: jest.fn(() => 'hashed data'),
-  events: {
-    on: jest.fn((name, cb) => {
-      if (name === 'new-auth-method') authCB = cb
-      else linkCB = cb
-    }),
-  },
-}
+import { sha256Multihash, pad, unpad } from '../src/utils'
 
 function formatCall(method, params) {
   return {
@@ -44,113 +27,111 @@ async function callWithCB(rpc, payload, origin) {
 describe('ThreeIdProvider', () => {
   let rpc
 
-  beforeEach(() => {
-    rpc = new ThreeIdProvider(IDW_MOCK)
-    IDW_MOCK.authenticate.mockClear()
-    IDW_MOCK.encrypt.mockClear()
-    IDW_MOCK.decrypt.mockClear()
-  })
-
   it('is 3id provider', async () => {
+    rpc = new ThreeIdProvider({})
     expect(rpc.is3idProvider).toBeTruthy()
-  })
-
-  it('getLink correctly', async () => {
-    const payload = formatCall('getLink')
-    expect(await rpc.send(payload)).toMatchSnapshot()
-    expect(IDW_MOCK.getLink).toHaveBeenCalledTimes(1)
-    expect(await callWithCB(rpc, payload)).toMatchSnapshot()
-    expect(IDW_MOCK.getLink).toHaveBeenCalledTimes(2)
-  })
-
-  it('linkManagementKey correctly', async () => {
-    const payload = formatCall('linkManagementKey')
-    expect(await rpc.send(payload)).toMatchSnapshot()
-    expect(IDW_MOCK.linkManagementKey).toHaveBeenCalledTimes(1)
-    expect(IDW_MOCK.linkManagementKey).toHaveBeenCalledWith()
-    expect(await callWithCB(rpc, payload)).toMatchSnapshot()
-    expect(IDW_MOCK.linkManagementKey).toHaveBeenCalledTimes(2)
+    expect(rpc.isDidProvider).toBeTruthy()
   })
 
   it('authenticate correctly', async () => {
+    const config = {
+      permissions: { request: jest.fn(async (o, spaces) => spaces) },
+      keyring: { getPublicKeys: jest.fn(({ space }) => {
+        return space ? 'spacekeys' : 'mainkeys'
+      })}
+    }
+    rpc = new ThreeIdProvider(config)
     const origin = 'https://my.origin'
     const spaces = ['space1']
     const authData = ['enc auth data']
     const payload = formatCall('authenticate', { spaces, authData })
     expect(await rpc.send(payload, origin)).toMatchSnapshot()
-    expect(IDW_MOCK.authenticate).toHaveBeenCalledTimes(1)
-    expect(IDW_MOCK.authenticate).toHaveBeenCalledWith(spaces, { authData }, origin)
-    expect(await callWithCB(rpc, payload, origin)).toMatchSnapshot()
-    expect(IDW_MOCK.authenticate).toHaveBeenCalledTimes(2)
+    expect(config.keyring.getPublicKeys).toHaveBeenCalledTimes(2)
+    expect(config.keyring.getPublicKeys).toHaveBeenNthCalledWith(1, {})
+    expect(config.keyring.getPublicKeys).toHaveBeenNthCalledWith(2, { space: spaces[0], uncompressed: true })
     const payload2 = formatCall('authenticate', { spaces, authData, mgmtPub: true })
     expect(await rpc.send(payload2, origin)).toMatchSnapshot()
-    expect(IDW_MOCK.authenticate).toHaveBeenCalledTimes(3)
-    expect(IDW_MOCK.authenticate).toHaveBeenCalledWith(spaces, { authData, mgmtPub: true }, origin)
+    expect(config.keyring.getPublicKeys).toHaveBeenCalledTimes(4)
+    expect(config.keyring.getPublicKeys).toHaveBeenNthCalledWith(3, { mgmtPub: true })
+    expect(config.keyring.getPublicKeys).toHaveBeenNthCalledWith(4, { space: spaces[0], uncompressed: true })
   })
 
   it('isAuthenticated correctly', async () => {
+    const config = {
+      permissions: { has: jest.fn(() => true) },
+    }
+    rpc = new ThreeIdProvider(config)
     const origin = 'https://my.origin'
     const spaces = ['space1']
     const payload = formatCall('isAuthenticated', { spaces })
     expect(await rpc.send(payload, origin)).toMatchSnapshot()
-    expect(IDW_MOCK.isAuthenticated).toHaveBeenCalledTimes(1)
-    expect(IDW_MOCK.isAuthenticated).toHaveBeenCalledWith(spaces, origin)
-    expect(await callWithCB(rpc, payload, origin)).toMatchSnapshot()
-    expect(IDW_MOCK.isAuthenticated).toHaveBeenCalledTimes(2)
+    expect(config.permissions.has).toHaveBeenCalledTimes(1)
+    expect(config.permissions.has).toHaveBeenCalledWith(origin, spaces)
   })
 
   it('sign claim correctly', async () => {
-    const pl = 'data'
+    const config = {
+      permissions: { has: jest.fn(() => true) },
+      threeIdx: { DID: 'did:3:asdf' },
+      keyring: { getJWTSigner: () => () => Promise.resolve('signed') },
+    }
+    rpc = new ThreeIdProvider(config)
+    const pl = { d: 'data', iat: undefined }
     const space = 'space1'
-    const did = ['enc auth data']
-    const payload = formatCall('signClaim', { payload: pl, did, space })
+    const payload = formatCall('signClaim', { payload: pl, space })
     expect(await rpc.send(payload)).toMatchSnapshot()
-    expect(IDW_MOCK.signClaim).toHaveBeenCalledTimes(1)
-    expect(IDW_MOCK.signClaim).toHaveBeenCalledWith(pl, { DID: did, space })
     expect(await callWithCB(rpc, payload)).toMatchSnapshot()
-    expect(IDW_MOCK.signClaim).toHaveBeenCalledTimes(2)
   })
 
   it('encrypt correctly', async () => {
+    const config = {
+      permissions: { has: jest.fn(() => true) },
+      keyring: { symEncrypt: jest.fn(() => 'encrypted msg') }
+    }
+    rpc = new ThreeIdProvider(config)
     const message = 'data'
     const space = 'space1'
     const payload = formatCall('encrypt', { message, space })
-    expect(await rpc.send(payload)).toMatchSnapshot()
-    expect(IDW_MOCK.encrypt).toHaveBeenCalledTimes(1)
-    expect(IDW_MOCK.encrypt).toHaveBeenCalledWith(message, space, {
-      blockSize: undefined,
-    })
-    expect(await callWithCB(rpc, payload)).toMatchSnapshot()
-    expect(IDW_MOCK.encrypt).toHaveBeenCalledTimes(2)
+    expect((await rpc.send(payload)).result).toEqual('encrypted msg')
+    expect(config.keyring.symEncrypt).toHaveBeenCalledTimes(1)
+    expect(config.keyring.symEncrypt).toHaveBeenCalledWith(pad(message), { space })
   })
 
   it('asymmetrically encrypt correctly', async () => {
+    const config = {
+      permissions: { has: jest.fn(() => true) },
+      keyring: { asymEncrypt: jest.fn(() => 'encrypted msg') }
+    }
+    rpc = new ThreeIdProvider(config)
     const message = 'data'
     const to = 'pubkey'
     const payload = formatCall('encrypt', { message, to })
-    expect(await rpc.send(payload)).toMatchSnapshot()
-    expect(IDW_MOCK.encrypt).toHaveBeenCalledTimes(1)
-    expect(IDW_MOCK.encrypt).toHaveBeenCalledWith(message, undefined, {
-      to,
-      blockSize: undefined,
-    })
-    expect(await callWithCB(rpc, payload)).toMatchSnapshot()
-    expect(IDW_MOCK.encrypt).toHaveBeenCalledTimes(2)
+    expect((await rpc.send(payload)).result).toEqual('encrypted msg')
+    expect(config.keyring.asymEncrypt).toHaveBeenCalledTimes(1)
+    expect(config.keyring.asymEncrypt).toHaveBeenCalledWith(pad(message), to)
   })
 
   it('decrypt correctly', async () => {
+    const config = {
+      permissions: { has: jest.fn(() => true) },
+      keyring: { symDecrypt: jest.fn(() => 'decrypted msg') }
+    }
+    rpc = new ThreeIdProvider(config)
     const ciphertext = 'data'
     const nonce = 'nonce'
     const space = 'space1'
     const payload = formatCall('decrypt', { ciphertext, nonce, space })
     expect(await rpc.send(payload)).toMatchSnapshot()
-    expect(IDW_MOCK.decrypt).toHaveBeenCalledTimes(1)
-    expect(IDW_MOCK.decrypt).toHaveBeenCalledWith({ ciphertext, nonce }, space, undefined)
-    expect(await callWithCB(rpc, payload)).toMatchSnapshot()
-    expect(IDW_MOCK.decrypt).toHaveBeenCalledTimes(2)
+    expect(config.keyring.symDecrypt).toHaveBeenCalledTimes(1)
+    expect(config.keyring.symDecrypt).toHaveBeenCalledWith(ciphertext, nonce, { space })
   })
 
   it('asymmetrically decrypt correctly', async () => {
+    const config = {
+      permissions: { has: jest.fn(() => true) },
+      keyring: { asymDecrypt: jest.fn(() => 'decrypted msg') }
+    }
+    rpc = new ThreeIdProvider(config)
     const ciphertext = 'data'
     const nonce = 'nonce'
     const space = 'space1'
@@ -162,63 +143,24 @@ describe('ThreeIdProvider', () => {
       ephemeralFrom,
     })
     expect(await rpc.send(payload)).toMatchSnapshot()
-    expect(IDW_MOCK.decrypt).toHaveBeenCalledTimes(1)
-    expect(IDW_MOCK.decrypt).toHaveBeenCalledWith(
-      { ciphertext, ephemeralFrom, nonce },
-      space,
-      undefined
+    expect(config.keyring.asymDecrypt).toHaveBeenCalledTimes(1)
+    expect(config.keyring.asymDecrypt).toHaveBeenCalledWith(
+      ciphertext, ephemeralFrom, nonce, { space }
     )
-    expect(await callWithCB(rpc, payload)).toMatchSnapshot()
-    expect(IDW_MOCK.decrypt).toHaveBeenCalledTimes(2)
   })
 
   it('hash entry key correctly', async () => {
+    const config = {
+      permissions: { has: jest.fn(() => true) },
+      keyring: { getDBSalt: jest.fn(() => 'saltysalt') }
+    }
+    rpc = new ThreeIdProvider(config)
     const key = 'key'
     const space = 'space1'
     const payload = formatCall('hashEntryKey', { key, space })
-    expect(await rpc.send(payload)).toMatchSnapshot()
-    expect(IDW_MOCK.hashDBKey).toHaveBeenCalledTimes(1)
-    expect(IDW_MOCK.hashDBKey).toHaveBeenCalledWith(key, space)
-    expect(await callWithCB(rpc, payload)).toMatchSnapshot()
-    expect(IDW_MOCK.hashDBKey).toHaveBeenCalledTimes(2)
-  })
-
-  it('NEW_AUTH_METHOD_POLL should work correctly', async () => {
-    const payload = formatCall('newAuthMethodPoll')
-    let response
-    response = await rpc.send(payload)
-    expect(response.result.length).toEqual(0)
-    response = await callWithCB(rpc, payload)
-    expect(response.result.length).toEqual(0)
-
-    const authBlob = 'auth data'
-    authCB(authBlob)
-    response = await rpc.send(payload)
-    expect(response.result.length).toEqual(1)
-    expect(response.result).toEqual([authBlob])
-    authCB(authBlob)
-    response = await callWithCB(rpc, payload)
-    expect(response.result.length).toEqual(1)
-    expect(response.result).toEqual([authBlob])
-  })
-
-  it('NEW_LINK_POLL should work correctly', async () => {
-    const payload = formatCall('newLinkPoll')
-    let response
-    response = await rpc.send(payload)
-    expect(response.result.length).toEqual(0)
-    response = await callWithCB(rpc, payload)
-    expect(response.result.length).toEqual(0)
-
-    const linkProof = 'link proof'
-    linkCB(linkProof)
-    response = await rpc.send(payload)
-    expect(response.result.length).toEqual(1)
-    expect(response.result).toEqual([linkProof])
-    linkCB(linkProof)
-    response = await callWithCB(rpc, payload)
-    expect(response.result.length).toEqual(1)
-    expect(response.result).toEqual([linkProof])
+    expect((await rpc.send(payload)).result).toEqual(sha256Multihash('saltysalt' + key))
+    expect(config.keyring.getDBSalt).toHaveBeenCalledTimes(1)
+    expect(config.keyring.getDBSalt).toHaveBeenCalledWith(space)
   })
 
   it('Unsupported method should throw', async () => {

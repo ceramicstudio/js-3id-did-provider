@@ -17,44 +17,62 @@ describe('DidProvider', () => {
   })
 
   test('`did_authenticate` method returns the accounts', async () => {
-    const wallet = {
-      authenticate: jest.fn(async () => {}),
-      DID: 'did:3:test',
+    const config = {
+      permissions: { request: jest.fn(async (origin, paths) => paths) },
+      threeIdx: { DID: 'did:3:test' },
     }
     await expectRPC(
-      new DidProvider(wallet),
+      new DidProvider(config),
       'foo',
       { method: 'did_authenticate' },
-      { result: { did: 'did:3:test' } }
+      { result: { did: 'did:3:test', paths: [] } }
     )
-    expect(wallet.authenticate).toBeCalledWith([], {}, 'foo')
+    expect(config.permissions.request).toBeCalledWith('foo', [])
+    await expectRPC(
+      new DidProvider(config),
+      'foo',
+      { method: 'did_authenticate', params: { paths: ['/1'] } },
+      { result: { did: 'did:3:test', paths: ['/1'] } }
+    )
   })
 
   test('`did_createJWS` method throws an error if the user is not authenticated', async () => {
     const payload = { foo: 'bar' }
-    const headers = { bar: 'baz' }
-    const isAuthenticated = jest.fn(() => false)
+    const protected = { bar: 'baz' }
+    const permissions = { has: jest.fn(() => false) }
     await expectRPC(
-      new DidProvider({ isAuthenticated }),
+      new DidProvider({ permissions }),
       'bar',
-      { method: 'did_createJWS', params: { payload, headers } },
+      { method: 'did_createJWS', params: { payload, protected } },
       { error: { code: 0, message: 'Authentication required' } }
     )
-    expect(isAuthenticated).toBeCalledWith([], 'bar')
+    expect(permissions.has).toBeCalledWith('bar')
   })
 
   test('`did_createJWS` returns the JWS string', async () => {
-    const wallet = {
-      isAuthenticated: () => true,
-      getRootSigner: () => () => Promise.resolve('signed'),
+    const config = {
+      permissions: { has: jest.fn(() => true) },
+      threeIdx: {
+        parseKeyName: (did) => did.split('#')[1] || 'signing',
+        encodeKidWithVersion: async (keyName) => Promise.resolve('did:3:asdf?version=0#' + keyName)
+      },
+      keyring: { getSigner: () => () => Promise.resolve('signed') },
     }
     const payload = { foo: 'bar' }
-    const headers = { bar: 'baz' }
+    const protected = { bar: 'baz' }
+    let did = 'did:3:asdf'
     await expectRPC(
-      new DidProvider(wallet),
+      new DidProvider(config),
       null,
-      { method: 'did_createJWS', params: { payload, headers } },
-      { result: { jws: 'eyJhbGciOiJFUzI1NksifQ.eyJmb28iOiJiYXIifQ.signed' } }
+      { method: 'did_createJWS', params: { payload, protected, did } },
+      { result: { jws: 'eyJiYXIiOiJiYXoiLCJraWQiOiJkaWQ6Mzphc2RmP3ZlcnNpb249MCNzaWduaW5nIiwiYWxnIjoiRVMyNTZLIn0.eyJmb28iOiJiYXIifQ.signed' } }
+    )
+    did = 'did:3:asdf#management'
+    await expectRPC(
+      new DidProvider(config),
+      null,
+      { method: 'did_createJWS', params: { payload, protected, did } },
+      { result: { jws: 'eyJiYXIiOiJiYXoiLCJraWQiOiJkaWQ6Mzphc2RmP3ZlcnNpb249MCNtYW5hZ2VtZW50IiwiYWxnIjoiRVMyNTZLIn0.eyJmb28iOiJiYXIifQ.signed' } }
     )
   })
 })

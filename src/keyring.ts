@@ -212,9 +212,9 @@ export default class Keyring {
     return EllipticSigner((key as HDNode).privateKey.slice(2))
   }
 
-  getRootSigner(keyId?: string): Signer {
+  getSigner(keyId?: string): Signer {
     const key =
-      keyId === 'managementKey' ? this._rootKeys?.managementKey : this._rootKeys?.signingKey
+      keyId === 'management' ? this._rootKeys?.managementKey : this._rootKeys?.signingKey
     if (key == null || !(key instanceof HDNode)) {
       throw new Error('Invalid key')
     }

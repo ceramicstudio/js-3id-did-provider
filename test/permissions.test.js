@@ -32,6 +32,7 @@ describe('Permissions', () => {
 
   it('has works correctly', async () => {
     permissions.set('app1', ['/1', '/2'])
+    // Using self origin always returns true
     expect(permissions.has(SELF_ORIGIN)).toBeTruthy()
     expect(permissions.has(SELF_ORIGIN, ['a', 'b', 'c'])).toBeTruthy()
     expect(permissions.has('app1')).toBeTruthy()
