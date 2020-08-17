@@ -22,6 +22,7 @@ type Context = {
 const methods: HandlerMethods<Context> = {
   '3id_authenticate': async ({ permissions, keyring, origin }, params) => {
     const spaces = await permissions.request(origin, params.spaces || [])
+    if (spaces === null) throw new RPCError(4001, 'User Rejected Request')
     return {
       main: keyring.getPublicKeys({ mgmtPub: params.mgmtPub }),
       spaces: spaces.reduce((acc, space) => {
@@ -38,7 +39,7 @@ const methods: HandlerMethods<Context> = {
   },
   '3id_signClaim': async ({ threeIdx, permissions, keyring, origin }, params) => {
     if (!permissions.has(origin, params.spaces)) {
-      throw new RPCError(0, 'Authentication required')
+      throw new RPCError(4100, 'Unauthorized')
     }
     const settings = {
       signer: keyring.getJWTSigner(params.space, params.useMgmt),
@@ -49,7 +50,7 @@ const methods: HandlerMethods<Context> = {
   },
   '3id_encrypt': async ({ origin, keyring, permissions }, params) => {
     if (!permissions.has(origin, params.spaces)) {
-      throw new RPCError(0, 'Authentication required')
+      throw new RPCError(4100, 'Unauthorized')
     }
     const { to, blockSize, message, space } = params
     const paddedMsg = typeof message === 'string' ? pad(message, blockSize) : message
@@ -61,7 +62,7 @@ const methods: HandlerMethods<Context> = {
   },
   '3id_decrypt': async ({ origin, keyring, permissions }, params) => {
     if (!permissions.has(origin, params.spaces)) {
-      throw new RPCError(0, 'Authentication required')
+      throw new RPCError(4100, 'Unauthorized')
     }
     const { ciphertext, ephemeralFrom, nonce, space } = params
     let paddedMsg
@@ -81,7 +82,7 @@ const methods: HandlerMethods<Context> = {
   },
   '3id_hashEntryKey': async ({ origin, keyring, permissions }, params) => {
     if (!permissions.has(origin, params.spaces)) {
-      throw new RPCError(0, 'Authentication required')
+      throw new RPCError(4100, 'Unauthorized')
     }
     const salt: string = keyring.getDBSalt(params.space)
     const key: string = params.key

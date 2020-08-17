@@ -38,12 +38,12 @@ export const didMethods: HandlerMethods<Context> = {
     const paths = await permissions.request(origin, params.paths || [])
     // paths should be an array if permission granted
     // may be a subset or requested paths or empty array
-    if (paths === null) throw new RPCError(0, 'Authentication not granted')
+    if (paths === null) throw new RPCError(4001, 'User Rejected Request')
     return { did: threeIdx.DID, paths }
   },
   did_createJWS: async ({ permissions, keyring, threeIdx, origin }, params: CreateJWSParams) => {
     if (!permissions.has(origin)) {
-      throw new RPCError(0, 'Authentication required')
+      throw new RPCError(4100, 'Unauthorized')
     }
     const keyName = threeIdx.parseKeyName(params.did)
     const kid = await threeIdx.encodeKidWithVersion(keyName)
