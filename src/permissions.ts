@@ -45,7 +45,11 @@ export default class Permissions {
         origin,
         payload: { paths },
       })
-      this.set(origin, given)
+      const existing = this.get(origin)
+      const union = existing
+        ? existing.concat(given ? given.filter((e) => !existing.includes(e)) : [])
+        : given
+      this.set(origin, union)
       return given
     }
   }
@@ -71,7 +75,7 @@ export default class Permissions {
    * @param     {String}            origin          Application domain
    * @return    {Array<String>}                     The permissioned paths
    */
-  get(origin: Origin): Array<string> {
+  get(origin: Origin): Array<string> | null {
     if (!this.did) throw new Error('DID not set')
     return store.get(storageKey(origin, this.did))
   }
