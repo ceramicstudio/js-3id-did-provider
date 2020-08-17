@@ -16,7 +16,7 @@ import { toStableObject } from './utils'
 
 type Origin = string | null | undefined
 
-type Context = {
+export type Context = {
   permissions: Permissions
   threeIdx: ThreeIDX
   keyring: Keyring
@@ -58,12 +58,11 @@ export interface ProviderConfig {
   permissions: Permissions
   threeIdx: ThreeIDX
   keyring: Keyring
-  forcedOrigin: string
+  forcedOrigin?: string
 }
 
 export class DidProvider implements RPCConnection {
   protected _handle: RequestHandler
-  protected _wallet: IdentityWallet
 
   constructor({ permissions, threeIdx, keyring, forcedOrigin }: ProviderConfig) {
     const handler = createHandler<Context>(didMethods)

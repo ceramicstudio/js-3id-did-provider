@@ -9,15 +9,10 @@ import {
 } from 'rpc-utils'
 
 import { sha256Multihash, pad, unpad } from './utils'
-import { didMethods, ProviderConfig } from './did-provider'
+import { didMethods, ProviderConfig, Context } from './did-provider'
 import { PublicKeys } from './keyring'
 
 type Origin = string | null | undefined
-
-type Context = {
-  provider: ThreeIdProvider
-  origin: Origin
-}
 
 const methods: HandlerMethods<Context> = {
   '3id_authenticate': async ({ permissions, keyring, origin }, params) => {
@@ -77,7 +72,7 @@ const methods: HandlerMethods<Context> = {
     } else {
       paddedMsg = keyring.symDecrypt(ciphertext, nonce, { space })
     }
-    if (!paddedMsg) throw new RPCError('Could not decrypt message')
+    if (!paddedMsg) throw new RPCError(0, 'Could not decrypt message')
     return Promise.resolve(unpad(paddedMsg))
   },
   '3id_hashEntryKey': async ({ origin, keyring, permissions }, params) => {

@@ -16,27 +16,15 @@ interface IDWConfig {
 }
 
 export default class IdentityWallet {
-  protected _seed: string | undefined
-  protected _authSecret: string | undefined
   protected _externalAuth: ((req: any) => Promise<any>) | undefined
-  protected _keyring: Keyring | undefined
 
   public DID: string | undefined
 
-  constructor(config: IDWConfig) {
-    this.permissions = new Permissions(config.getPermission)
-    if (config.seed) {
-      this._seed = config.seed
-    } else if (config.authSecret) {
-      this._authSecret = config.authSecret
-    } else if (config.externalAuth) {
-      this._externalAuth = config.externalAuth
-    } else {
-      throw new Error(
-        'Either seed, or authSecret has to be passed to create an IdentityWallet instance'
-      )
-    }
-  }
+  constructor(
+    protected _keyring: Keyring,
+    protected _threeIdx: ThreeIDX,
+    public permissions: Permissions
+  ) {}
 
   /**
    * Creates an instance of IdentityWallet
@@ -49,22 +37,21 @@ export default class IdentityWallet {
    * @return    {IdentityWallet}                    An IdentityWallet instance
    */
   static async create(config: IDWConfig) {
+    if (!config.seed) throw new Error('seed required for now')
+    const keyring = new Keyring(config.seed)
+    const threeIdx = new ThreeIDX(config.ceramic)
+    const pubkeys = keyring.getPublicKeys({ mgmtPub: true })
+    await threeIdx.create3idDoc(pubkeys)
+    const permissions = new Permissions(config.getPermission)
+    permissions.setDID(threeIdx.DID)
     // the next two lines will likely change soon
-    const idw = new IdentityWallet(config)
-    await idw._init(config.ceramic)
+    const idw = new IdentityWallet(keyring, threeIdx, permissions)
+    await idw._init()
   }
 
-  /**
-   * Temporary option for use with ceramic js-did migration
-   */
-  async _init(ceramic) {
-    if (!this._seed) throw new Error('seed required for now')
-    this._keyring = new Keyring(this._seed)
-    this.threeIdx = new ThreeIDX(ceramic)
-    const pubkeys = this._keyring.getPublicKeys({ mgmtPub: true })
-    await this.threeIdx.create3idDoc(pubkeys)
+  async _init() {
     // TODO - change to DID provider when ceramic uses js-did
-    await this.threeIdx.setDIDProvider(this.get3idProvider(SELF_ORIGIN))
+    await this._threeIdx.setDIDProvider(this.get3idProvider(SELF_ORIGIN))
   }
 
   /**
@@ -76,7 +63,7 @@ export default class IdentityWallet {
     return new ThreeIdProvider({
       keyring: this._keyring,
       permissions: this.permissions,
-      threeIdx: this.threeIdx,
+      threeIdx: this._threeIdx,
       forcedOrigin,
     })
   }
@@ -90,7 +77,7 @@ export default class IdentityWallet {
     return new DidProvider({
       keyring: this._keyring,
       permissions: this.permissions,
-      threeIdx: this.threeIdx,
+      threeIdx: this._threeIdx,
       forcedOrigin,
     })
   }

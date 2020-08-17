@@ -35,7 +35,7 @@ function encodeKey(key: Uint8Array, keyType: string): string {
   // See js-multicodec for a general implementation
   buf[1] = 0x01
   buf.set(key, 2)
-  return `z${bs58.encode(buf) as string}`
+  return `z${bs58.encode(buf)}`
 }
 
 export const gen3IDgenesis = (pubkeys: any): any => {

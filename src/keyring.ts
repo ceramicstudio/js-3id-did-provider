@@ -231,7 +231,7 @@ export default class Keyring {
   }: {
     space?: string
     uncompressed?: boolean
-    mgmtPub?: string
+    mgmtPub?: boolean
   } = {}): PublicKeys {
     const keys = this._getKeys(space)
     let signingKey = keys.signingKey.publicKey.slice(2)

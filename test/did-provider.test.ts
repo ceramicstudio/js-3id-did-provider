@@ -44,7 +44,7 @@ describe('DidProvider', () => {
       new DidProvider({ permissions }),
       'bar',
       { method: 'did_createJWS', params: { payload, protected } },
-      { error: { code: 0, message: 'Authentication required' } }
+      { error: { code: 4100, message: 'Unauthorized' } }
     )
     expect(permissions.has).toBeCalledWith('bar')
   })

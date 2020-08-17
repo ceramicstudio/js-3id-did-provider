@@ -27,6 +27,10 @@ declare module 'ipfs-did-document' {
   }
 }
 
+declare module 'ipfs' {
+  export default any
+}
+
 declare module 'ipld-dag-cbor' {
   import CID from 'cids'
 

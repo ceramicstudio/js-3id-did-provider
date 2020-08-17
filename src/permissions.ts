@@ -6,13 +6,19 @@ interface PermissionRequest {
   payload: Record<string, any>
 }
 
+type Origin = string | null | undefined
 export type GetPermissionFn = (req: PermissionRequest) => Promise<Array<string>> | null
 
 export const SELF_ORIGIN = '__IDW_ORIGIN'
 
-const storageKey = (origin: string, did: string) => `3id_permission_${did}_${origin}`
+const storageKey = (origin: Origin, did: string) => {
+  if (!origin) origin = '__NULL_ORIGIN'
+  return `3id_permission_${did}_${origin}`
+}
 
 export default class Permissions {
+  public did: string | null = null
+
   constructor(protected getPermission: GetPermissionFn) {
     if (typeof this.getPermission !== 'function') {
       throw new Error('getPermission parameter has to be a function')
@@ -20,7 +26,7 @@ export default class Permissions {
   }
 
   setDID(did: string): void {
-    this._did = did
+    this.did = did
   }
 
   /**
@@ -30,7 +36,7 @@ export default class Permissions {
    * @param     {Array<String>}     paths           The desired paths
    * @return    {Array<String>}                     The paths that where granted permission for
    */
-  async request(origin: string, paths: Array<string> = []): Promise<Array<string> | null> {
+  async request(origin: Origin, paths: Array<string> = []): Promise<Array<string> | null> {
     if (this.has(origin, paths)) {
       return paths
     } else {
@@ -51,7 +57,7 @@ export default class Permissions {
    * @param     {Array<String>}     paths           The desired paths
    * @return    {Boolean}                           True if permission has previously been given
    */
-  has(origin: string, paths: Array<string> = []): boolean {
+  has(origin: Origin, paths: Array<string> = []): boolean {
     if (origin === SELF_ORIGIN) return true
     const currentPaths = this.get(origin)
     return paths.reduce((acc: boolean, path: string) => {
@@ -65,9 +71,9 @@ export default class Permissions {
    * @param     {String}            origin          Application domain
    * @return    {Array<String>}                     The permissioned paths
    */
-  get(origin: string): Array<string> {
-    if (!this._did) throw new Error('DID not set')
-    return store.get(storageKey(origin, this._did))
+  get(origin: Origin): Array<string> {
+    if (!this.did) throw new Error('DID not set')
+    return store.get(storageKey(origin, this.did))
   }
 
   /**
@@ -76,8 +82,8 @@ export default class Permissions {
    * @param     {String}            origin          Application domain
    * @param     {Array<String>}     paths           The desired paths
    */
-  set(origin: string, paths: Array<string> | null): void {
-    if (!this._did) throw new Error('DID not set')
-    return store.set(storageKey(origin, this._did), paths)
+  set(origin: Origin, paths: Array<string> | null): void {
+    if (!this.did) throw new Error('DID not set')
+    return store.set(storageKey(origin, this.did), paths)
   }
 }
