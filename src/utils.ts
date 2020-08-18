@@ -2,7 +2,6 @@ import { sha256 } from 'js-sha256'
 import Multihash from 'multihashes'
 import naclutil from 'tweetnacl-util'
 import bs58 from 'bs58'
-import dagCBOR from 'ipld-dag-cbor'
 import { Wallet } from '@ethersproject/wallet'
 import stringify from 'fast-json-stable-stringify'
 
@@ -50,18 +49,6 @@ export const gen3IDgenesis = (pubkeys: any): any => {
       },
     },
   }
-}
-
-let tmpData: any
-export const fakeIpfs = {
-  dag: {
-    put: (data: any, opts: dagCBOR.UserOptions) => {
-      tmpData = data
-      return dagCBOR.util.cid(dagCBOR.util.serialize(data), opts)
-    },
-    get: () => ({ value: tmpData }),
-  },
-  add: () => 'empty', // used in _initMuport in 3box-js 3id, but muport fingerprint not needed here
 }
 
 export const fakeEthProvider = (wallet: Wallet) => ({

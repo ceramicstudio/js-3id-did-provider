@@ -109,33 +109,17 @@ await idWallet.linkAddress(ethAddress, ethProvider)
 **Kind**: global class  
 
 * [IdentityWallet](#IdentityWallet)
-    * [new IdentityWallet(getConsent, config)](#new_IdentityWallet_new)
-    * [.get3idProvider()](#IdentityWallet+get3idProvider) ⇒ <code>ThreeIdProvider</code>
-    * [.getDidProvider()](#IdentityWallet+getDidProvider) ⇒ <code>DidProvider</code>
-    * [.hasConsent(spaces, origin)](#IdentityWallet+hasConsent) ⇒ <code>Boolean</code>
-    * [.getConsent(spaces, origin)](#IdentityWallet+getConsent) ⇒ <code>Boolean</code>
-    * [.linkAddress(address, provider)](#IdentityWallet+linkAddress) ⇒ <code>Object</code>
-    * [.authenticate(spaces, opts)](#IdentityWallet+authenticate) ⇒ <code>Object</code>
-    * [.isAuthenticated(spaces, origin)](#IdentityWallet+isAuthenticated) ⇒ <code>Boolean</code>
-    * [.addAuthMethod(authSecret)](#IdentityWallet+addAuthMethod)
-    * [.signClaim(payload, opts)](#IdentityWallet+signClaim) ⇒ <code>String</code>
-    * [.encrypt(message, space, opts)](#IdentityWallet+encrypt) ⇒ <code>Object</code>
-    * [.decrypt(encryptedObject, space)](#IdentityWallet+decrypt) ⇒ <code>String</code>
+    * [new IdentityWallet()](#new_IdentityWallet_new)
+    * _instance_
+        * [.get3idProvider()](#IdentityWallet+get3idProvider) ⇒ <code>ThreeIdProvider</code>
+        * [.getDidProvider()](#IdentityWallet+getDidProvider) ⇒ <code>DidProvider</code>
+    * _static_
+        * [.create(config)](#IdentityWallet.create) ⇒ [<code>IdentityWallet</code>](#IdentityWallet)
 
 <a name="new_IdentityWallet_new"></a>
 
-#### new IdentityWallet(getConsent, config)
-Creates an instance of IdentityWallet
-
-**Returns**: <code>this</code> - An IdentityWallet instance  
-
-| Param | Type | Description |
-| --- | --- | --- |
-| getConsent | <code>function</code> | The function that is called to ask the user for consent |
-| config | <code>Object</code> | The configuration to be used |
-| config.seed | <code>String</code> | The seed of the identity, 32 hex string |
-| config.authSecret | <code>String</code> | The authSecret to use, 32 hex string |
-| config.externalAuth | <code>String</code> | External auth function, directly returns key material, used to migrate legacy 3box accounts |
+#### new IdentityWallet()
+Use IdentityWallet.create() to create an IdentityWallet instance
 
 <a name="IdentityWallet+get3idProvider"></a>
 
@@ -151,131 +135,19 @@ Get the DIDProvider
 
 **Kind**: instance method of [<code>IdentityWallet</code>](#IdentityWallet)  
 **Returns**: <code>DidProvider</code> - The DIDProvider for this IdentityWallet instance  
-<a name="IdentityWallet+hasConsent"></a>
+<a name="IdentityWallet.create"></a>
 
-#### identityWallet.hasConsent(spaces, origin) ⇒ <code>Boolean</code>
-Determine if consent has been given for spaces for a given origin
+#### IdentityWallet.create(config) ⇒ [<code>IdentityWallet</code>](#IdentityWallet)
+Creates an instance of IdentityWallet
 
-**Kind**: instance method of [<code>IdentityWallet</code>](#IdentityWallet)  
-**Returns**: <code>Boolean</code> - True if consent has already been given  
-
-| Param | Type | Description |
-| --- | --- | --- |
-| spaces | <code>Array.&lt;String&gt;</code> | The desired spaces |
-| origin | <code>String</code> | Application domain |
-| opt.address | <code>String</code> | Optional address (managementKey) if keyring not available yet |
-
-<a name="IdentityWallet+getConsent"></a>
-
-#### identityWallet.getConsent(spaces, origin) ⇒ <code>Boolean</code>
-Get consent for given spaces for a given origin
-
-**Kind**: instance method of [<code>IdentityWallet</code>](#IdentityWallet)  
-**Returns**: <code>Boolean</code> - True consent was given  
+**Kind**: static method of [<code>IdentityWallet</code>](#IdentityWallet)  
+**Returns**: [<code>IdentityWallet</code>](#IdentityWallet) - An IdentityWallet instance  
 
 | Param | Type | Description |
 | --- | --- | --- |
-| spaces | <code>Array.&lt;String&gt;</code> | The desired spaces |
-| origin | <code>String</code> | Application domain |
-| opt.address | <code>String</code> | Optional address (managementKey) if keyring not available yet |
-
-<a name="IdentityWallet+linkAddress"></a>
-
-#### identityWallet.linkAddress(address, provider) ⇒ <code>Object</code>
-Link a blockchain address to the identity. Usually the address
-would be an ethereum address (EOA or EIP1271 compatible contract)
-and the provider is an JSON-RPC provider that can sign a message
-with this address using personal_sign.
-
-**Kind**: instance method of [<code>IdentityWallet</code>](#IdentityWallet)  
-**Returns**: <code>Object</code> - The link proof object  
-
-| Param | Type | Description |
-| --- | --- | --- |
-| address | <code>String</code> | The address to link |
-| provider | <code>Object</code> | The provider that can sign a message for the given address |
-
-<a name="IdentityWallet+authenticate"></a>
-
-#### identityWallet.authenticate(spaces, opts) ⇒ <code>Object</code>
-Authenticate to given spaces
-
-**Kind**: instance method of [<code>IdentityWallet</code>](#IdentityWallet)  
-**Returns**: <code>Object</code> - The public keys for the requested spaces of this identity  
-
-| Param | Type | Description |
-| --- | --- | --- |
-| spaces | <code>Array.&lt;String&gt;</code> | The desired spaces |
-| opts | <code>Object</code> | Optional parameters |
-| opts.authData | <code>Array.&lt;Object&gt;</code> | The authData for this identity |
-
-<a name="IdentityWallet+isAuthenticated"></a>
-
-#### identityWallet.isAuthenticated(spaces, origin) ⇒ <code>Boolean</code>
-Check if authenticated to given spaces
-
-**Kind**: instance method of [<code>IdentityWallet</code>](#IdentityWallet)  
-**Returns**: <code>Boolean</code> - True if authenticated  
-
-| Param | Type | Description |
-| --- | --- | --- |
-| spaces | <code>Array.&lt;String&gt;</code> | The desired spaces |
-| origin | <code>String</code> | Application domain |
-| opt.address | <code>String</code> | Optional address (managementKey) if keyring not available yet |
-
-<a name="IdentityWallet+addAuthMethod"></a>
-
-#### identityWallet.addAuthMethod(authSecret)
-Add a new authentication method for this identity
-
-**Kind**: instance method of [<code>IdentityWallet</code>](#IdentityWallet)  
-
-| Param | Type | Description |
-| --- | --- | --- |
-| authSecret | <code>String</code> | A 32 byte hex string used as authentication secret |
-
-<a name="IdentityWallet+signClaim"></a>
-
-#### identityWallet.signClaim(payload, opts) ⇒ <code>String</code>
-Sign a verifiable credential. The format of the credential is [did-jwt](https://github.com/uport-project/did-jwt).
-
-**Kind**: instance method of [<code>IdentityWallet</code>](#IdentityWallet)  
-**Returns**: <code>String</code> - The signed claim encoded as a JWT  
-
-| Param | Type | Description |
-| --- | --- | --- |
-| payload | <code>Object</code> | The payload of the claim |
-| opts | <code>Object</code> | Optional parameters |
-| opts.space | <code>String</code> | The space used to sign the claim |
-| opts.expiresIn | <code>String</code> | Set an expiry date for the claim as unix timestamp |
-
-<a name="IdentityWallet+encrypt"></a>
-
-#### identityWallet.encrypt(message, space, opts) ⇒ <code>Object</code>
-Encrypt a message
-
-**Kind**: instance method of [<code>IdentityWallet</code>](#IdentityWallet)  
-**Returns**: <code>Object</code> - The encrypted object (ciphertext and nonce)  
-
-| Param | Type | Description |
-| --- | --- | --- |
-| message | <code>String</code> | The message to be encrypted |
-| space | <code>String</code> | The space used for encryption |
-| opts | <code>Object</code> | Optional parameters |
-| opts.to | <code>String</code> | The public key to encrypt the message to |
-| opts.nonce | <code>String</code> | The nonce used to encrypt the message |
-| opts.blockSize | <code>String</code> | The blockSize used for padding (default 24) |
-
-<a name="IdentityWallet+decrypt"></a>
-
-#### identityWallet.decrypt(encryptedObject, space) ⇒ <code>String</code>
-Decrypt a message
-
-**Kind**: instance method of [<code>IdentityWallet</code>](#IdentityWallet)  
-**Returns**: <code>String</code> - The decrypted message  
-
-| Param | Type | Description |
-| --- | --- | --- |
-| encryptedObject | <code>Object</code> | The encrypted object (ciphertext, nonce, and ephemeralFrom for asymmetric encrypted objects) |
-| space | <code>String</code> | The space used for encryption |
+| config | <code>Object</code> | The configuration to be used |
+| config.getPermission | <code>function</code> | The function that is called to ask the user for permission |
+| config.seed | <code>String</code> | The seed of the identity, 32 hex string |
+| config.authSecret | <code>String</code> | The authSecret to use, 32 hex string |
+| config.externalAuth | <code>String</code> | External auth function, directly returns key material, used to migrate legacy 3box accounts |
 

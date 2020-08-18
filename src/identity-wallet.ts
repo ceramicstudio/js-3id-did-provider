@@ -20,6 +20,9 @@ export default class IdentityWallet {
 
   public DID: string | undefined
 
+  /**
+   * Use IdentityWallet.create() to create an IdentityWallet instance
+   */
   constructor(
     protected _keyring: Keyring,
     protected _threeIdx: ThreeIDX,
