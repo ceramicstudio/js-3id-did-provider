@@ -27,7 +27,7 @@ export class ThreeIDX {
 
   async encodeKidWithVersion(keyName = 'signing'): Promise<string> {
     const version = (await this.ceramic.listVersions(this.docs['3id'].id)).pop() || 0
-    return `${this.DID}?version=${version}#${keyName}`
+    return `${this.DID}?version-id=${version}#${keyName}`
   }
 
   parseKeyName(kid: string): string | undefined {
