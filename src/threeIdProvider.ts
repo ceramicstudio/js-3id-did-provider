@@ -1,4 +1,4 @@
-import { LinkProof } from '3id-blockchain-utils'
+import { createJWT } from 'did-jwt'
 import {
   HandlerMethods,
   RequestHandler,
@@ -8,105 +8,111 @@ import {
   createHandler,
 } from 'rpc-utils'
 
-import { EncryptedMessage } from './crypto'
-import IdentityWallet from './identity-wallet'
+import { sha256Multihash, pad, unpad } from './utils'
+import { didMethods, ProviderConfig, Context } from './did-provider'
+import { PublicKeys } from './keyring'
 
 type Origin = string | null | undefined
 
-type Context = {
-  provider: ThreeIdProvider
-  origin: Origin
-}
-
 const methods: HandlerMethods<Context> = {
-  '3id_getLink': async (ctx) => {
-    return (await ctx.provider.wallet.getLink()).toLowerCase()
+  '3id_authenticate': async ({ permissions, keyring, origin }, params) => {
+    const spaces = await permissions.request(origin, params.spaces || [])
+    if (spaces === null) throw new RPCError(4001, 'User Rejected Request')
+    return {
+      main: keyring.getPublicKeys({ mgmtPub: params.mgmtPub }),
+      spaces: spaces.reduce((acc, space) => {
+        acc[space] = keyring.getPublicKeys({
+          space,
+          uncompressed: true,
+        })
+        return acc
+      }, {} as Record<string, PublicKeys>),
+    }
   },
-  '3id_linkManagementKey': async (ctx) => {
-    return await ctx.provider.wallet.linkManagementKey()
+  '3id_isAuthenticated': async ({ permissions, origin }, params) => {
+    return Promise.resolve(permissions.has(origin, params.spaces))
   },
-  '3id_authenticate': async (ctx, params) => {
-    return await ctx.provider.wallet.authenticate(
-      params.spaces,
-      {
-        authData: params.authData,
-        address: params.address,
-        mgmtPub: params.mgmtPub,
-      },
-      ctx.origin
-    )
-  },
-  '3id_isAuthenticated': async (ctx, params) => {
-    return await ctx.provider.wallet.isAuthenticated(params.spaces, ctx.origin)
-  },
-  '3id_signClaim': async (ctx, params) => {
-    return await ctx.provider.wallet.signClaim(params.payload, {
-      DID: params.did,
-      space: params.space,
+  '3id_signClaim': async ({ threeIdx, permissions, keyring, origin }, params) => {
+    if (!permissions.has(origin, params.spaces)) {
+      throw new RPCError(4100, 'Unauthorized')
+    }
+    const settings = {
+      signer: keyring.getJWTSigner(params.space, params.useMgmt),
+      issuer: threeIdx.DID,
       expiresIn: params.expiresIn,
-      useMgmt: params.useMgmt,
-    })
+    }
+    return createJWT(params.payload, settings)
   },
-  '3id_encrypt': async (ctx, params) => {
-    return await ctx.provider.wallet.encrypt(params.message, params.space, {
-      blockSize: params.blockSize,
-      to: params.to,
-    })
+  '3id_encrypt': async ({ origin, keyring, permissions }, params) => {
+    if (!permissions.has(origin, params.spaces)) {
+      throw new RPCError(4100, 'Unauthorized')
+    }
+    const { to, blockSize, message, space } = params
+    const paddedMsg = typeof message === 'string' ? pad(message, blockSize) : message
+    if (to) {
+      return Promise.resolve(keyring.asymEncrypt(paddedMsg, to))
+    } else {
+      return Promise.resolve(keyring.symEncrypt(paddedMsg, { space }))
+    }
   },
-  '3id_decrypt': async (ctx, params) => {
-    return await ctx.provider.wallet.decrypt(
-      {
-        ciphertext: params.ciphertext,
-        ephemeralFrom: params.ephemeralFrom,
-        nonce: params.nonce,
-      },
-      params.space,
-      params.buffer
-    )
+  '3id_decrypt': async ({ origin, keyring, permissions }, params) => {
+    if (!permissions.has(origin, params.spaces)) {
+      throw new RPCError(4100, 'Unauthorized')
+    }
+    const { ciphertext, ephemeralFrom, nonce, space } = params
+    let paddedMsg
+    if (ephemeralFrom) {
+      paddedMsg = keyring.asymDecrypt(
+        ciphertext,
+        ephemeralFrom,
+        nonce,
+        // @ts-ignore issue: https://github.com/microsoft/TypeScript/issues/14107
+        { space }
+      )
+    } else {
+      paddedMsg = keyring.symDecrypt(ciphertext, nonce, { space })
+    }
+    if (!paddedMsg) throw new RPCError(0, 'Could not decrypt message')
+    return Promise.resolve(unpad(paddedMsg))
   },
-  '3id_hashEntryKey': async (ctx, params) => {
-    return await ctx.provider.wallet.hashDBKey(params.key, params.space)
+  '3id_hashEntryKey': async ({ origin, keyring, permissions }, params) => {
+    if (!permissions.has(origin, params.spaces)) {
+      throw new RPCError(4100, 'Unauthorized')
+    }
+    const salt: string = keyring.getDBSalt(params.space)
+    const key: string = params.key
+    return Promise.resolve(sha256Multihash(salt + key))
   },
-  '3id_newAuthMethodPoll': (ctx) => ctx.provider.pollAuthMethods(),
-  '3id_newLinkPoll': (ctx) => ctx.provider.pollLinks(),
+  '3id_newAuthMethodPoll': () => [],
+  '3id_newLinkPoll': () => [],
 }
 
 type Callback = (err: Error | null | undefined, res?: RPCResponse | null) => void
 
 export default class ThreeIdProvider {
-  private _newAuthMethods: Array<EncryptedMessage> = []
-  private _newLinks: Array<LinkProof> = []
-
   protected _handle: RequestHandler
 
-  public wallet: IdentityWallet
-
-  constructor(wallet: IdentityWallet) {
-    this._handle = createHandler<Context>(methods)
-    this.wallet = wallet
-
-    wallet.events.on('new-auth-method', (authBlob: EncryptedMessage) => {
-      this._newAuthMethods.push(authBlob)
-    })
-    wallet.events.on('new-link-proof', (linkProof: LinkProof) => {
-      this._newLinks.push(linkProof)
-    })
+  constructor({ permissions, threeIdx, keyring, forcedOrigin }: ProviderConfig) {
+    const handler = createHandler<Context>(Object.assign(methods, didMethods))
+    this._handle = (origin: string, req: RPCRequest) => {
+      return handler(
+        {
+          origin: forcedOrigin || origin,
+          permissions,
+          threeIdx,
+          keyring,
+        },
+        req
+      )
+    }
   }
 
   public get is3idProvider(): boolean {
     return true
   }
 
-  public pollAuthMethods(): Array<EncryptedMessage> {
-    const methods = [...this._newAuthMethods]
-    this._newAuthMethods = []
-    return methods
-  }
-
-  public pollLinks(): Array<LinkProof> {
-    const links = [...this._newLinks]
-    this._newLinks = []
-    return links
+  public get isDidProvider(): boolean {
+    return true
   }
 
   async send(
@@ -119,7 +125,7 @@ export default class ThreeIdProvider {
       origin = null
     }
 
-    const res = await this._handle({ provider: this, origin }, req)
+    const res = await this._handle(origin, req)
     if (res?.error) {
       const error = RPCError.fromObject(res.error)
       if (callback == null) {

@@ -1,0 +1,68 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`ThreeIDX creates 3id doc 1`] = `
+Object {
+  "anchorStatus": 1,
+  "content": Object {
+    "publicKeys": Object {
+      "encryption": "z6LSfQabSbJzX8WAm1qdQcHCHTzVv8a2u6F7kmzdodfvUCo9",
+      "signing": "zQ3shwsCgFanBax6UiaLu1oGvM7vhuqoW88VBUiUTCeHbTeTV",
+    },
+  },
+  "doctype": "3id",
+  "log": Array [
+    Object {
+      "codec": "dag-cbor",
+      "hash": Object {
+        "data": Array [
+          18,
+          32,
+          89,
+          33,
+          75,
+          234,
+          25,
+          41,
+          90,
+          2,
+          153,
+          115,
+          59,
+          180,
+          173,
+          151,
+          34,
+          12,
+          198,
+          166,
+          159,
+          157,
+          214,
+          225,
+          178,
+          218,
+          212,
+          199,
+          210,
+          9,
+          169,
+          164,
+          108,
+          131,
+        ],
+        "type": "Buffer",
+      },
+      "version": 1,
+    },
+  ],
+  "metadata": Object {
+    "owners": Array [
+      "zQ3shjotJHMLorSNen9hWJoYSfkyEvRCvCKhqYVpDBZWCJXJN",
+    ],
+  },
+  "next": Object {
+    "content": null,
+  },
+  "signature": 0,
+}
+`;

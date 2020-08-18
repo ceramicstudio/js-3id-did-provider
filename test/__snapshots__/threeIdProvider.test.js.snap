@@ -8,31 +8,7 @@ exports[`ThreeIdProvider asymmetrically decrypt correctly 1`] = `
 Object {
   "id": 1,
   "jsonrpc": "2.0",
-  "result": "decrypted data",
-}
-`;
-
-exports[`ThreeIdProvider asymmetrically decrypt correctly 2`] = `
-Object {
-  "id": 1,
-  "jsonrpc": "2.0",
-  "result": "decrypted data",
-}
-`;
-
-exports[`ThreeIdProvider asymmetrically encrypt correctly 1`] = `
-Object {
-  "id": 1,
-  "jsonrpc": "2.0",
-  "result": "encrypted data",
-}
-`;
-
-exports[`ThreeIdProvider asymmetrically encrypt correctly 2`] = `
-Object {
-  "id": 1,
-  "jsonrpc": "2.0",
-  "result": "encrypted data",
+  "result": "decrypted msg",
 }
 `;
 
@@ -40,7 +16,12 @@ exports[`ThreeIdProvider authenticate correctly 1`] = `
 Object {
   "id": 1,
   "jsonrpc": "2.0",
-  "result": "auth data",
+  "result": Object {
+    "main": "mainkeys",
+    "spaces": Object {
+      "space1": "spacekeys",
+    },
+  },
 }
 `;
 
@@ -48,15 +29,12 @@ exports[`ThreeIdProvider authenticate correctly 2`] = `
 Object {
   "id": 1,
   "jsonrpc": "2.0",
-  "result": "auth data",
-}
-`;
-
-exports[`ThreeIdProvider authenticate correctly 3`] = `
-Object {
-  "id": 1,
-  "jsonrpc": "2.0",
-  "result": "auth data",
+  "result": Object {
+    "main": "mainkeys",
+    "spaces": Object {
+      "space1": "spacekeys",
+    },
+  },
 }
 `;
 
@@ -64,63 +42,7 @@ exports[`ThreeIdProvider decrypt correctly 1`] = `
 Object {
   "id": 1,
   "jsonrpc": "2.0",
-  "result": "decrypted data",
-}
-`;
-
-exports[`ThreeIdProvider decrypt correctly 2`] = `
-Object {
-  "id": 1,
-  "jsonrpc": "2.0",
-  "result": "decrypted data",
-}
-`;
-
-exports[`ThreeIdProvider encrypt correctly 1`] = `
-Object {
-  "id": 1,
-  "jsonrpc": "2.0",
-  "result": "encrypted data",
-}
-`;
-
-exports[`ThreeIdProvider encrypt correctly 2`] = `
-Object {
-  "id": 1,
-  "jsonrpc": "2.0",
-  "result": "encrypted data",
-}
-`;
-
-exports[`ThreeIdProvider getLink correctly 1`] = `
-Object {
-  "id": 1,
-  "jsonrpc": "2.0",
-  "result": "link",
-}
-`;
-
-exports[`ThreeIdProvider getLink correctly 2`] = `
-Object {
-  "id": 1,
-  "jsonrpc": "2.0",
-  "result": "link",
-}
-`;
-
-exports[`ThreeIdProvider hash entry key correctly 1`] = `
-Object {
-  "id": 1,
-  "jsonrpc": "2.0",
-  "result": "hashed data",
-}
-`;
-
-exports[`ThreeIdProvider hash entry key correctly 2`] = `
-Object {
-  "id": 1,
-  "jsonrpc": "2.0",
-  "result": "hashed data",
+  "result": "decrypted msg",
 }
 `;
 
@@ -132,35 +54,11 @@ Object {
 }
 `;
 
-exports[`ThreeIdProvider isAuthenticated correctly 2`] = `
-Object {
-  "id": 1,
-  "jsonrpc": "2.0",
-  "result": true,
-}
-`;
-
-exports[`ThreeIdProvider linkManagementKey correctly 1`] = `
-Object {
-  "id": 1,
-  "jsonrpc": "2.0",
-  "result": "link data",
-}
-`;
-
-exports[`ThreeIdProvider linkManagementKey correctly 2`] = `
-Object {
-  "id": 1,
-  "jsonrpc": "2.0",
-  "result": "link data",
-}
-`;
-
 exports[`ThreeIdProvider sign claim correctly 1`] = `
 Object {
   "id": 1,
   "jsonrpc": "2.0",
-  "result": "signed claim",
+  "result": "eyJ0eXAiOiJKV1QiLCJhbGciOiJFUzI1NksifQ.eyJkIjoiZGF0YSIsImlzcyI6ImRpZDozOmFzZGYifQ.signed",
 }
 `;
 
@@ -168,6 +66,6 @@ exports[`ThreeIdProvider sign claim correctly 2`] = `
 Object {
   "id": 1,
   "jsonrpc": "2.0",
-  "result": "signed claim",
+  "result": "eyJ0eXAiOiJKV1QiLCJhbGciOiJFUzI1NksifQ.eyJkIjoiZGF0YSIsImlzcyI6ImRpZDozOmFzZGYifQ.signed",
 }
 `;
