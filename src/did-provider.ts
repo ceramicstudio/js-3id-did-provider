@@ -48,7 +48,7 @@ export const didMethods: HandlerMethods<Context> = {
     const keyName = threeIdx.parseKeyName(params.did)
     const kid = await threeIdx.encodeKidWithVersion(keyName)
     const signer = keyring.getSigner(keyName)
-    const header = toStableObject(Object.assign(params.protected, { kid }))
+    const header = toStableObject(Object.assign(params.protected || {}, { kid }))
     const jws = await createJWS(toStableObject(params.payload), signer, header)
     return { jws }
   },

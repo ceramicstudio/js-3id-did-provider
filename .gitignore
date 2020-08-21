@@ -5,3 +5,5 @@ coverage/
 tmp/
 .js-ipfs
 yarn.lock
+
+.idea
