@@ -47,6 +47,7 @@ export default class IdentityWallet {
     // the next two lines will likely change soon
     const idw = new IdentityWallet(keyring, threeIdx, permissions)
     await idw._init()
+    return idw
   }
 
   async _init() {
