@@ -1,11 +1,16 @@
 import { sha256 } from 'js-sha256'
 import Multihash from 'multihashes'
-import naclutil from 'tweetnacl-util'
 import bs58 from 'bs58'
 import { Wallet } from '@ethersproject/wallet'
 import stringify from 'fast-json-stable-stringify'
 
 const ENC_BLOCK_SIZE = 24
+
+export interface PublicKeys {
+  signingKey: string
+  managementKey: string | null
+  asymEncryptionKey: string
+}
 
 export const pad = (val: string, blockSize = ENC_BLOCK_SIZE): string => {
   const blockDiff = (blockSize - (val.length % blockSize)) % blockSize
@@ -24,7 +29,7 @@ const multicodecPubkeyTable: Record<string, number> = {
   ed25519: 0xed,
 }
 
-function encodeKey(key: Uint8Array, keyType: string): string {
+export function encodeKey(key: Uint8Array, keyType: string): string {
   const buf = new Uint8Array(key.length + 2)
   if (!multicodecPubkeyTable[keyType]) {
     throw new Error(`Key type "${keyType}" not supported.`)
@@ -35,20 +40,6 @@ function encodeKey(key: Uint8Array, keyType: string): string {
   buf[1] = 0x01
   buf.set(key, 2)
   return `z${bs58.encode(buf)}`
-}
-
-export const gen3IDgenesis = (pubkeys: any): any => {
-  return {
-    metadata: {
-      owners: [encodeKey(hexToUint8Array(pubkeys.managementKey), 'secp256k1')],
-    },
-    content: {
-      publicKeys: {
-        signing: encodeKey(hexToUint8Array(pubkeys.signingKey), 'secp256k1'),
-        encryption: encodeKey(naclutil.decodeBase64(pubkeys.asymEncryptionKey), 'x25519'),
-      },
-    },
-  }
 }
 
 export const fakeEthProvider = (wallet: Wallet) => ({
@@ -68,7 +59,7 @@ export const fakeEthProvider = (wallet: Wallet) => ({
   },
 })
 
-export function hexToUint8Array(str: string): Uint8Array {
+export function hexToU8A(str: string): Uint8Array {
   return new Uint8Array(Buffer.from(str, 'hex'))
 }
 

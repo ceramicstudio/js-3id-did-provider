@@ -43,7 +43,7 @@ export default class IdentityWallet {
     if (!config.seed) throw new Error('seed required for now')
     const keyring = new Keyring(config.seed)
     const threeIdx = new ThreeIDX(config.ceramic)
-    const pubkeys = keyring.getPublicKeys({ mgmtPub: true })
+    const pubkeys = keyring.getPublicKeys({ mgmtPub: true, useMulticodec: true })
     await threeIdx.create3idDoc(pubkeys)
     const permissions = new Permissions(config.getPermission)
     permissions.setDID(threeIdx.DID)

@@ -41,13 +41,13 @@ describe('ThreeIDX', () => {
   })
 
   it('creates 3id doc', async () => {
-    const pubkeys = keyring.getPublicKeys({ mgmtPub: true })
+    const pubkeys = keyring.getPublicKeys({ mgmtPub: true, useMulticodec: true })
     await threeIdx.create3idDoc(pubkeys)
     expect(threeIdx.docs['3id'].state).toMatchSnapshot()
   })
 
   it('parses key name correctly', async () => {
-    const pubkeys = keyring.getPublicKeys({ mgmtPub: true })
+    const pubkeys = keyring.getPublicKeys({ mgmtPub: true, useMulticodec: true })
     await threeIdx.create3idDoc(pubkeys)
     const badKid = 'did:3:bayfiuherg98h349h#signing'
     expect(() => threeIdx.parseKeyName(badKid)).toThrow('Invalid DID')
@@ -56,7 +56,7 @@ describe('ThreeIDX', () => {
   })
 
   it('encodes kid with version', async () => {
-    const pubkeys = keyring.getPublicKeys({ mgmtPub: true })
+    const pubkeys = keyring.getPublicKeys({ mgmtPub: true, useMulticodec: true })
     await threeIdx.create3idDoc(pubkeys)
     const latestVer = (await ceramic.listVersions(threeIdx.docs['3id'].id)).pop()
     expect(await threeIdx.encodeKidWithVersion()).toEqual(threeIdx.DID + '?version-id=' + latestVer + '#signing')

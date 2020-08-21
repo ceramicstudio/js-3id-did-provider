@@ -14,7 +14,7 @@ import {
   symDecryptBase,
   symEncryptBase,
 } from './crypto'
-import { hexToUint8Array } from './utils'
+import { PublicKeys, encodeKey, hexToU8A } from './utils'
 
 const ec = new EC('secp256k1')
 
@@ -38,12 +38,6 @@ interface MigratedKeys {
   managementAddress: string
   seed: string
   spaceSeeds: Record<string, string>
-}
-
-export interface PublicKeys {
-  signingKey: string
-  managementKey: string | null
-  asymEncryptionKey: string
 }
 
 export interface KeySet {
@@ -109,7 +103,7 @@ export default class Keyring {
       asymEncryptionKey: nacl.box.keyPair.fromSecretKey(
         new Uint8Array(Buffer.from(hdNode.derivePath('2').privateKey.slice(2), 'hex'))
       ),
-      symEncryptionKey: hexToUint8Array(hdNode.derivePath('3').privateKey.slice(2)),
+      symEncryptionKey: hexToU8A(hdNode.derivePath('3').privateKey.slice(2)),
     }
   }
 
@@ -228,10 +222,12 @@ export default class Keyring {
     space,
     uncompressed,
     mgmtPub,
+    useMulticodec,
   }: {
     space?: string
     uncompressed?: boolean
     mgmtPub?: boolean
+    useMulticodec?: boolean
   } = {}): PublicKeys {
     const keys = this._getKeys(space)
     let signingKey = keys.signingKey.publicKey.slice(2)
@@ -244,9 +240,13 @@ export default class Keyring {
       signingKey = ec.keyFromPublic(Buffer.from(signingKey, 'hex')).getPublic(false, 'hex')
     }
     return {
-      signingKey,
-      managementKey,
-      asymEncryptionKey: naclutil.encodeBase64(keys.asymEncryptionKey.publicKey),
+      signingKey: useMulticodec ? encodeKey(hexToU8A(signingKey), 'secp256k1') : signingKey,
+      managementKey: useMulticodec
+        ? encodeKey(hexToU8A(managementKey), 'secp256k1')
+        : managementKey,
+      asymEncryptionKey: useMulticodec
+        ? encodeKey(keys.asymEncryptionKey.publicKey, 'x25519')
+        : naclutil.encodeBase64(keys.asymEncryptionKey.publicKey),
     }
   }
 
@@ -256,7 +256,7 @@ export default class Keyring {
 
   static encryptWithAuthSecret(message: string | Uint8Array, authSecret: string): EncryptedMessage {
     const node = HDNode.fromSeed(ensure0x(authSecret)).derivePath(AUTH_PATH_ENCRYPTION)
-    const key = hexToUint8Array(node.privateKey.slice(2))
+    const key = hexToU8A(node.privateKey.slice(2))
     return symEncryptBase(message, key)
   }
 
@@ -266,7 +266,7 @@ export default class Keyring {
     authSecret: string
   ): string | null {
     const node = HDNode.fromSeed(ensure0x(authSecret)).derivePath(AUTH_PATH_ENCRYPTION)
-    const key = hexToUint8Array(node.privateKey.slice(2))
+    const key = hexToU8A(node.privateKey.slice(2))
     return symDecryptBase(ciphertext, key, nonce)
   }
 
