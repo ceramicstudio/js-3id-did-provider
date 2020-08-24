@@ -64,9 +64,11 @@ export default class Permissions {
   has(origin: Origin, paths: Array<string> = []): boolean {
     if (origin === SELF_ORIGIN) return true
     const currentPaths = this.get(origin)
-    return paths.reduce((acc: boolean, path: string) => {
-      return acc && currentPaths.includes(path)
-    }, Boolean(currentPaths))
+    return currentPaths == null
+      ? false
+      : paths.reduce((acc: boolean, path: string) => {
+          return acc && currentPaths.includes(path)
+        }, true)
   }
 
   /**
@@ -88,6 +90,6 @@ export default class Permissions {
    */
   set(origin: Origin, paths: Array<string> | null): void {
     if (!this.did) throw new Error('DID not set')
-    return store.set(storageKey(origin, this.did), paths)
+    store.set(storageKey(origin, this.did), paths)
   }
 }
