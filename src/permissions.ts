@@ -64,11 +64,9 @@ export default class Permissions {
   has(origin: Origin, paths: Array<string> = []): boolean {
     if (origin === SELF_ORIGIN) return true
     const currentPaths = this.get(origin)
-    return currentPaths == null
-      ? false
-      : paths.reduce((acc: boolean, path: string) => {
-          return acc && currentPaths.includes(path)
-        }, true)
+    return paths.reduce((acc: boolean, path: string) => {
+      return acc && Boolean(currentPaths?.includes(path))
+    }, Boolean(currentPaths))
   }
 
   /**
