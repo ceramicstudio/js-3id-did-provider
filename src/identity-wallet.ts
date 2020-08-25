@@ -39,7 +39,7 @@ export default class IdentityWallet {
    * @param     {String}    config.externalAuth     External auth function, directly returns key material, used to migrate legacy 3box accounts
    * @return    {IdentityWallet}                    An IdentityWallet instance
    */
-  static async create(config: IDWConfig) {
+  static async create(config: IDWConfig): Promise<IdentityWallet> {
     if (!config.seed) throw new Error('seed required for now')
     const keyring = new Keyring(config.seed)
     const threeIdx = new ThreeIDX(config.ceramic)
@@ -53,7 +53,7 @@ export default class IdentityWallet {
     return idw
   }
 
-  async _init() {
+  async _init(): Promise<void> {
     // TODO - change to DID provider when ceramic uses js-did
     await this._threeIdx.setDIDProvider(this.get3idProvider(SELF_ORIGIN))
   }
@@ -63,7 +63,7 @@ export default class IdentityWallet {
    *
    * @return    {ThreeIdProvider}                   The 3IDProvider for this IdentityWallet instance
    */
-  get3idProvider(forcedOrigin?: string) {
+  get3idProvider(forcedOrigin?: string): ThreeIdProvider {
     return new ThreeIdProvider({
       keyring: this._keyring,
       permissions: this.permissions,
@@ -77,7 +77,7 @@ export default class IdentityWallet {
    *
    * @return    {DidProvider}                   The DIDProvider for this IdentityWallet instance
    */
-  getDidProvider(forcedOrigin?: string) {
+  getDidProvider(forcedOrigin?: string): DidProvider {
     return new DidProvider({
       keyring: this._keyring,
       permissions: this.permissions,

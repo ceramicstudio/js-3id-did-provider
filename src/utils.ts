@@ -42,7 +42,7 @@ export function encodeKey(key: Uint8Array, keyType: string): string {
   return `z${bs58.encode(buf)}`
 }
 
-export const fakeEthProvider = (wallet: Wallet) => ({
+export const fakeEthProvider = (wallet: Wallet): any => ({
   send: (
     request: { method: string; params: Array<any> },
     callback: (err: Error | null | undefined, res?: any) => void
@@ -50,7 +50,7 @@ export const fakeEthProvider = (wallet: Wallet) => ({
     if (request.method !== 'personal_sign') {
       callback(new Error('only supports personal_sign'))
     } else {
-      let message = request.params[0]
+      let message = request.params[0] as string
       if (message.startsWith('0x')) {
         message = Buffer.from(message.slice(2), 'hex').toString('utf8')
       }
@@ -63,6 +63,6 @@ export function hexToU8A(str: string): Uint8Array {
   return new Uint8Array(Buffer.from(str, 'hex'))
 }
 
-export function toStableObject(obj: any): any {
-  return JSON.parse(stringify(obj))
+export function toStableObject(obj: Record<string, any>): Record<string, any> {
+  return JSON.parse(stringify(obj)) as Record<string, any>
 }

@@ -77,7 +77,7 @@ export default class Permissions {
    */
   get(origin: Origin): Array<string> | null {
     if (!this.did) throw new Error('DID not set')
-    return store.get(storageKey(origin, this.did))
+    return store.get(storageKey(origin, this.did)) as Array<string> | null
   }
 
   /**
@@ -88,6 +88,6 @@ export default class Permissions {
    */
   set(origin: Origin, paths: Array<string> | null): void {
     if (!this.did) throw new Error('DID not set')
-    return store.set(storageKey(origin, this.did), paths)
+    store.set(storageKey(origin, this.did), paths)
   }
 }

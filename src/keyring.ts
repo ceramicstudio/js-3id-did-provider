@@ -31,7 +31,6 @@ const ensure0x = (str: string): string => {
 
 interface DecryptOptions {
   space?: string
-  toBuffer?: boolean | undefined
 }
 
 interface MigratedKeys {
@@ -78,8 +77,8 @@ export default class Keyring {
   }
 
   //  Import and load legacy keys
-  _importMigratedKeys(migratedKeysString: string) {
-    const migratedKeys: MigratedKeys = JSON.parse(migratedKeysString)
+  _importMigratedKeys(migratedKeysString: string): void {
+    const migratedKeys: MigratedKeys = JSON.parse(migratedKeysString) as MigratedKeys
 
     const getHDNode = (seed: string): HDNode => {
       const seedNode = HDNode.fromSeed(seed)
@@ -114,7 +113,7 @@ export default class Keyring {
     }
   }
 
-  _deriveSpaceKeys(space: string) {
+  _deriveSpaceKeys(space: string): void {
     const spaceHash = sha256(`${space}.3box`)
     // convert hash to path
     const spacePath = spaceHash
@@ -149,28 +148,15 @@ export default class Keyring {
     return asymEncrypt(msg, toPublic, nonce)
   }
 
-  // @ts-ignore issue: https://github.com/microsoft/TypeScript/issues/14107
   asymDecrypt(
     ciphertext: string,
     fromPublic: string,
     nonce: string,
-    { space, toBuffer }: { space?: string; toBuffer?: false }
-  ): string
-  asymDecrypt(
-    ciphertext: string,
-    fromPublic: string,
-    nonce: string,
-    { space, toBuffer }: { space?: string; toBuffer: true }
-  ): Buffer
-  asymDecrypt(
-    ciphertext: string,
-    fromPublic: string,
-    nonce: string,
-    { space, toBuffer }: DecryptOptions = {}
-  ) {
+    { space }: DecryptOptions = {}
+  ): string {
     const key = this._getKeys(space).asymEncryptionKey.secretKey
     // @ts-ignore issue: https://github.com/microsoft/TypeScript/issues/14107
-    return asymDecrypt(ciphertext, fromPublic, key, nonce, toBuffer)
+    return asymDecrypt(ciphertext, fromPublic, key, nonce)
   }
 
   symEncrypt(
@@ -180,14 +166,8 @@ export default class Keyring {
     return symEncryptBase(msg, this._getKeys(space).symEncryptionKey, nonce)
   }
 
-  symDecrypt(ciphertext: string, nonce: string, { space, toBuffer }: DecryptOptions = {}) {
-    return symDecryptBase(
-      ciphertext,
-      this._getKeys(space).symEncryptionKey,
-      nonce,
-      // @ts-ignore issue: https://github.com/microsoft/TypeScript/issues/14107
-      toBuffer
-    )
+  symDecrypt(ciphertext: string, nonce: string, { space }: DecryptOptions = {}): string | null {
+    return symDecryptBase(ciphertext, this._getKeys(space).symEncryptionKey, nonce)
   }
 
   async managementPersonalSign(message: ArrayLike<number> | string): Promise<string> {
@@ -242,7 +222,7 @@ export default class Keyring {
     return {
       signingKey: useMulticodec ? encodeKey(hexToU8A(signingKey), 'secp256k1') : signingKey,
       managementKey: useMulticodec
-        ? encodeKey(hexToU8A(managementKey), 'secp256k1')
+        ? encodeKey(hexToU8A(managementKey as string), 'secp256k1')
         : managementKey,
       asymEncryptionKey: useMulticodec
         ? encodeKey(keys.asymEncryptionKey.publicKey, 'x25519')
