@@ -5,6 +5,7 @@ import Keyring from './keyring'
 import ThreeIdProvider from './threeIdProvider'
 import { ThreeIDX } from './three-idx'
 import Permissions, { GetPermissionFn, SELF_ORIGIN } from './permissions'
+import Keychain from './keychain'
 
 interface IDWConfig {
   getPermission: GetPermissionFn
@@ -26,7 +27,8 @@ export default class IdentityWallet {
   constructor(
     protected _keyring: Keyring,
     protected _threeIdx: ThreeIDX,
-    public permissions: Permissions
+    public permissions: Permissions,
+    public keychain: Keychain
   ) {}
 
   /**

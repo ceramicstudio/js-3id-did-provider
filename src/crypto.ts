@@ -50,7 +50,7 @@ export function symDecryptBase(
 
 export function asymEncrypt(
   message: Uint8Array | string,
-  toPublic: string,
+  toPublic: Uint8Array | string,
   providedNonce?: Uint8Array
 ): AsymEncryptedMessage {
   const nonce = providedNonce ?? randomNonce()
@@ -59,7 +59,7 @@ export function asymEncrypt(
   const ciphertext = nacl.box(
     msg,
     nonce,
-    naclutil.decodeBase64(toPublic),
+    typeof toPublic === 'string' ? naclutil.decodeBase64(toPublic) : toPublic,
     ephemneralKeypair.secretKey
   )
   return {

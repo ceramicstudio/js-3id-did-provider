@@ -23,6 +23,7 @@ const ROOT_STORE_PATH = "0'/0'/0'/0'/0'/0'/0'/0'"
 const BASE_PATH_LEGACY = "m/7696500'/0'/0'"
 
 const AUTH_PATH_WALLET = BASE_PATH + '/' + ROOT_STORE_PATH + '/0'
+const AUTH_PATH_ASYM_ENCRYPTION = BASE_PATH + '/' + ROOT_STORE_PATH + '/2'
 const AUTH_PATH_ENCRYPTION = BASE_PATH + '/' + ROOT_STORE_PATH + '/3'
 
 const ensure0x = (str: string): string => {
@@ -155,7 +156,6 @@ export default class Keyring {
     { space }: DecryptOptions = {}
   ): string {
     const key = this._getKeys(space).asymEncryptionKey.secretKey
-    // @ts-ignore issue: https://github.com/microsoft/TypeScript/issues/14107
     return asymDecrypt(ciphertext, fromPublic, key, nonce)
   }
 
@@ -234,13 +234,17 @@ export default class Keyring {
     return this._seed
   }
 
-  static encryptWithAuthSecret(message: string | Uint8Array, authSecret: string): EncryptedMessage {
-    const node = HDNode.fromSeed(ensure0x(authSecret)).derivePath(AUTH_PATH_ENCRYPTION)
-    const key = hexToU8A(node.privateKey.slice(2))
-    return symEncryptBase(message, key)
+  static authSecretToKeyPair(authSecret: Uint8Array): BoxKeyPair {
+    const node = HDNode.fromSeed(authSecret).derivePath(AUTH_PATH_ASYM_ENCRYPTION)
+    return nacl.box.keyPair.fromSecretKey(hexToU8A(node.privateKey.slice(2)))
   }
 
-  static decryptWithAuthSecret(
+  static authSecretToWallet(authSecret: Uint8Array): Wallet {
+    const node = HDNode.fromSeed(authSecret).derivePath(AUTH_PATH_WALLET)
+    return new Wallet(node.privateKey)
+  }
+
+  static symDecryptWithAuthSecret(
     ciphertext: string,
     nonce: string,
     authSecret: string
@@ -248,10 +252,5 @@ export default class Keyring {
     const node = HDNode.fromSeed(ensure0x(authSecret)).derivePath(AUTH_PATH_ENCRYPTION)
     const key = hexToU8A(node.privateKey.slice(2))
     return symDecryptBase(ciphertext, key, nonce)
-  }
-
-  static walletForAuthSecret(authSecret: string): Wallet {
-    const node = HDNode.fromSeed(ensure0x(authSecret)).derivePath(AUTH_PATH_WALLET)
-    return new Wallet(node.privateKey)
   }
 }
