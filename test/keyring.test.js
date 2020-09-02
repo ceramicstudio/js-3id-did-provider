@@ -73,8 +73,8 @@ describe('Keyring', () => {
       const testMsg = 'Very secret test message'
       const authSecret = Buffer.from(naclRandom(32)).toString('hex')
 
-      const box = Keyring.encryptWithAuthSecret(testMsg, authSecret)
-      const cleartext = Keyring.decryptWithAuthSecret(box.ciphertext, box.nonce, authSecret)
+      const box = Keyring.symEncryptWithAuthSecret(testMsg, authSecret)
+      const cleartext = Keyring.symDecryptWithAuthSecret(box.ciphertext, box.nonce, authSecret)
       expect(cleartext).toEqual(testMsg)
     })
   })

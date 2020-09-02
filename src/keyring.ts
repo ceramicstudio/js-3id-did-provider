@@ -154,7 +154,7 @@ export default class Keyring {
     fromPublic: string,
     nonce: string,
     { space }: DecryptOptions = {}
-  ): string {
+  ): string | null {
     const key = this._getKeys(space).asymEncryptionKey.secretKey
     return asymDecrypt(ciphertext, fromPublic, key, nonce)
   }
@@ -252,5 +252,11 @@ export default class Keyring {
     const node = HDNode.fromSeed(ensure0x(authSecret)).derivePath(AUTH_PATH_ENCRYPTION)
     const key = hexToU8A(node.privateKey.slice(2))
     return symDecryptBase(ciphertext, key, nonce)
+  }
+
+  static symEncryptWithAuthSecret(message: string | Uint8Array, authSecret: string): EncryptedMessage {
+    const node = HDNode.fromSeed(ensure0x(authSecret)).derivePath(AUTH_PATH_ENCRYPTION)
+    const key = hexToU8A(node.privateKey.slice(2))
+    return symEncryptBase(message, key)
   }
 }

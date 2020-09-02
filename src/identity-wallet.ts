@@ -5,7 +5,7 @@ import Keyring from './keyring'
 import ThreeIdProvider from './threeIdProvider'
 import { ThreeIDX } from './three-idx'
 import Permissions, { GetPermissionFn, SELF_ORIGIN } from './permissions'
-import Keychain from './keychain'
+import { Keychain } from './keychain'
 
 interface IDWConfig {
   getPermission: GetPermissionFn
@@ -42,22 +42,39 @@ export default class IdentityWallet {
    * @return    {IdentityWallet}                    An IdentityWallet instance
    */
   static async create(config: IDWConfig): Promise<IdentityWallet> {
-    if (!config.seed) throw new Error('seed required for now')
-    const keyring = new Keyring(config.seed)
+    //if (!config.seed) throw new Error('seed required for now')
+    //const keyring = new Keyring(config.seed)
+    //const threeIdx = new ThreeIDX(config.ceramic)
+    //const pubkeys = keyring.getPublicKeys({ mgmtPub: true, useMulticodec: true })
+    //await threeIdx.create3idDoc(pubkeys)
+    //const permissions = new Permissions(config.getPermission)
+    //permissions.setDID(threeIdx.DID)
+    //// the next two lines will likely change soon
+    //const idw = new IdentityWallet(keyring, threeIdx, permissions)
+    //await idw._init()
+    //return idw
+    if (config.seed && config.authSecret) throw new Error("Can't use both seed and authSecret")
     const threeIdx = new ThreeIDX(config.ceramic)
-    const pubkeys = keyring.getPublicKeys({ mgmtPub: true, useMulticodec: true })
-    await threeIdx.create3idDoc(pubkeys)
     const permissions = new Permissions(config.getPermission)
+    let keyring, keychain
+    if (config.seed) {
+      keyring = new Keyring(config.seed)
+      keychain = new Keychain(keyring, threeIdx)
+      const pubkeys = keyring.getPublicKeys({ mgmtPub: true, useMulticodec: true })
+      await threeIdx.create3idDoc(pubkeys)
+    } else if (config.authSecret) {
+      keychain = await Keychain.load(threeIdx, config.authSecret)
+      keyring = keychain._keyring
+    }
     permissions.setDID(threeIdx.DID)
-    // the next two lines will likely change soon
-    const idw = new IdentityWallet(keyring, threeIdx, permissions)
+    const idw = new IdentityWallet(keyring, threeIdx, permissions, keychain)
     await idw._init()
     return idw
   }
 
   async _init(): Promise<void> {
     // TODO - change to DID provider when ceramic uses js-did
-    await this._threeIdx.setDIDProvider(this.get3idProvider(SELF_ORIGIN))
+    await this._threeIdx.setDIDProvider(this.getDidProvider(SELF_ORIGIN))
   }
 
   /**
