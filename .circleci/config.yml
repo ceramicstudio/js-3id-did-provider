@@ -3,7 +3,7 @@ jobs:
   build:
     working_directory: ~/identity-wallet
     docker:
-      - image: circleci/node:10
+      - image: circleci/node:12
     steps:
       - checkout
 
