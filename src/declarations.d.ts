@@ -1,6 +1,6 @@
 // not sure why this is needed
 declare module 'ipfs' {
-  export default any
+  export type Ipfs = any
 }
 
 declare module 'multihashes' {

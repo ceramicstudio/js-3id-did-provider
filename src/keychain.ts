@@ -12,7 +12,7 @@ interface KeychainStatus {
   removing: Array<string>
 }
 
-async function newAuthEntry(
+export async function newAuthEntry(
   keyring: Keyring,
   did: string,
   authId: string,
@@ -98,14 +98,16 @@ export class Keychain {
       // Create IDX structure if not present
       await this._threeIdx.createIDX(this._pendingAdds.pop() as NewAuthEntry)
     }
-    await this._threeIdx.addAuthEntries(this._pendingAdds)
-    this._pendingAdds = []
+    if (this._pendingAdds.length) {
+      await this._threeIdx.addAuthEntries(this._pendingAdds)
+      this._pendingAdds = []
+    }
   }
 
-  static async load(threeIdx: ThreeIDX, authSecret: Uint8Array, authId: string): Promise<Keychain> {
+  static async load(threeIdx: ThreeIDX, authSecret: Uint8Array): Promise<Keychain> {
     const { secretKey } = Keyring.authSecretToKeyPair(authSecret)
     const wallet = Keyring.authSecretToWallet(authSecret)
-    const accountId = new AccountID({ address: wallet.address, chainId: 'eip155:1' })
+    const accountId = new AccountID({ address: wallet.address.toLowerCase(), chainId: 'eip155:1' })
     const authData = await threeIdx.loadIDX(accountId.toString())
     let keyring
     if (authData) {
@@ -121,7 +123,6 @@ export class Keychain {
       keyring = new Keyring(seed)
       const pubkeys = keyring.getPublicKeys({ mgmtPub: true, useMulticodec: true })
       await threeIdx.create3idDoc(pubkeys)
-      await threeIdx.createIDX(await newAuthEntry(keyring, threeIdx.DID, authId, authSecret))
     }
     return new Keychain(keyring, threeIdx)
   }
