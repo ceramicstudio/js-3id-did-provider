@@ -22,8 +22,11 @@ const BASE_PATH = "m/51073068'/0'"
 const ROOT_STORE_PATH = "0'/0'/0'/0'/0'/0'/0'/0'"
 const BASE_PATH_LEGACY = "m/7696500'/0'/0'"
 
-const AUTH_PATH_WALLET = BASE_PATH + '/' + ROOT_STORE_PATH + '/0'
-const AUTH_PATH_ASYM_ENCRYPTION = BASE_PATH + '/' + ROOT_STORE_PATH + '/2'
+// Using the long paths with base and rootstore is extremely slow.
+// For auth simple paths are used instead.
+const AUTH_PATH_WALLET = '0'
+const AUTH_PATH_ASYM_ENCRYPTION = '2'
+// symEncryption path is here for backwards compatibly.
 const AUTH_PATH_ENCRYPTION = BASE_PATH + '/' + ROOT_STORE_PATH + '/3'
 
 const ensure0x = (str: string): string => {

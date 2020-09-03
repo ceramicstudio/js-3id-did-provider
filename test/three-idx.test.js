@@ -33,13 +33,13 @@ const randomSecret = () => '0x' + Buffer.from(naclRandom(32)).toString('hex')
 const genAuthEntryCreate = async (did) => {
   const wallet = Keyring.authSecretToWallet(randomSecret())
   const accountId = new AccountID({ address: wallet.address, chainId: 'eip155:1' })
-  const authEntryCreate = {
+  const newAuthEntry = {
     pub: 'publickey' + randomSecret(),
     data: 'authdata' + randomSecret(),
     id: 'authid' + randomSecret(),
     linkProof: await createLink(did || 'did:3:asdf', accountId, fakeEthProvider(wallet))
   }
-  return { authEntryCreate, accountId: accountId.toString() }
+  return { newAuthEntry, accountId: accountId.toString() }
 }
 
 const setup3id = async (threeIdx, keyring) => {
@@ -107,14 +107,14 @@ describe('ThreeIDX', () => {
   })
 
   it('creates authMapEntry', async () => {
-    const { authEntryCreate, accountId } = await genAuthEntryCreate()
-    const authMapEntry = await threeIdx.createAuthMapEntry(authEntryCreate)
+    const { newAuthEntry, accountId } = await genAuthEntryCreate()
+    const authMapEntry = await threeIdx.createAuthMapEntry(newAuthEntry)
 
     expect(authMapEntry).toEqual({
       [threeIdx.docs[accountId].id]: {
-        pub: authEntryCreate.pub,
-        data: authEntryCreate.data,
-        id: authEntryCreate.id,
+        pub: newAuthEntry.pub,
+        data: newAuthEntry.data,
+        id: newAuthEntry.id,
       }
     })
     expect(threeIdx.docs[accountId].owners).toEqual([accountId])
@@ -123,14 +123,14 @@ describe('ThreeIDX', () => {
 
   it('createIDX', async () => {
     await setup3id(threeIdx, keyring)
-    const { authEntryCreate, accountId } = await genAuthEntryCreate()
-    await threeIdx.createIDX(authEntryCreate)
+    const { newAuthEntry, accountId } = await genAuthEntryCreate()
+    await threeIdx.createIDX(newAuthEntry)
 
     expect(threeIdx.docs['auth-keychain'].content).toEqual({
       [threeIdx.docs[accountId].id]: {
-        pub: authEntryCreate.pub,
-        data: authEntryCreate.data,
-        id: authEntryCreate.id,
+        pub: newAuthEntry.pub,
+        data: newAuthEntry.data,
+        id: newAuthEntry.id,
       }
     })
     expect(threeIdx.docs.idx.content).toEqual({ 'auth-keychain': threeIdx.docs['auth-keychain'].id })
@@ -146,32 +146,32 @@ describe('ThreeIDX', () => {
 
   it('loadIDX fails if authLink does not exist', async () => {
     await setup3id(threeIdx, keyring)
-    const { authEntryCreate, accountId } = await genAuthEntryCreate(threeIdx.DID)
+    const { newAuthEntry, accountId } = await genAuthEntryCreate(threeIdx.DID)
 
     expect(await threeIdx.loadIDX(accountId)).toEqual(null)
   })
 
   it('loadIDX works if IDX created', async () => {
     await setup3id(threeIdx, keyring)
-    const { authEntryCreate, accountId } = await genAuthEntryCreate(threeIdx.DID)
-    await threeIdx.createIDX(authEntryCreate)
+    const { newAuthEntry, accountId } = await genAuthEntryCreate(threeIdx.DID)
+    await threeIdx.createIDX(newAuthEntry)
 
-    expect(await threeIdx.loadIDX(accountId)).toEqual(authEntryCreate.data)
+    expect(await threeIdx.loadIDX(accountId)).toEqual(newAuthEntry.data)
   })
 
   it('addAuthEntries', async () => {
     await setup3id(threeIdx, keyring)
-    const { authEntryCreate: aec1, accountId: ai1 } = await genAuthEntryCreate(threeIdx.DID)
-    await threeIdx.createIDX(aec1)
+    const { newAuthEntry: nae1, accountId: ai1 } = await genAuthEntryCreate(threeIdx.DID)
+    await threeIdx.createIDX(nae1)
 
-    const authEntry1 = { pub: aec1.pub, data: aec1.data, id: aec1.id }
+    const authEntry1 = { pub: nae1.pub, data: nae1.data, id: nae1.id }
     expect(threeIdx.getAllAuthEntries()).toEqual([authEntry1])
 
-    const { authEntryCreate: aec2, accountId: ai2 } = await genAuthEntryCreate(threeIdx.DID)
-    const { authEntryCreate: aec3, accountId: ai3 } = await genAuthEntryCreate(threeIdx.DID)
-    const authEntry2 = { pub: aec2.pub, data: aec2.data, id: aec2.id }
-    const authEntry3 = { pub: aec3.pub, data: aec3.data, id: aec3.id }
-    await threeIdx.addAuthEntries([aec2, aec3])
+    const { newAuthEntry: nae2, accountId: ai2 } = await genAuthEntryCreate(threeIdx.DID)
+    const { newAuthEntry: nae3, accountId: ai3 } = await genAuthEntryCreate(threeIdx.DID)
+    const authEntry2 = { pub: nae2.pub, data: nae2.data, id: nae2.id }
+    const authEntry3 = { pub: nae3.pub, data: nae3.data, id: nae3.id }
+    await threeIdx.addAuthEntries([nae2, nae3])
 
     expect(threeIdx.getAllAuthEntries()).toEqual([authEntry1, authEntry2, authEntry3])
     expect(await all(await ceramic.pin.ls())).toEqual(expect.arrayContaining([

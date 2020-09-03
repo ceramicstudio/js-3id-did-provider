@@ -27,7 +27,7 @@ const CDefs = {
 
 interface EncData {
   jwe?: string
-  box?: AsymEncryptedMessage
+  box: AsymEncryptedMessage
 }
 
 export interface AuthEntry {
@@ -40,7 +40,7 @@ interface AuthMapEntry {
   [link: string]: AuthEntry
 }
 
-interface AuthEntryCreate extends AuthEntry {
+export interface NewAuthEntry extends AuthEntry {
   linkProof: LinkProof
 }
 
@@ -83,7 +83,7 @@ export class ThreeIDX {
     return keyName
   }
 
-  async createAuthMapEntry(authEntry: AuthEntryCreate): Promise<AuthMapEntry> {
+  async createAuthMapEntry(authEntry: NewAuthEntry): Promise<AuthMapEntry> {
     const authLink = authEntry.linkProof.account
     this.docs[authLink] = await this.ceramic.createDocument('account-link', {
       metadata: { owners: [authLink] },
@@ -98,7 +98,7 @@ export class ThreeIDX {
   /**
    * Create a new IDX structure that has a given authEntry in it's keychain.
    */
-  async createIDX(authEntry: AuthEntryCreate): Promise<void> {
+  async createIDX(authEntry: NewAuthEntry): Promise<void> {
     const entry = await this.createAuthMapEntry(authEntry)
     this.docs[CDefs.authKeychain] = await this.ceramic.createDocument('tile', {
       metadata: { owners: [this.DID] },
@@ -137,7 +137,7 @@ export class ThreeIDX {
   /**
    * Adds a new AuthEntries to the Auth keychain.
    */
-  async addAuthEntries(authEntries: Array<AuthEntryCreate>): Promise<void> {
+  async addAuthEntries(authEntries: Array<NewAuthEntry>): Promise<void> {
     const mapEntries = await Promise.all(authEntries.map(this.createAuthMapEntry.bind(this)))
     const content = Object.assign({}, this.docs[CDefs.authKeychain].content)
     const newContent = mapEntries.reduce((acc, entry) => Object.assign(acc, entry), content)
@@ -148,6 +148,7 @@ export class ThreeIDX {
    * Returns all public keys that is in the auth keychain.
    */
   getAllAuthEntries(): Array<AuthEntry> {
+    if (!this.docs[CDefs.authKeychain]) return []
     const content = Object.assign({}, this.docs[CDefs.authKeychain].content)
     return Object.keys(content).map((authLink: string): AuthEntry => content[authLink] as AuthEntry)
   }

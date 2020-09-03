@@ -1,12 +1,7 @@
+import type { ThreeIDX, AuthEntry, NewAuthEntry } from './three-idx'
 import Keyring from './keyring'
-import { ThreeIDX, AuthEntry } from './keyring'
-import {
-  AsymEncryptedMessage,
-  EncryptedMessage,
-  asymDecrypt,
-  asymEncrypt,
-} from './crypto'
-import { PublicKeys, encodeKey, hexToU8A, fakeEthProvider } from './utils'
+import { AsymEncryptedMessage, asymDecrypt, asymEncrypt, naclRandom } from './crypto'
+import { encodeKey, fakeEthProvider } from './utils'
 
 import { createLink } from '3id-blockchain-utils'
 import { AccountID } from 'caip'
@@ -17,23 +12,43 @@ interface KeychainStatus {
   removing: Array<string>
 }
 
+async function newAuthEntry(
+  keyring: Keyring,
+  did: string,
+  authId: string,
+  authSecret: Uint8Array
+): Promise<NewAuthEntry> {
+  const mainPub = keyring.getPublicKeys().asymEncryptionKey
+  const { publicKey } = Keyring.authSecretToKeyPair(authSecret)
+  const wallet = Keyring.authSecretToWallet(authSecret)
+  const accountId = new AccountID({ address: wallet.address, chainId: 'eip155:1' })
+  return {
+    pub: encodeKey(publicKey, 'x25519'),
+    data: { box: asymEncrypt(keyring.serialize() as string, publicKey) },
+    id: { box: asymEncrypt(authId, mainPub) },
+    linkProof: await createLink(did, accountId, fakeEthProvider(wallet)),
+  }
+}
+
 export class Keychain {
+  private _pendingAdds: Array<NewAuthEntry> = []
   /**
    * Create an instance of the keychain
    */
-  constructor(
-    protected _keyring: Keyring,
-    protected _threeIdx: ThreeIDX
-  ) {}
+  constructor(public _keyring: Keyring, protected _threeIdx: ThreeIDX) {}
+
+  _decryptBox(box: AsymEncryptedMessage): string | null {
+    return this._keyring.asymDecrypt(box.ciphertext, box.ephemeralFrom, box.nonce)
+  }
 
   /**
    * List all current authentication methods.
    *
    * @return    {Array<string>}                           A list of authIds.
    */
-  async list(): Promise<Array<string>> {
-    return (await this._threeIdx.getAllAuthEntries()).map(({ }: AuthEntry): string => {
-      return this._keyring.asymDecrypt(entry.ciphertext, entry.ephemeralFrom, entry.nonce)
+  list(): Array<string> {
+    return this._threeIdx.getAllAuthEntries().map(({ id }: AuthEntry): string => {
+      return this._decryptBox(id.box) as string
     })
   }
 
@@ -44,17 +59,9 @@ export class Keychain {
    * @param     {Uint8Array}        authSecret      The authSecret to use, should be of sufficient entropy
    */
   async add(authId: string, authSecret: Uint8Array): Promise<void> {
-    const mainPub = this._keyring.getPublicKeys().asymEncryptionKey
-    const { publicKey } = Keyring.authSecretToKeyPair(authSecret)
-    const wallet = Keyring.authSecretToWallet(authSecret)
-    const accountId = new AccountID({ address: wallet.address, chainId: 'eip155:1' })
-    const authEntry = {
-      pub: encodeKey(publicKey, 'x25519'),
-      data: asymEncrypt(this._keyring.serialize(), publicKey),
-      id: asymEncrypt(authId, mainPub),
-      linkProof: await createLink(this._threeIdx.DID, accountId, fakeEthProvider(wallet)),
-    }
-    await this._threeIdx.addAuthEntry(authEntry)
+    this._pendingAdds.push(
+      await newAuthEntry(this._keyring, this._threeIdx.DID, authId, authSecret)
+    )
   }
 
   /**
@@ -62,7 +69,7 @@ export class Keychain {
    *
    * @param     {String}            authId          An identifier for the auth method
    */
-  async remove(authId: string): Promise<void> {
+  async remove(authId: string): Promise<void> { // eslint-disable-line
     throw new Error('Not implmeented yet')
   }
 
@@ -75,30 +82,47 @@ export class Keychain {
    * @return    {KeychainStatus}                    Object that states the staging status of the keychain
    */
   status(): KeychainStatus {
+    return {
+      clean: !this._pendingAdds.length,
+      adding: this._pendingAdds.map((e) => this._decryptBox(e.id.box) as string),
+      removing: [],
+    }
   }
 
   /**
    * Commit the staged changes to the keychain.
    */
   async commit(): Promise<void> {
+    if (!this._pendingAdds.length) throw new Error('Nothing to commit')
+    if (this._threeIdx.getAllAuthEntries().length === 0) {
+      // Create IDX structure if not present
+      await this._threeIdx.createIDX(this._pendingAdds.pop() as NewAuthEntry)
+    }
+    await this._threeIdx.addAuthEntries(this._pendingAdds)
+    this._pendingAdds = []
   }
 
-  static async load(threeIdx: ThreeIDX, authSecret: Uint8Array): Promise<Keychain> {
+  static async load(threeIdx: ThreeIDX, authSecret: Uint8Array, authId: string): Promise<Keychain> {
     const { secretKey } = Keyring.authSecretToKeyPair(authSecret)
     const wallet = Keyring.authSecretToWallet(authSecret)
     const accountId = new AccountID({ address: wallet.address, chainId: 'eip155:1' })
     const authData = await threeIdx.loadIDX(accountId.toString())
-    if (!authData) {
-      // create seed, 3id, and IDX
+    let keyring
+    if (authData) {
+      const seed = asymDecrypt(
+        authData.box.ciphertext,
+        authData.box.ephemeralFrom,
+        secretKey,
+        authData.box.nonce
+      )
+      keyring = new Keyring(seed)
     } else {
+      const seed = '0x' + Buffer.from(naclRandom(32)).toString('hex')
+      keyring = new Keyring(seed)
+      const pubkeys = keyring.getPublicKeys({ mgmtPub: true, useMulticodec: true })
+      await threeIdx.create3idDoc(pubkeys)
+      await threeIdx.createIDX(await newAuthEntry(keyring, threeIdx.DID, authId, authSecret))
     }
-    const seed = asymDecrypt(
-      authData.box.ciphertext,
-      authData.box.ephemeralFrom,
-      secretKey,
-      authData.box.nonce,
-    )
-    const keyring = new Keyring(seed)
     return new Keychain(keyring, threeIdx)
   }
 }

@@ -6,11 +6,13 @@ import ThreeIdProvider from './threeIdProvider'
 import { ThreeIDX } from './three-idx'
 import Permissions, { GetPermissionFn, SELF_ORIGIN } from './permissions'
 import { Keychain } from './keychain'
+import { hexToU8A } from './utils'
 
 interface IDWConfig {
   getPermission: GetPermissionFn
   seed?: string
   authSecret?: string
+  authId?: string
   externalAuth?: (req: any) => Promise<any>
   ceramic: CeramicApi
   useThreeIdProv: boolean
@@ -38,22 +40,16 @@ export default class IdentityWallet {
    * @param     {Function}  config.getPermission    The function that is called to ask the user for permission
    * @param     {String}    config.seed             The seed of the identity, 32 hex string
    * @param     {String}    config.authSecret       The authSecret to use, 32 hex string
+   * @param     {String}    config.authId           The authId is used to identify the authSecret
    * @param     {String}    config.externalAuth     External auth function, directly returns key material, used to migrate legacy 3box accounts
    * @return    {IdentityWallet}                    An IdentityWallet instance
    */
   static async create(config: IDWConfig): Promise<IdentityWallet> {
-    //if (!config.seed) throw new Error('seed required for now')
-    //const keyring = new Keyring(config.seed)
-    //const threeIdx = new ThreeIDX(config.ceramic)
-    //const pubkeys = keyring.getPublicKeys({ mgmtPub: true, useMulticodec: true })
-    //await threeIdx.create3idDoc(pubkeys)
-    //const permissions = new Permissions(config.getPermission)
-    //permissions.setDID(threeIdx.DID)
-    //// the next two lines will likely change soon
-    //const idw = new IdentityWallet(keyring, threeIdx, permissions)
-    //await idw._init()
-    //return idw
     if (config.seed && config.authSecret) throw new Error("Can't use both seed and authSecret")
+    if (!config.seed && !config.authSecret) throw new Error('Either seed or authSecret is needed')
+    if (config.authSecret && !config.authId) {
+      throw new Error('AuthId must be given along with authSecret')
+    }
     const threeIdx = new ThreeIDX(config.ceramic)
     const permissions = new Permissions(config.getPermission)
     let keyring, keychain
@@ -63,18 +59,13 @@ export default class IdentityWallet {
       const pubkeys = keyring.getPublicKeys({ mgmtPub: true, useMulticodec: true })
       await threeIdx.create3idDoc(pubkeys)
     } else if (config.authSecret) {
-      keychain = await Keychain.load(threeIdx, config.authSecret)
+      keychain = await Keychain.load(threeIdx, hexToU8A(config.authSecret), config.authId as string)
       keyring = keychain._keyring
     }
     permissions.setDID(threeIdx.DID)
-    const idw = new IdentityWallet(keyring, threeIdx, permissions, keychain)
-    await idw._init()
+    const idw = new IdentityWallet(keyring as Keyring, threeIdx, permissions, keychain as Keychain)
+    await idw._threeIdx.setDIDProvider(idw.getDidProvider(SELF_ORIGIN))
     return idw
-  }
-
-  async _init(): Promise<void> {
-    // TODO - change to DID provider when ceramic uses js-did
-    await this._threeIdx.setDIDProvider(this.getDidProvider(SELF_ORIGIN))
   }
 
   /**
