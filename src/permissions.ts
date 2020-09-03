@@ -19,6 +19,9 @@ const storageKey = (origin: Origin, did: string) => {
 export default class Permissions {
   public did: string | null = null
 
+  /**
+   * The Permissions class exposes methods to read and update the given permissions
+   */
   constructor(protected getPermission: GetPermissionFn) {
     if (typeof this.getPermission !== 'function') {
       throw new Error('getPermission parameter has to be a function')

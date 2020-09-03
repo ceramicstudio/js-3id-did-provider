@@ -9,7 +9,7 @@
 # Identity Wallet
 🆔-wallet
 
-3Box `identity-wallet-js` is a JavaScript SDK that allows Ethereum JavaScript wallet developers to natively support 3Box identity and authentication functionalities, including: creating 3Box accounts, adding authentication methods (Ethereum keys), and responding to authentication requests for 3Box accounts as well as spaces.
+IdentityWallet is a JavaScript SDK that allows developers to create and manage 3ID identities on the Ceramic network. It exposes a [DID Provider](https://eips.ethereum.org/EIPS/eip-2844) interface which exposes JOSE signing and decryption though a JOSN-RPC interface. IdentityWallet can be used in combination with [js-did](https://github.com/ceramicnetwork/js-did).
 
 
 ## Getting Started
@@ -30,73 +30,34 @@ Import using the dist build in your html code
 <script type="text/javascript" src="../dist/identity-wallet.js"></script>
 ```
 
-#### Understanding the `getConsent` function
-The first parameter of the IdentityWallet constructor is the `getConsent` function. This function determines whether or not any given `origin` (app) is allowed access to the users data. What this function should do is to present a dialog to the user in the wallet UI, asking for permission to access the given spaces.
+#### Understanding the `getPermission` function
+the `getPermission` configuration parameter is always required when creating an instance of IdentityWallet. It is used to give an application permission to decrypt and sign data. What this function should do is to present a dialog to the user in the wallet UI, asking for permission to access the given paths.
 
 The function is called with one parameter which is the `request` object. It looks like this:
 ```js
 {
   type: 'authenticate',
   origin: 'https://my.app.origin',
-  spaces: ['space1', 'space2']
+  payload: {
+    paths: ['/path/1', '/path/2']
+  }
 }
 ```
-In the above example the app with origin `https://my.app.origin` is requesting access to `space1` and `space2`. If the user consents to this the function should return `true`, otherwise it should return `false`.
-Note that if the `spaces` array is empty the app is requesting access to the general 3Box storage.
+In the above example the app with origin `https://my.app.origin` is requesting access to `/path/1` and `/path/2`. If the user consents to this the function should just return the `paths` array, otherwise an empty array. Note that an array containing only some of the requested paths may also be returned.
 
 #### Creating a wallet with a seed
 To create a wallet with a seed you can simply pass it as an option to the constructor. This will create an instance of the IdentityWallet that derives all it's keys from this seed. Be careful, if this seed is lost the identity and all of it's data will be lost as well.
 ```js
 const seed = '0xabc123...' // a hex encoded seed
 
-const idWallet = new IdentityWallet(getConsent, { seed })
+const idWallet = await IdentityWallet.create({ getPermission, seed })
 ```
 
-#### Creating an identity for a contract wallet
-For wallets which doesn't have one keypair, e.g. smart contract wallets, we provide a way of creating an identity with multiple authentication secrets. In this model each authentication secret grants full access to the identity.
+#### Using the IdentityWallet with js-did
+An instance of the DID provider from IdentityWallet can be passed directly to js-did.
 ```js
-const authSecret = '0xabc123...' // a hex encoded secret
-
-const idWallet = new IdentityWallet(getConsent, { authSecret })
-```
-
-New authentication secrets can later be added by calling the `addAuthMethod` instance method of the identityWallet. Note that this method can only be called after an authentication first has happened (`Box.openBox` has been called from `3box-js`).
-```js
-const authSecret2 = '0xabc123...' // a hex encoded secret
-
-idWallet.addAuthMethod(authSecret2)
-```
-
-#### Using the IdentityWallet with 3box-js
-An instance of IdentityWallet can be passed directly to 3box-js and will be used to authenticate the user.
-```js
-const provider = idWallet.get3idProvider()
-const box = await Box.openBox(null, provider)
-```
-
-#### Using the ThreeIdProvider to consume RPC calls
-As described above the *3idProvider* can be accessed by calling `idWallet.get3idProvider()`. The provider object that is returned can be used to consume [3ID JSON-RPC](https://github.com/3box/3box/blob/master/3IPs/3ip-10.md) requests.
-```js
-const provider = idWallet.get3idProvider()
-// using the provider
-const response = await provider.send(rpcRequest, origin)
-
-// alternatively using a callback function
-provider.send(rpcRequest, origin, (error, response) => {
-  // use response or handle error
-})
-```
-In the above example `rpcRequest` is a request formated according to the [3ID JSON-RPC](https://github.com/3box/3box/blob/master/3IPs/3ip-10.md) specification, and `origin` is a string, e.g. `https://my.app.origin`.
-
-
-#### Link an address to the identity
-Multiple blockchain addresses can be linked to an identity controlled by an IdentityWallet instance. Right now two types of ethereum addresses are supported: EOAs (externally owned accounts) and EIP1271 contracts. Support for other types and blockchains can be easily added by contributing to the 3id-blockchain-utils module.
-To link an address simply use the linkAddress method as shown in the example below. The ethProvider needs to be able to sign a message using personal_sign for the given address.
-```js
-const ethAddress = '0xabc...'
-const ethProvider = // an ethereum json-rpc provider
-
-await idWallet.linkAddress(ethAddress, ethProvider)
+const provider = idWallet.getDidProvider()
+const did = new DID({ provider })
 ```
 
 ## Maintainers

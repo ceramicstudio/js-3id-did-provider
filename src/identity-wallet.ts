@@ -26,12 +26,25 @@ export default class IdentityWallet {
   constructor(
     protected _keyring: Keyring,
     protected _threeIdx: ThreeIDX,
-    public permissions: Permissions,
-    public keychain: Keychain
+    protected _permissions: Permissions,
+    protected _keychain: Keychain
   ) {}
+  /**
+   * @property {Keychain} keychain          Edit the keychain
+   */
+  get keychain(): Keychain {
+    return this._keychain
+  }
 
   /**
-   * The 3ID of the IdentityWallet instance
+   * @property {Permissions} permissions    Edit permissions
+   */
+  get permissions(): Permissions {
+    return this._permissions
+  }
+
+  /**
+   * @property {string} DID                 The 3ID of the IdentityWallet instance
    */
   get DID(): string {
     return this._threeIdx.DID
@@ -78,12 +91,12 @@ export default class IdentityWallet {
   }
 
   /**
-   * Get the 3IDProvider
+   * Get the DIDProvider
    *
-   * @return    {ThreeIdProvider}                   The 3IDProvider for this IdentityWallet instance
+   * @return    {DidProvider}                   The DIDProvider for this IdentityWallet instance
    */
-  get3idProvider(forcedOrigin?: string): ThreeIdProvider {
-    return new ThreeIdProvider({
+  getDidProvider(forcedOrigin?: string): DidProvider {
+    return new DidProvider({
       keyring: this._keyring,
       permissions: this.permissions,
       threeIdx: this._threeIdx,
@@ -92,12 +105,12 @@ export default class IdentityWallet {
   }
 
   /**
-   * Get the DIDProvider
+   * Get the 3IDProvider
    *
-   * @return    {DidProvider}                   The DIDProvider for this IdentityWallet instance
+   * @return    {ThreeIdProvider}                   The 3IDProvider for this IdentityWallet instance
    */
-  getDidProvider(forcedOrigin?: string): DidProvider {
-    return new DidProvider({
+  get3idProvider(forcedOrigin?: string): ThreeIdProvider {
+    return new ThreeIdProvider({
       keyring: this._keyring,
       permissions: this.permissions,
       threeIdx: this._threeIdx,

@@ -33,7 +33,7 @@ export async function newAuthEntry(
 export class Keychain {
   private _pendingAdds: Array<NewAuthEntry> = []
   /**
-   * Create an instance of the keychain
+   * The Keychain enables adding and removing of authentication methods.
    */
   constructor(public _keyring: Keyring, protected _threeIdx: ThreeIDX) {}
 
