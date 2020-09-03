@@ -149,13 +149,13 @@ export class ThreeIDX {
    */
   getAllAuthEntries(): Array<AuthEntry> {
     if (!this.docs[CDefs.authKeychain]) return []
-    const content = Object.assign({}, this.docs[CDefs.authKeychain].content)
+    const content = this.docs[CDefs.authKeychain].content
     return Object.keys(content).map((authLink: string): AuthEntry => content[authLink] as AuthEntry)
   }
 
   async pinAllDocs(): Promise<void> {
     await Promise.all(
-      Object.entries(this.docs).map(async ([_, doc]) => {
+      Object.values(this.docs).map(async (doc) => {
         await this.ceramic.pin.add(doc.id)
       })
     )
