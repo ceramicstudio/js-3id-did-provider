@@ -85,9 +85,11 @@ export class ThreeIDX {
 
   async createAuthMapEntry(authEntry: NewAuthEntry): Promise<AuthMapEntry> {
     const authLink = authEntry.linkProof.account
-    this.docs[authLink] = await this.ceramic.createDocument('account-link', {
-      metadata: { owners: [authLink] },
-    })
+    this.docs[authLink] = await this.ceramic.createDocument(
+      'account-link',
+      { metadata: { owners: [authLink] } },
+      { applyOnly: true }
+    )
     await this.docs[authLink].change({ content: authEntry.linkProof })
     await this.ceramic.pin.add(this.docs[authLink].id)
     const tmpEntry = Object.assign({}, authEntry)
@@ -118,9 +120,11 @@ export class ThreeIDX {
    * Returns the encrypted JWE for the given authLink
    */
   async loadIDX(authLink: string): Promise<EncData | null> {
-    this.docs[authLink] = await this.ceramic.createDocument('account-link', {
-      metadata: { owners: [authLink] },
-    })
+    this.docs[authLink] = await this.ceramic.createDocument(
+      'account-link',
+      { metadata: { owners: [authLink] } },
+      { applyOnly: true }
+    )
     const did = this.docs[authLink].content
     if (!did) return null
     this.docs.threeId = await this.ceramic.loadDocument(`ceramic://${did.split(':')[2] as string}`)
