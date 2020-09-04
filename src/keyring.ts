@@ -14,7 +14,7 @@ import {
   symDecryptBase,
   symEncryptBase,
 } from './crypto'
-import { hexToUint8Array } from './utils'
+import { PublicKeys, encodeKey, hexToU8A } from './utils'
 
 const ec = new EC('secp256k1')
 
@@ -22,7 +22,11 @@ const BASE_PATH = "m/51073068'/0'"
 const ROOT_STORE_PATH = "0'/0'/0'/0'/0'/0'/0'/0'"
 const BASE_PATH_LEGACY = "m/7696500'/0'/0'"
 
-const AUTH_PATH_WALLET = BASE_PATH + '/' + ROOT_STORE_PATH + '/0'
+// Using the long paths with base and rootstore is extremely slow.
+// For auth simple paths are used instead.
+const AUTH_PATH_WALLET = '0'
+const AUTH_PATH_ASYM_ENCRYPTION = '2'
+// symEncryption path is here for backwards compatibly.
 const AUTH_PATH_ENCRYPTION = BASE_PATH + '/' + ROOT_STORE_PATH + '/3'
 
 const ensure0x = (str: string): string => {
@@ -31,19 +35,12 @@ const ensure0x = (str: string): string => {
 
 interface DecryptOptions {
   space?: string
-  toBuffer?: boolean | undefined
 }
 
 interface MigratedKeys {
   managementAddress: string
   seed: string
   spaceSeeds: Record<string, string>
-}
-
-export interface PublicKeys {
-  signingKey: string
-  managementKey: string | null
-  asymEncryptionKey: string
 }
 
 export interface KeySet {
@@ -84,8 +81,8 @@ export default class Keyring {
   }
 
   //  Import and load legacy keys
-  _importMigratedKeys(migratedKeysString: string) {
-    const migratedKeys: MigratedKeys = JSON.parse(migratedKeysString)
+  _importMigratedKeys(migratedKeysString: string): void {
+    const migratedKeys: MigratedKeys = JSON.parse(migratedKeysString) as MigratedKeys
 
     const getHDNode = (seed: string): HDNode => {
       const seedNode = HDNode.fromSeed(seed)
@@ -109,7 +106,7 @@ export default class Keyring {
       asymEncryptionKey: nacl.box.keyPair.fromSecretKey(
         new Uint8Array(Buffer.from(hdNode.derivePath('2').privateKey.slice(2), 'hex'))
       ),
-      symEncryptionKey: hexToUint8Array(hdNode.derivePath('3').privateKey.slice(2)),
+      symEncryptionKey: hexToU8A(hdNode.derivePath('3').privateKey.slice(2)),
     }
   }
 
@@ -120,7 +117,7 @@ export default class Keyring {
     }
   }
 
-  _deriveSpaceKeys(space: string) {
+  _deriveSpaceKeys(space: string): void {
     const spaceHash = sha256(`${space}.3box`)
     // convert hash to path
     const spacePath = spaceHash
@@ -155,28 +152,14 @@ export default class Keyring {
     return asymEncrypt(msg, toPublic, nonce)
   }
 
-  // @ts-ignore issue: https://github.com/microsoft/TypeScript/issues/14107
   asymDecrypt(
     ciphertext: string,
     fromPublic: string,
     nonce: string,
-    { space, toBuffer }: { space?: string; toBuffer?: false }
-  ): string
-  asymDecrypt(
-    ciphertext: string,
-    fromPublic: string,
-    nonce: string,
-    { space, toBuffer }: { space?: string; toBuffer: true }
-  ): Buffer
-  asymDecrypt(
-    ciphertext: string,
-    fromPublic: string,
-    nonce: string,
-    { space, toBuffer }: DecryptOptions = {}
-  ) {
+    { space }: DecryptOptions = {}
+  ): string | null {
     const key = this._getKeys(space).asymEncryptionKey.secretKey
-    // @ts-ignore issue: https://github.com/microsoft/TypeScript/issues/14107
-    return asymDecrypt(ciphertext, fromPublic, key, nonce, toBuffer)
+    return asymDecrypt(ciphertext, fromPublic, key, nonce)
   }
 
   symEncrypt(
@@ -186,14 +169,8 @@ export default class Keyring {
     return symEncryptBase(msg, this._getKeys(space).symEncryptionKey, nonce)
   }
 
-  symDecrypt(ciphertext: string, nonce: string, { space, toBuffer }: DecryptOptions = {}) {
-    return symDecryptBase(
-      ciphertext,
-      this._getKeys(space).symEncryptionKey,
-      nonce,
-      // @ts-ignore issue: https://github.com/microsoft/TypeScript/issues/14107
-      toBuffer
-    )
+  symDecrypt(ciphertext: string, nonce: string, { space }: DecryptOptions = {}): string | null {
+    return symDecryptBase(ciphertext, this._getKeys(space).symEncryptionKey, nonce)
   }
 
   async managementPersonalSign(message: ArrayLike<number> | string): Promise<string> {
@@ -228,10 +205,12 @@ export default class Keyring {
     space,
     uncompressed,
     mgmtPub,
+    useMulticodec,
   }: {
     space?: string
     uncompressed?: boolean
     mgmtPub?: boolean
+    useMulticodec?: boolean
   } = {}): PublicKeys {
     const keys = this._getKeys(space)
     let signingKey = keys.signingKey.publicKey.slice(2)
@@ -244,9 +223,13 @@ export default class Keyring {
       signingKey = ec.keyFromPublic(Buffer.from(signingKey, 'hex')).getPublic(false, 'hex')
     }
     return {
-      signingKey,
-      managementKey,
-      asymEncryptionKey: naclutil.encodeBase64(keys.asymEncryptionKey.publicKey),
+      signingKey: useMulticodec ? encodeKey(hexToU8A(signingKey), 'secp256k1') : signingKey,
+      managementKey: useMulticodec
+        ? encodeKey(hexToU8A(managementKey as string), 'secp256k1')
+        : managementKey,
+      asymEncryptionKey: useMulticodec
+        ? encodeKey(keys.asymEncryptionKey.publicKey, 'x25519')
+        : naclutil.encodeBase64(keys.asymEncryptionKey.publicKey),
     }
   }
 
@@ -254,24 +237,32 @@ export default class Keyring {
     return this._seed
   }
 
-  static encryptWithAuthSecret(message: string | Uint8Array, authSecret: string): EncryptedMessage {
-    const node = HDNode.fromSeed(ensure0x(authSecret)).derivePath(AUTH_PATH_ENCRYPTION)
-    const key = hexToUint8Array(node.privateKey.slice(2))
-    return symEncryptBase(message, key)
+  static authSecretToKeyPair(authSecret: Uint8Array): BoxKeyPair {
+    const node = HDNode.fromSeed(authSecret).derivePath(AUTH_PATH_ASYM_ENCRYPTION)
+    return nacl.box.keyPair.fromSecretKey(hexToU8A(node.privateKey.slice(2)))
   }
 
-  static decryptWithAuthSecret(
+  static authSecretToWallet(authSecret: Uint8Array): Wallet {
+    const node = HDNode.fromSeed(authSecret).derivePath(AUTH_PATH_WALLET)
+    return new Wallet(node.privateKey)
+  }
+
+  static symDecryptWithAuthSecret(
     ciphertext: string,
     nonce: string,
     authSecret: string
   ): string | null {
     const node = HDNode.fromSeed(ensure0x(authSecret)).derivePath(AUTH_PATH_ENCRYPTION)
-    const key = hexToUint8Array(node.privateKey.slice(2))
+    const key = hexToU8A(node.privateKey.slice(2))
     return symDecryptBase(ciphertext, key, nonce)
   }
 
-  static walletForAuthSecret(authSecret: string): Wallet {
-    const node = HDNode.fromSeed(ensure0x(authSecret)).derivePath(AUTH_PATH_WALLET)
-    return new Wallet(node.privateKey)
+  static symEncryptWithAuthSecret(
+    message: string | Uint8Array,
+    authSecret: string
+  ): EncryptedMessage {
+    const node = HDNode.fromSeed(ensure0x(authSecret)).derivePath(AUTH_PATH_ENCRYPTION)
+    const key = hexToU8A(node.privateKey.slice(2))
+    return symEncryptBase(message, key)
   }
 }

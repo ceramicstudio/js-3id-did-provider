@@ -35,21 +35,8 @@ export function symEncryptBase(
 export function symDecryptBase(
   ciphertext: string,
   symKey: Uint8Array,
-  nonce: string,
-  toBuffer?: false
-): string | null
-export function symDecryptBase(
-  ciphertext: string,
-  symKey: Uint8Array,
-  nonce: string,
-  toBuffer?: true
-): Buffer | null
-export function symDecryptBase(
-  ciphertext: string,
-  symKey: Uint8Array,
-  nonce: string,
-  toBuffer = false
-) {
+  nonce: string
+): string | null {
   const cleartext = nacl.secretbox.open(
     naclutil.decodeBase64(ciphertext),
     naclutil.decodeBase64(nonce),
@@ -58,12 +45,12 @@ export function symDecryptBase(
   if (cleartext == null) {
     return null
   }
-  return toBuffer ? Buffer.from(cleartext) : naclutil.encodeUTF8(cleartext)
+  return naclutil.encodeUTF8(cleartext)
 }
 
 export function asymEncrypt(
   message: Uint8Array | string,
-  toPublic: string,
+  toPublic: Uint8Array | string,
   providedNonce?: Uint8Array
 ): AsymEncryptedMessage {
   const nonce = providedNonce ?? randomNonce()
@@ -72,7 +59,7 @@ export function asymEncrypt(
   const ciphertext = nacl.box(
     msg,
     nonce,
-    naclutil.decodeBase64(toPublic),
+    typeof toPublic === 'string' ? naclutil.decodeBase64(toPublic) : toPublic,
     ephemneralKeypair.secretKey
   )
   return {
@@ -86,23 +73,8 @@ export function asymDecrypt(
   ciphertext: string,
   fromPublic: string,
   toSecret: Uint8Array,
-  nonce: string,
-  toBuffer: true
-): Buffer | null
-export function asymDecrypt(
-  ciphertext: string,
-  fromPublic: string,
-  toSecret: Uint8Array,
-  nonce: string,
-  toBuffer?: false
-): string | null
-export function asymDecrypt(
-  ciphertext: string,
-  fromPublic: string,
-  toSecret: Uint8Array,
-  nonce: string,
-  toBuffer?: boolean
-) {
+  nonce: string
+): string | null {
   const cleartext = nacl.box.open(
     naclutil.decodeBase64(ciphertext),
     naclutil.decodeBase64(nonce),
@@ -112,5 +84,5 @@ export function asymDecrypt(
   if (cleartext == null) {
     return null
   }
-  return toBuffer ? Buffer.from(cleartext) : naclutil.encodeUTF8(cleartext)
+  return naclutil.encodeUTF8(cleartext)
 }

@@ -8,9 +8,8 @@ import {
   createHandler,
 } from 'rpc-utils'
 
-import { sha256Multihash, pad, unpad } from './utils'
+import { PublicKeys, sha256Multihash, pad, unpad } from './utils'
 import { didMethods, ProviderConfig, Context } from './did-provider'
-import { PublicKeys } from './keyring'
 
 type Origin = string | null | undefined
 

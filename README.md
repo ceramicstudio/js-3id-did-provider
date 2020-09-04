@@ -1,15 +1,14 @@
-[![CircleCI](https://img.shields.io/circleci/project/github/3box/identity-wallet.svg?style=for-the-badge)](https://circleci.com/gh/3box/identity-wallet)
+[![CircleCI](https://img.shields.io/circleci/project/github/3box/identity-wallet-js.svg?style=for-the-badge)](https://circleci.com/gh/3box/identity-wallet-js)
 [![Discord](https://img.shields.io/discord/484729862368526356.svg?style=for-the-badge)](https://discordapp.com/invite/Z3f3Cxy)
 [![npm](https://img.shields.io/npm/dt/identity-wallet.svg?style=for-the-badge)](https://www.npmjs.com/package/identity-wallet)
 [![npm](https://img.shields.io/npm/v/identity-wallet.svg?style=for-the-badge)](https://www.npmjs.com/package/identity-wallet)
-[![Codecov](https://img.shields.io/codecov/c/github/3box/identity-wallet.svg?style=for-the-badge)](https://codecov.io/gh/3box/identity-wallet)
+[![Codecov](https://img.shields.io/codecov/c/github/3box/identity-wallet-js.svg?style=for-the-badge)](https://codecov.io/gh/3box/identity-wallet-js)
 [![Twitter Follow](https://img.shields.io/twitter/follow/3boxdb.svg?style=for-the-badge&label=Twitter)](https://twitter.com/3boxdb)
-[![Greenkeeper badge](https://badges.greenkeeper.io/3box/identity-wallet.svg)](https://greenkeeper.io/)
 
 # Identity Wallet
 🆔-wallet
 
-3Box `identity-wallet-js` is a JavaScript SDK that allows Ethereum JavaScript wallet developers to natively support 3Box identity and authentication functionalities, including: creating 3Box accounts, adding authentication methods (Ethereum keys), and responding to authentication requests for 3Box accounts as well as spaces.
+IdentityWallet is a JavaScript SDK that allows developers to create and manage 3ID identities on the Ceramic network. It exposes a [DID Provider](https://eips.ethereum.org/EIPS/eip-2844) interface which exposes JOSE signing and decryption though a JOSN-RPC interface. IdentityWallet can be used in combination with [js-did](https://github.com/ceramicnetwork/js-did).
 
 
 ## Getting Started
@@ -30,73 +29,34 @@ Import using the dist build in your html code
 <script type="text/javascript" src="../dist/identity-wallet.js"></script>
 ```
 
-#### Understanding the `getConsent` function
-The first parameter of the IdentityWallet constructor is the `getConsent` function. This function determines whether or not any given `origin` (app) is allowed access to the users data. What this function should do is to present a dialog to the user in the wallet UI, asking for permission to access the given spaces.
+#### Understanding the `getPermission` function
+the `getPermission` configuration parameter is always required when creating an instance of IdentityWallet. It is used to give an application permission to decrypt and sign data. What this function should do is to present a dialog to the user in the wallet UI, asking for permission to access the given paths.
 
 The function is called with one parameter which is the `request` object. It looks like this:
 ```js
 {
   type: 'authenticate',
   origin: 'https://my.app.origin',
-  spaces: ['space1', 'space2']
+  payload: {
+    paths: ['/path/1', '/path/2']
+  }
 }
 ```
-In the above example the app with origin `https://my.app.origin` is requesting access to `space1` and `space2`. If the user consents to this the function should return `true`, otherwise it should return `false`.
-Note that if the `spaces` array is empty the app is requesting access to the general 3Box storage.
+In the above example the app with origin `https://my.app.origin` is requesting access to `/path/1` and `/path/2`. If the user consents to this the function should just return the `paths` array, otherwise an empty array. Note that an array containing only some of the requested paths may also be returned.
 
 #### Creating a wallet with a seed
 To create a wallet with a seed you can simply pass it as an option to the constructor. This will create an instance of the IdentityWallet that derives all it's keys from this seed. Be careful, if this seed is lost the identity and all of it's data will be lost as well.
 ```js
 const seed = '0xabc123...' // a hex encoded seed
 
-const idWallet = new IdentityWallet(getConsent, { seed })
+const idWallet = await IdentityWallet.create({ getPermission, seed })
 ```
 
-#### Creating an identity for a contract wallet
-For wallets which doesn't have one keypair, e.g. smart contract wallets, we provide a way of creating an identity with multiple authentication secrets. In this model each authentication secret grants full access to the identity.
+#### Using the IdentityWallet with js-did
+An instance of the DID provider from IdentityWallet can be passed directly to js-did.
 ```js
-const authSecret = '0xabc123...' // a hex encoded secret
-
-const idWallet = new IdentityWallet(getConsent, { authSecret })
-```
-
-New authentication secrets can later be added by calling the `addAuthMethod` instance method of the identityWallet. Note that this method can only be called after an authentication first has happened (`Box.openBox` has been called from `3box-js`).
-```js
-const authSecret2 = '0xabc123...' // a hex encoded secret
-
-idWallet.addAuthMethod(authSecret2)
-```
-
-#### Using the IdentityWallet with 3box-js
-An instance of IdentityWallet can be passed directly to 3box-js and will be used to authenticate the user.
-```js
-const provider = idWallet.get3idProvider()
-const box = await Box.openBox(null, provider)
-```
-
-#### Using the ThreeIdProvider to consume RPC calls
-As described above the *3idProvider* can be accessed by calling `idWallet.get3idProvider()`. The provider object that is returned can be used to consume [3ID JSON-RPC](https://github.com/3box/3box/blob/master/3IPs/3ip-10.md) requests.
-```js
-const provider = idWallet.get3idProvider()
-// using the provider
-const response = await provider.send(rpcRequest, origin)
-
-// alternatively using a callback function
-provider.send(rpcRequest, origin, (error, response) => {
-  // use response or handle error
-})
-```
-In the above example `rpcRequest` is a request formated according to the [3ID JSON-RPC](https://github.com/3box/3box/blob/master/3IPs/3ip-10.md) specification, and `origin` is a string, e.g. `https://my.app.origin`.
-
-
-#### Link an address to the identity
-Multiple blockchain addresses can be linked to an identity controlled by an IdentityWallet instance. Right now two types of ethereum addresses are supported: EOAs (externally owned accounts) and EIP1271 contracts. Support for other types and blockchains can be easily added by contributing to the 3id-blockchain-utils module.
-To link an address simply use the linkAddress method as shown in the example below. The ethProvider needs to be able to sign a message using personal_sign for the given address.
-```js
-const ethAddress = '0xabc...'
-const ethProvider = // an ethereum json-rpc provider
-
-await idWallet.linkAddress(ethAddress, ethProvider)
+const provider = idWallet.getDidProvider()
+const did = new DID({ provider })
 ```
 
 ## Maintainers
@@ -109,41 +69,51 @@ await idWallet.linkAddress(ethAddress, ethProvider)
 **Kind**: global class  
 
 * [IdentityWallet](#IdentityWallet)
-    * [new IdentityWallet(getConsent, config)](#new_IdentityWallet_new)
-    * [.get3idProvider()](#IdentityWallet+get3idProvider) ⇒ <code>ThreeIdProvider</code>
-    * [.getDidProvider()](#IdentityWallet+getDidProvider) ⇒ <code>DidProvider</code>
-    * [.hasConsent(spaces, origin)](#IdentityWallet+hasConsent) ⇒ <code>Boolean</code>
-    * [.getConsent(spaces, origin)](#IdentityWallet+getConsent) ⇒ <code>Boolean</code>
-    * [.linkAddress(address, provider)](#IdentityWallet+linkAddress) ⇒ <code>Object</code>
-    * [.authenticate(spaces, opts)](#IdentityWallet+authenticate) ⇒ <code>Object</code>
-    * [.isAuthenticated(spaces, origin)](#IdentityWallet+isAuthenticated) ⇒ <code>Boolean</code>
-    * [.addAuthMethod(authSecret)](#IdentityWallet+addAuthMethod)
-    * [.signClaim(payload, opts)](#IdentityWallet+signClaim) ⇒ <code>String</code>
-    * [.encrypt(message, space, opts)](#IdentityWallet+encrypt) ⇒ <code>Object</code>
-    * [.decrypt(encryptedObject, space)](#IdentityWallet+decrypt) ⇒ <code>String</code>
+    * [new IdentityWallet()](#new_IdentityWallet_new)
+    * _instance_
+        * [.keychain](#IdentityWallet+keychain)
+        * [.permissions](#IdentityWallet+permissions)
+        * [.DID](#IdentityWallet+DID)
+        * [.getDidProvider()](#IdentityWallet+getDidProvider) ⇒ <code>DidProvider</code>
+        * [.get3idProvider()](#IdentityWallet+get3idProvider) ⇒ <code>ThreeIdProvider</code>
+    * _static_
+        * [.create(config)](#IdentityWallet.create) ⇒ [<code>IdentityWallet</code>](#IdentityWallet)
 
 <a name="new_IdentityWallet_new"></a>
 
-#### new IdentityWallet(getConsent, config)
-Creates an instance of IdentityWallet
+#### new IdentityWallet()
+Use IdentityWallet.create() to create an IdentityWallet instance
 
-**Returns**: <code>this</code> - An IdentityWallet instance  
+<a name="IdentityWallet+keychain"></a>
 
-| Param | Type | Description |
+#### identityWallet.keychain
+**Kind**: instance property of [<code>IdentityWallet</code>](#IdentityWallet)  
+**Properties**
+
+| Name | Type | Description |
 | --- | --- | --- |
-| getConsent | <code>function</code> | The function that is called to ask the user for consent |
-| config | <code>Object</code> | The configuration to be used |
-| config.seed | <code>String</code> | The seed of the identity, 32 hex string |
-| config.authSecret | <code>String</code> | The authSecret to use, 32 hex string |
-| config.externalAuth | <code>String</code> | External auth function, directly returns key material, used to migrate legacy 3box accounts |
+| keychain | [<code>Keychain</code>](#Keychain) | Edit the keychain |
 
-<a name="IdentityWallet+get3idProvider"></a>
+<a name="IdentityWallet+permissions"></a>
 
-#### identityWallet.get3idProvider() ⇒ <code>ThreeIdProvider</code>
-Get the 3IDProvider
+#### identityWallet.permissions
+**Kind**: instance property of [<code>IdentityWallet</code>](#IdentityWallet)  
+**Properties**
 
-**Kind**: instance method of [<code>IdentityWallet</code>](#IdentityWallet)  
-**Returns**: <code>ThreeIdProvider</code> - The 3IDProvider for this IdentityWallet instance  
+| Name | Type | Description |
+| --- | --- | --- |
+| permissions | [<code>Permissions</code>](#Permissions) | Edit permissions |
+
+<a name="IdentityWallet+DID"></a>
+
+#### identityWallet.DID
+**Kind**: instance property of [<code>IdentityWallet</code>](#IdentityWallet)  
+**Properties**
+
+| Name | Type | Description |
+| --- | --- | --- |
+| DID | <code>string</code> | The 3ID of the IdentityWallet instance |
+
 <a name="IdentityWallet+getDidProvider"></a>
 
 #### identityWallet.getDidProvider() ⇒ <code>DidProvider</code>
@@ -151,131 +121,195 @@ Get the DIDProvider
 
 **Kind**: instance method of [<code>IdentityWallet</code>](#IdentityWallet)  
 **Returns**: <code>DidProvider</code> - The DIDProvider for this IdentityWallet instance  
-<a name="IdentityWallet+hasConsent"></a>
+<a name="IdentityWallet+get3idProvider"></a>
 
-#### identityWallet.hasConsent(spaces, origin) ⇒ <code>Boolean</code>
-Determine if consent has been given for spaces for a given origin
+#### identityWallet.get3idProvider() ⇒ <code>ThreeIdProvider</code>
+Get the 3IDProvider
 
 **Kind**: instance method of [<code>IdentityWallet</code>](#IdentityWallet)  
-**Returns**: <code>Boolean</code> - True if consent has already been given  
+**Returns**: <code>ThreeIdProvider</code> - The 3IDProvider for this IdentityWallet instance  
+<a name="IdentityWallet.create"></a>
+
+#### IdentityWallet.create(config) ⇒ [<code>IdentityWallet</code>](#IdentityWallet)
+Creates an instance of IdentityWallet
+
+**Kind**: static method of [<code>IdentityWallet</code>](#IdentityWallet)  
+**Returns**: [<code>IdentityWallet</code>](#IdentityWallet) - An IdentityWallet instance  
 
 | Param | Type | Description |
 | --- | --- | --- |
-| spaces | <code>Array.&lt;String&gt;</code> | The desired spaces |
+| config | <code>Object</code> | The configuration to be used |
+| config.getPermission | <code>function</code> | The function that is called to ask the user for permission |
+| config.seed | <code>String</code> | The seed of the identity, 32 bytes hex string |
+| config.authSecret | <code>Uint8Array</code> | The authSecret to use, 32 bytes |
+| config.authId | <code>String</code> | The authId is used to identify the authSecret |
+| config.externalAuth | <code>String</code> | External auth function, directly returns key material, used to migrate legacy 3box accounts |
+
+<a name="Keychain"></a>
+
+### Keychain
+**Kind**: global class  
+
+* [Keychain](#Keychain)
+    * [new Keychain()](#new_Keychain_new)
+    * [.list()](#Keychain+list) ⇒ <code>Array.&lt;string&gt;</code>
+    * [.add(authId, authSecret)](#Keychain+add)
+    * [.remove(authId)](#Keychain+remove)
+    * [.status()](#Keychain+status) ⇒ <code>KeychainStatus</code>
+    * [.commit()](#Keychain+commit)
+
+<a name="new_Keychain_new"></a>
+
+#### new Keychain()
+The Keychain enables adding and removing of authentication methods.
+
+<a name="Keychain+list"></a>
+
+#### keychain.list() ⇒ <code>Array.&lt;string&gt;</code>
+List all current authentication methods.
+
+**Kind**: instance method of [<code>Keychain</code>](#Keychain)  
+**Returns**: <code>Array.&lt;string&gt;</code> - A list of authIds.  
+<a name="Keychain+add"></a>
+
+#### keychain.add(authId, authSecret)
+Add a new authentication method (adds to staging).
+
+**Kind**: instance method of [<code>Keychain</code>](#Keychain)  
+
+| Param | Type | Description |
+| --- | --- | --- |
+| authId | <code>String</code> | An identifier for the auth method |
+| authSecret | <code>Uint8Array</code> | The authSecret to use, should be of sufficient entropy |
+
+<a name="Keychain+remove"></a>
+
+#### keychain.remove(authId)
+Remove an authentication method (adds to staging).
+
+**Kind**: instance method of [<code>Keychain</code>](#Keychain)  
+
+| Param | Type | Description |
+| --- | --- | --- |
+| authId | <code>String</code> | An identifier for the auth method |
+
+<a name="Keychain+status"></a>
+
+#### keychain.status() ⇒ <code>KeychainStatus</code>
+Show the staging status of the keychain.
+Since removing auth methods will rotate the keys of the 3ID its a good idea
+to remove multiple auth methods at once if desired. Therefore we introduce
+a commit pattern to do multiple updates to the keychain at once.
+
+**Kind**: instance method of [<code>Keychain</code>](#Keychain)  
+**Returns**: <code>KeychainStatus</code> - Object that states the staging status of the keychain  
+<a name="Keychain+commit"></a>
+
+#### keychain.commit()
+Commit the staged changes to the keychain.
+
+**Kind**: instance method of [<code>Keychain</code>](#Keychain)  
+<a name="Permissions"></a>
+
+### Permissions
+**Kind**: global class  
+
+* [Permissions](#Permissions)
+    * [new Permissions()](#new_Permissions_new)
+    * [.request(origin, paths)](#Permissions+request) ⇒ <code>Array.&lt;String&gt;</code>
+    * [.has(origin, paths)](#Permissions+has) ⇒ <code>Boolean</code>
+    * [.get(origin)](#Permissions+get) ⇒ <code>Array.&lt;String&gt;</code>
+    * [.set(origin, paths)](#Permissions+set)
+
+<a name="new_Permissions_new"></a>
+
+#### new Permissions()
+The Permissions class exposes methods to read and update the given permissions
+
+<a name="Permissions+request"></a>
+
+#### permissions.request(origin, paths) ⇒ <code>Array.&lt;String&gt;</code>
+Request permission for given paths for a given origin.
+
+**Kind**: instance method of [<code>Permissions</code>](#Permissions)  
+**Returns**: <code>Array.&lt;String&gt;</code> - The paths that where granted permission for  
+
+| Param | Type | Description |
+| --- | --- | --- |
 | origin | <code>String</code> | Application domain |
-| opt.address | <code>String</code> | Optional address (managementKey) if keyring not available yet |
+| paths | <code>Array.&lt;String&gt;</code> | The desired paths |
 
-<a name="IdentityWallet+getConsent"></a>
+<a name="Permissions+has"></a>
 
-#### identityWallet.getConsent(spaces, origin) ⇒ <code>Boolean</code>
-Get consent for given spaces for a given origin
+#### permissions.has(origin, paths) ⇒ <code>Boolean</code>
+Determine if permission has been given for paths for a given origin.
 
-**Kind**: instance method of [<code>IdentityWallet</code>](#IdentityWallet)  
-**Returns**: <code>Boolean</code> - True consent was given  
+**Kind**: instance method of [<code>Permissions</code>](#Permissions)  
+**Returns**: <code>Boolean</code> - True if permission has previously been given  
 
 | Param | Type | Description |
 | --- | --- | --- |
-| spaces | <code>Array.&lt;String&gt;</code> | The desired spaces |
 | origin | <code>String</code> | Application domain |
-| opt.address | <code>String</code> | Optional address (managementKey) if keyring not available yet |
+| paths | <code>Array.&lt;String&gt;</code> | The desired paths |
 
-<a name="IdentityWallet+linkAddress"></a>
+<a name="Permissions+get"></a>
 
-#### identityWallet.linkAddress(address, provider) ⇒ <code>Object</code>
-Link a blockchain address to the identity. Usually the address
-would be an ethereum address (EOA or EIP1271 compatible contract)
-and the provider is an JSON-RPC provider that can sign a message
-with this address using personal_sign.
+#### permissions.get(origin) ⇒ <code>Array.&lt;String&gt;</code>
+Get the paths which the given origin has permission for.
 
-**Kind**: instance method of [<code>IdentityWallet</code>](#IdentityWallet)  
-**Returns**: <code>Object</code> - The link proof object  
+**Kind**: instance method of [<code>Permissions</code>](#Permissions)  
+**Returns**: <code>Array.&lt;String&gt;</code> - The permissioned paths  
 
 | Param | Type | Description |
 | --- | --- | --- |
-| address | <code>String</code> | The address to link |
-| provider | <code>Object</code> | The provider that can sign a message for the given address |
-
-<a name="IdentityWallet+authenticate"></a>
-
-#### identityWallet.authenticate(spaces, opts) ⇒ <code>Object</code>
-Authenticate to given spaces
-
-**Kind**: instance method of [<code>IdentityWallet</code>](#IdentityWallet)  
-**Returns**: <code>Object</code> - The public keys for the requested spaces of this identity  
-
-| Param | Type | Description |
-| --- | --- | --- |
-| spaces | <code>Array.&lt;String&gt;</code> | The desired spaces |
-| opts | <code>Object</code> | Optional parameters |
-| opts.authData | <code>Array.&lt;Object&gt;</code> | The authData for this identity |
-
-<a name="IdentityWallet+isAuthenticated"></a>
-
-#### identityWallet.isAuthenticated(spaces, origin) ⇒ <code>Boolean</code>
-Check if authenticated to given spaces
-
-**Kind**: instance method of [<code>IdentityWallet</code>](#IdentityWallet)  
-**Returns**: <code>Boolean</code> - True if authenticated  
-
-| Param | Type | Description |
-| --- | --- | --- |
-| spaces | <code>Array.&lt;String&gt;</code> | The desired spaces |
 | origin | <code>String</code> | Application domain |
-| opt.address | <code>String</code> | Optional address (managementKey) if keyring not available yet |
 
-<a name="IdentityWallet+addAuthMethod"></a>
+<a name="Permissions+set"></a>
 
-#### identityWallet.addAuthMethod(authSecret)
-Add a new authentication method for this identity
+#### permissions.set(origin, paths)
+Set the paths which the given origin should have permission for.
 
-**Kind**: instance method of [<code>IdentityWallet</code>](#IdentityWallet)  
-
-| Param | Type | Description |
-| --- | --- | --- |
-| authSecret | <code>String</code> | A 32 byte hex string used as authentication secret |
-
-<a name="IdentityWallet+signClaim"></a>
-
-#### identityWallet.signClaim(payload, opts) ⇒ <code>String</code>
-Sign a verifiable credential. The format of the credential is [did-jwt](https://github.com/uport-project/did-jwt).
-
-**Kind**: instance method of [<code>IdentityWallet</code>](#IdentityWallet)  
-**Returns**: <code>String</code> - The signed claim encoded as a JWT  
+**Kind**: instance method of [<code>Permissions</code>](#Permissions)  
 
 | Param | Type | Description |
 | --- | --- | --- |
-| payload | <code>Object</code> | The payload of the claim |
-| opts | <code>Object</code> | Optional parameters |
-| opts.space | <code>String</code> | The space used to sign the claim |
-| opts.expiresIn | <code>String</code> | Set an expiry date for the claim as unix timestamp |
+| origin | <code>String</code> | Application domain |
+| paths | <code>Array.&lt;String&gt;</code> | The desired paths |
 
-<a name="IdentityWallet+encrypt"></a>
+<a name="ThreeIDX"></a>
 
-#### identityWallet.encrypt(message, space, opts) ⇒ <code>Object</code>
-Encrypt a message
+### ThreeIDX
+Class used for creating the 3ID and IDX data structure.
 
-**Kind**: instance method of [<code>IdentityWallet</code>](#IdentityWallet)  
-**Returns**: <code>Object</code> - The encrypted object (ciphertext and nonce)  
+**Kind**: global class  
 
-| Param | Type | Description |
-| --- | --- | --- |
-| message | <code>String</code> | The message to be encrypted |
-| space | <code>String</code> | The space used for encryption |
-| opts | <code>Object</code> | Optional parameters |
-| opts.to | <code>String</code> | The public key to encrypt the message to |
-| opts.nonce | <code>String</code> | The nonce used to encrypt the message |
-| opts.blockSize | <code>String</code> | The blockSize used for padding (default 24) |
+* [ThreeIDX](#ThreeIDX)
+    * [.createIDX()](#ThreeIDX+createIDX)
+    * [.loadIDX()](#ThreeIDX+loadIDX)
+    * [.addAuthEntries()](#ThreeIDX+addAuthEntries)
+    * [.getAllAuthEntries()](#ThreeIDX+getAllAuthEntries)
 
-<a name="IdentityWallet+decrypt"></a>
+<a name="ThreeIDX+createIDX"></a>
 
-#### identityWallet.decrypt(encryptedObject, space) ⇒ <code>String</code>
-Decrypt a message
+#### threeIDX.createIDX()
+Create a new IDX structure that has a given authEntry in it's keychain.
 
-**Kind**: instance method of [<code>IdentityWallet</code>](#IdentityWallet)  
-**Returns**: <code>String</code> - The decrypted message  
+**Kind**: instance method of [<code>ThreeIDX</code>](#ThreeIDX)  
+<a name="ThreeIDX+loadIDX"></a>
 
-| Param | Type | Description |
-| --- | --- | --- |
-| encryptedObject | <code>Object</code> | The encrypted object (ciphertext, nonce, and ephemeralFrom for asymmetric encrypted objects) |
-| space | <code>String</code> | The space used for encryption |
+#### threeIDX.loadIDX()
+Returns the encrypted JWE for the given authLink
 
+**Kind**: instance method of [<code>ThreeIDX</code>](#ThreeIDX)  
+<a name="ThreeIDX+addAuthEntries"></a>
+
+#### threeIDX.addAuthEntries()
+Adds a new AuthEntries to the Auth keychain.
+
+**Kind**: instance method of [<code>ThreeIDX</code>](#ThreeIDX)  
+<a name="ThreeIDX+getAllAuthEntries"></a>
+
+#### threeIDX.getAllAuthEntries()
+Returns all public keys that is in the auth keychain.
+
+**Kind**: instance method of [<code>ThreeIDX</code>](#ThreeIDX)  
