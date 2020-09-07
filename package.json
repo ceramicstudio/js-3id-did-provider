@@ -3,6 +3,7 @@
   "version": "2.0.0-alpha.2",
   "description": "Create and manage identities",
   "main": "lib/identity-wallet.js",
+  "types": "lib/identity-wallet.d.ts",
   "directories": {
     "lib": "lib"
   },
