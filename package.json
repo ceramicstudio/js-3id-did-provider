@@ -34,7 +34,7 @@
     "url": "git+https://github.com/3box/identity-wallet-js.git"
   },
   "author": "3box <team@3box.io>",
-  "license": "Apache-2.0",
+  "license": "(Apache-2.0 OR MIT)",
   "bugs": {
     "url": "https://github.com/3box/identity-wallet-js/issues"
   },
