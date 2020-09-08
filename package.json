@@ -3,6 +3,7 @@
   "version": "2.0.0-alpha.2",
   "description": "Create and manage identities",
   "main": "lib/identity-wallet.js",
+  "types": "lib/identity-wallet.d.ts",
   "directories": {
     "lib": "lib"
   },
@@ -55,7 +56,8 @@
     "rpc-utils": "^0.1.2",
     "store": "^2.0.12",
     "tweetnacl": "^1.0.3",
-    "tweetnacl-util": "^0.15.1"
+    "tweetnacl-util": "^0.15.1",
+    "elliptic": "^6.5.3"
   },
   "devDependencies": {
     "@babel/cli": "^7.10.5",
