@@ -45,6 +45,8 @@ export const didMethods: HandlerMethods<Context> = {
     if (!permissions.has(origin)) {
       throw new RPCError(4100, 'Unauthorized')
     }
+    // TODO - if the requesting DID is our management key
+    // (did:key) we should request explicit permission.
     const keyName = threeIdx.parseKeyName(params.did)
     const kid = await threeIdx.encodeKidWithVersion(keyName)
     const signer = keyring.getSigner(keyName)
