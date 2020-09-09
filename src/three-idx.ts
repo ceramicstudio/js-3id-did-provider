@@ -8,7 +8,7 @@ import type { DidProvider } from './did-provider'
 
 const gen3IDgenesis = (pubkeys: PublicKeys): Record<string, any> => {
   return {
-    metadata: { owners: [pubkeys.managementKey] },
+    metadata: { owners: [`did:key:${pubkeys.managementKey as string}`] },
     content: {
       publicKeys: {
         signing: pubkeys.signingKey,
@@ -44,9 +44,6 @@ export interface NewAuthEntry extends AuthEntry {
   linkProof: LinkProof
 }
 
-/**
- * Class used for creating the 3ID and IDX data structure.
- */
 export class ThreeIDX {
   public docs: Record<string, Doctype>
   public ceramic: CeramicApi
@@ -64,12 +61,18 @@ export class ThreeIDX {
     return `did:3:${this.docs.threeId.id.split('//')[1]}`
   }
 
+  get managementDID(): string {
+    return this.docs.threeId.owners[0]
+  }
+
   async create3idDoc(publicKeys: PublicKeys): Promise<void> {
     const docParams = gen3IDgenesis(publicKeys)
     this.docs.threeId = await this.ceramic.createDocument('3id', docParams)
   }
 
   async encodeKidWithVersion(keyName = 'signing'): Promise<string> {
+    // key id of a key-did: https://w3c-ccg.github.io/did-method-key/
+    if (keyName === 'management') return `${this.managementDID}#${this.managementDID.split(':')[2]}`
     const version = (await this.ceramic.listVersions(this.docs.threeId.id)).pop() || 0
     return `${this.DID}?version-id=${version}#${keyName}`
   }
@@ -77,6 +80,9 @@ export class ThreeIDX {
   parseKeyName(kid: string): string | undefined {
     if (!kid) return
     const [did, keyName] = kid.split('#')
+    if (did === this.managementDID) {
+      return 'management'
+    }
     if (this.DID == null || did !== this.DID) {
       throw new Error('Invalid DID')
     }

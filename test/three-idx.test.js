@@ -55,7 +55,7 @@ const mockedPermissions = {
 }
 
 describe('ThreeIDX', () => {
-  jest.setTimeout(10000)
+  jest.setTimeout(15000)
   let tmpFolder
   let ipfs, ceramic
   let keyring, threeIdx
@@ -98,12 +98,11 @@ describe('ThreeIDX', () => {
     await threeIdx.create3idDoc(pubkeys)
     // with no anchor
     expect(await threeIdx.encodeKidWithVersion()).toEqual(threeIdx.DID + '?version-id=0#signing')
-    expect(await threeIdx.encodeKidWithVersion('management')).toEqual(threeIdx.DID + '?version-id=0#management')
+    expect(await threeIdx.encodeKidWithVersion('management')).toEqual(`${threeIdx.managementDID}#${threeIdx.managementDID.split(':')[2]}`)
     // wait for anchor
     await new Promise(resolve => threeIdx.docs.threeId.on('change', resolve))
     const latestVer = (await ceramic.listVersions(threeIdx.docs.threeId.id)).pop()
     expect(await threeIdx.encodeKidWithVersion()).toEqual(threeIdx.DID + '?version-id=' + latestVer + '#signing')
-    expect(await threeIdx.encodeKidWithVersion('management')).toEqual(threeIdx.DID + '?version-id=' + latestVer + '#management')
   })
 
   it('creates authMapEntry', async () => {
