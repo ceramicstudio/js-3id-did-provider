@@ -127,7 +127,7 @@ describe('ThreeIDX', () => {
     expect(threeIdx.docs[accountId].content).toEqual('did:3:asdf')
   })
 
-  it('createIDX', async () => {
+  it('createIDX with new auth entry', async () => {
     await setup3id(threeIdx, keyring)
     const { newAuthEntry, accountId } = await genAuthEntryCreate()
     await threeIdx.createIDX(newAuthEntry)
@@ -147,6 +147,19 @@ describe('ThreeIDX', () => {
       threeIdx.docs.idx.id,
       threeIdx.docs['auth-keychain'].id,
       threeIdx.docs[accountId].id,
+    ].map(docid => docid.replace('ceramic://', '/ceramic/'))))
+  })
+
+  it('createIDX with no auth entry', async () => {
+    await setup3id(threeIdx, keyring)
+    await threeIdx.createIDX()
+
+    expect(threeIdx.docs.idx.content).toEqual({  })
+    expect(threeIdx.docs.threeId.content).toEqual(expect.objectContaining({ 'idx': threeIdx.docs.idx.id }))
+    // should be pinned
+    expect(await all(await ceramic.pin.ls())).toEqual(expect.arrayContaining([
+      threeIdx.docs.threeId.id,
+      threeIdx.docs.idx.id,
     ].map(docid => docid.replace('ceramic://', '/ceramic/'))))
   })
 

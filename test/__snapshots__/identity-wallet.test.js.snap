@@ -32,5 +32,12 @@ Object {
       "type": "Curve25519EncryptionPublicKey",
     },
   ],
+  "service": Array [
+    Object {
+      "id": "did:3:bafyreiaaskoyjlkq7a5mwdum5pzvhn3r45lqsmp7v622yko3etqc4wpmje#idx",
+      "serviceEndpoint": "ceramic://bagcqceralak3hhzv5xom27djnpq5mi7fgozn6ssar4yhhjfq4qcax2bfemnq",
+      "type": "IdentityIndexRoot",
+    },
+  ],
 }
 `;
