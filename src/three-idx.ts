@@ -91,11 +91,15 @@ export class ThreeIDX {
 
   async createAuthMapEntry(authEntry: NewAuthEntry): Promise<AuthMapEntry> {
     const authLink = authEntry.linkProof.account
-    this.docs[authLink] = await this.ceramic.createDocument(
-      'account-link',
-      { metadata: { owners: [authLink] } },
-      { applyOnly: true }
-    )
+    // tmp if statement, can be removed when fix released:
+    // https://github.com/ceramicnetwork/js-ceramic/pull/287
+    if (!this.docs[authLink]) {
+      this.docs[authLink] = await this.ceramic.createDocument(
+        'account-link',
+        { metadata: { owners: [authLink] } },
+        { applyOnly: true }
+      )
+    }
     await this.docs[authLink].change({ content: authEntry.linkProof })
     await this.ceramic.pin.add(this.docs[authLink].id)
     const tmpEntry = Object.assign({}, authEntry)
