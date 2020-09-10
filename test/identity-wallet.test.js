@@ -7,13 +7,20 @@ import tmp from 'tmp-promise'
 import Ceramic from '@ceramicnetwork/ceramic-core'
 import Ipfs from 'ipfs'
 
+import dagJose from 'dag-jose'
+import basicsImport from 'multiformats/cjs/src/basics-import.js'
+import legacy from 'multiformats/cjs/src/legacy.js'
+
 const seed = '0x6e34b2e1a9624113d81ece8a8a22e6e97f0e145c25c1d4d2d0e62753b4060c837097f768559e17ec89ee20cba153b23b9987912ec1e860fa1212ba4b84c776ce'
 
 const randomAuthSecret = () => naclRandom(32)
 const getPermissionMock = jest.fn(async () => [])
 
 const genIpfsConf = (folder) => {
+  basicsImport.multicodec.add(dagJose)
+  const format = legacy(basicsImport, dagJose.name)
   return {
+    ipld: { formats: [format] },
     repo: `${folder}/ipfs/`,
     config: {
       Addresses: { Swarm: [] },

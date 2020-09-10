@@ -16,10 +16,17 @@ import {
 } from '../src/crypto'
 import { fakeEthProvider } from '../src/utils'
 
+import dagJose from 'dag-jose'
+import basicsImport from 'multiformats/cjs/src/basics-import.js'
+import legacy from 'multiformats/cjs/src/legacy.js'
+
 const seed = '0x8e641c0dc77f6916cc7f743dad774cdf9f6f7bcb880b11395149dd878377cd398650bbfd4607962b49953c87da4d7f3ff247ed734b06f96bdd69479377bc612b'
 
 const genIpfsConf = (folder) => {
+  basicsImport.multicodec.add(dagJose)
+  const format = legacy(basicsImport, dagJose.name)
   return {
+    ipld: { formats: [format] },
     repo: `${folder}/ipfs/`,
     config: {
       Addresses: { Swarm: [] },
