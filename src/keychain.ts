@@ -59,9 +59,7 @@ export class Keychain {
    * @param     {Uint8Array}        authSecret      The authSecret to use, should be of sufficient entropy
    */
   async add(authId: string, authSecret: Uint8Array): Promise<void> {
-    this._pendingAdds.push(
-      await newAuthEntry(this._keyring, this._threeIdx.DID, authId, authSecret)
-    )
+    this._pendingAdds.push(await newAuthEntry(this._keyring, this._threeIdx.id, authId, authSecret))
   }
 
   /**

@@ -23,7 +23,7 @@ describe('Keychain', () => {
   beforeEach(async () => {
     let authEntries = []
     threeIdx = {
-      DID: 'did:3:asdf',
+      id: 'did:3:asdf',
       addAuthEntry: jest.fn(),
       loadIDX: jest.fn(async () => null),
       create3idDoc: jest.fn(),
@@ -45,7 +45,7 @@ describe('Keychain', () => {
     const authSecret = randomAuthSecret()
     // add the auth entry to IDX
     const tmpKc = await Keychain.load(threeIdx, authSecret)
-    threeIdx.createIDX(await newAuthEntry(tmpKc._keyring, threeIdx.DID, 'authid', authSecret))
+    threeIdx.createIDX(await newAuthEntry(tmpKc._keyring, threeIdx.id, 'authid', authSecret))
 
     threeIdx.loadIDX = jest.fn(async () => threeIdx.getAllAuthEntries()[0].data)
     const keychain = await Keychain.load(threeIdx, authSecret)
@@ -68,7 +68,7 @@ describe('Keychain', () => {
 
   it('commit adds, IDX already created', async () => {
     const keychain = new Keychain(keyring, threeIdx)
-    threeIdx.createIDX(await newAuthEntry(keychain._keyring, threeIdx.DID, 'authid', randomAuthSecret()))
+    threeIdx.createIDX(await newAuthEntry(keychain._keyring, threeIdx.id, 'authid', randomAuthSecret()))
 
     await keychain.add('auth1', randomAuthSecret())
     await keychain.add('auth2', randomAuthSecret())

@@ -43,10 +43,10 @@ export default class IdentityWallet {
   }
 
   /**
-   * @property {string} DID                 The 3ID of the IdentityWallet instance
+   * @property {string} id                 The 3ID of the IdentityWallet instance
    */
-  get DID(): string {
-    return this._threeIdx.DID
+  get id(): string {
+    return this._threeIdx.id
   }
 
   /**
@@ -78,7 +78,7 @@ export default class IdentityWallet {
       keychain = await Keychain.load(threeIdx, config.authSecret)
       keyring = keychain._keyring
     }
-    permissions.setDID(threeIdx.DID)
+    permissions.setDID(threeIdx.id)
     const idw = new IdentityWallet(keyring as Keyring, threeIdx, permissions, keychain as Keychain)
     await idw._threeIdx.setDIDProvider(idw.getDidProvider(SELF_ORIGIN))
     if (config.authId && !keychain?.list().length) {

@@ -19,7 +19,7 @@ describe('DidProvider', () => {
   test('`did_authenticate` method returns the accounts', async () => {
     const config = {
       permissions: { request: jest.fn(async (origin, paths) => paths) },
-      threeIdx: { DID: 'did:3:test' },
+      threeIdx: { id: 'did:3:test' },
     }
     await expectRPC(
       new DidProvider(config),
@@ -54,7 +54,7 @@ describe('DidProvider', () => {
       permissions: { has: jest.fn(() => true) },
       threeIdx: {
         parseKeyName: (did) => did.split('#')[1] || 'signing',
-        encodeKidWithVersion: async (keyName) => Promise.resolve('did:3:asdf?version=0#' + keyName)
+        encodeKidWithVersion: async (keyName) => Promise.resolve('did:3:asdf?version=0#' + keyName),
       },
       keyring: { getSigner: () => () => Promise.resolve('signed') },
     }
