@@ -111,19 +111,14 @@ export class ThreeIDX {
    * Create a new IDX structure that has a given authEntry in it's keychain.
    */
   async createIDX(authEntry?: NewAuthEntry): Promise<void> {
-    let content = {}
-    if (authEntry != null) {
-      const entry = await this.createAuthMapEntry(authEntry)
-      this.docs[CDefs.authKeychain] = await this.ceramic.createDocument('tile', {
-        metadata: { owners: [this.id] },
-        content: entry,
-      })
-      content = { [CDefs.authKeychain]: this.docs[CDefs.authKeychain].id }
-    }
-
+    const entry = authEntry ? await this.createAuthMapEntry(authEntry) : {}
+    this.docs[CDefs.authKeychain] = await this.ceramic.createDocument('tile', {
+      metadata: { owners: [this.id] },
+      content: entry,
+    })
     this.docs.idx = await this.ceramic.createDocument('tile', {
       metadata: { owners: [this.id] },
-      content,
+      content: { [CDefs.authKeychain]: this.docs[CDefs.authKeychain].id },
     })
     await this.docs.threeId.change({
       content: Object.assign(this.docs.threeId.content, { idx: this.docs.idx.id }),

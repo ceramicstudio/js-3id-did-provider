@@ -154,7 +154,7 @@ describe('ThreeIDX', () => {
     await setup3id(threeIdx, keyring)
     await threeIdx.createIDX()
 
-    expect(threeIdx.docs.idx.content).toEqual({  })
+    expect(threeIdx.docs.idx.content).toEqual({ 'auth-keychain': threeIdx.docs['auth-keychain'].id })
     expect(threeIdx.docs.threeId.content).toEqual(expect.objectContaining({ 'idx': threeIdx.docs.idx.id }))
     // should be pinned
     expect(await all(await ceramic.pin.ls())).toEqual(expect.arrayContaining([

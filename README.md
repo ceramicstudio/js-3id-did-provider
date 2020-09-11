@@ -112,7 +112,7 @@ Use IdentityWallet.create() to create an IdentityWallet instance
 
 | Name | Type | Description |
 | --- | --- | --- |
-| id | <code>string</code> | The 3ID of the IdentityWallet instance |
+| id | <code>string</code> | The DID of the IdentityWallet instance |
 
 <a name="IdentityWallet+getDidProvider"></a>
 

@@ -35,7 +35,7 @@ Object {
   "service": Array [
     Object {
       "id": "did:3:bafyreiaaskoyjlkq7a5mwdum5pzvhn3r45lqsmp7v622yko3etqc4wpmje#idx",
-      "serviceEndpoint": "ceramic://bagcqceralak3hhzv5xom27djnpq5mi7fgozn6ssar4yhhjfq4qcax2bfemnq",
+      "serviceEndpoint": "ceramic://bagcqcera7lfceeeskgkrpyasy34pjm3bpv3nphfmlom6wc4mfb2vroridhbq",
       "type": "IdentityIndexRoot",
     },
   ],

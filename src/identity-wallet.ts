@@ -43,7 +43,7 @@ export default class IdentityWallet {
   }
 
   /**
-   * @property {string} id                 The 3ID of the IdentityWallet instance
+   * @property {string} id                 The DID of the IdentityWallet instance
    */
   get id(): string {
     return this._threeIdx.id
