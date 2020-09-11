@@ -14,7 +14,6 @@ interface IDWConfig {
   authId?: string
   externalAuth?: (req: any) => Promise<any>
   ceramic: CeramicApi
-  useThreeIdProv: boolean
 }
 
 export default class IdentityWallet {
@@ -44,10 +43,10 @@ export default class IdentityWallet {
   }
 
   /**
-   * @property {string} DID                 The 3ID of the IdentityWallet instance
+   * @property {string} id                 The DID of the IdentityWallet instance
    */
-  get DID(): string {
-    return this._threeIdx.DID
+  get id(): string {
+    return this._threeIdx.id
   }
 
   /**
@@ -79,13 +78,17 @@ export default class IdentityWallet {
       keychain = await Keychain.load(threeIdx, config.authSecret)
       keyring = keychain._keyring
     }
-    permissions.setDID(threeIdx.DID)
+    permissions.setDID(threeIdx.id)
     const idw = new IdentityWallet(keyring as Keyring, threeIdx, permissions, keychain as Keychain)
     await idw._threeIdx.setDIDProvider(idw.getDidProvider(SELF_ORIGIN))
     if (config.authId && !keychain?.list().length) {
       // Add the auth method to the keychain
       await idw.keychain.add(config.authId, config.authSecret as Uint8Array)
       await idw.keychain.commit()
+    }
+    if (idw._threeIdx.docs.idx == null) {
+      // Ensure IDX is created and linked to the DID
+      await idw._threeIdx.createIDX()
     }
     return idw
   }

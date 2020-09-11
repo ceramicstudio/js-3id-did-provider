@@ -72,7 +72,7 @@ describe('ThreeIdProvider', () => {
   it('sign claim correctly', async () => {
     const config = {
       permissions: { has: jest.fn(() => true) },
-      threeIdx: { DID: 'did:3:asdf' },
+      threeIdx: { id: 'did:3:asdf' },
       keyring: { getJWTSigner: () => () => Promise.resolve('signed') },
     }
     rpc = new ThreeIdProvider(config)

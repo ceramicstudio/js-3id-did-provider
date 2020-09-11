@@ -73,7 +73,7 @@ const did = new DID({ provider })
     * _instance_
         * [.keychain](#IdentityWallet+keychain)
         * [.permissions](#IdentityWallet+permissions)
-        * [.DID](#IdentityWallet+DID)
+        * [.id](#IdentityWallet+id)
         * [.getDidProvider()](#IdentityWallet+getDidProvider) ⇒ <code>DidProvider</code>
         * [.get3idProvider()](#IdentityWallet+get3idProvider) ⇒ <code>ThreeIdProvider</code>
     * _static_
@@ -104,15 +104,15 @@ Use IdentityWallet.create() to create an IdentityWallet instance
 | --- | --- | --- |
 | permissions | [<code>Permissions</code>](#Permissions) | Edit permissions |
 
-<a name="IdentityWallet+DID"></a>
+<a name="IdentityWallet+id"></a>
 
-#### identityWallet.DID
+#### identityWallet.id
 **Kind**: instance property of [<code>IdentityWallet</code>](#IdentityWallet)  
 **Properties**
 
 | Name | Type | Description |
 | --- | --- | --- |
-| DID | <code>string</code> | The 3ID of the IdentityWallet instance |
+| id | <code>string</code> | The DID of the IdentityWallet instance |
 
 <a name="IdentityWallet+getDidProvider"></a>
 

@@ -37,7 +37,7 @@ const methods: HandlerMethods<Context> = {
     }
     const settings = {
       signer: keyring.getJWTSigner(params.space, params.useMgmt),
-      issuer: threeIdx.DID,
+      issuer: threeIdx.id,
       expiresIn: params.expiresIn,
     }
     return createJWT(params.payload, settings)

@@ -96,7 +96,7 @@ describe('ThreeIDX', () => {
     await threeIdx.create3idDoc(pubkeys)
     const badKid = 'did:3:bayfiuherg98h349h#signing'
     expect(() => threeIdx.parseKeyName(badKid)).toThrow('Invalid DID')
-    const goodKid = threeIdx.DID + '#signing'
+    const goodKid = threeIdx.id + '#signing'
     expect(threeIdx.parseKeyName(goodKid)).toEqual('signing')
   })
 
@@ -104,12 +104,12 @@ describe('ThreeIDX', () => {
     const pubkeys = keyring.getPublicKeys({ mgmtPub: true, useMulticodec: true })
     await threeIdx.create3idDoc(pubkeys)
     // with no anchor
-    expect(await threeIdx.encodeKidWithVersion()).toEqual(threeIdx.DID + '?version-id=0#signing')
+    expect(await threeIdx.encodeKidWithVersion()).toEqual(threeIdx.id + '?version-id=0#signing')
     expect(await threeIdx.encodeKidWithVersion('management')).toEqual(`${threeIdx.managementDID}#${threeIdx.managementDID.split(':')[2]}`)
     // wait for anchor
     await new Promise(resolve => threeIdx.docs.threeId.on('change', resolve))
     const latestVer = (await ceramic.listVersions(threeIdx.docs.threeId.id)).pop()
-    expect(await threeIdx.encodeKidWithVersion()).toEqual(threeIdx.DID + '?version-id=' + latestVer + '#signing')
+    expect(await threeIdx.encodeKidWithVersion()).toEqual(threeIdx.id + '?version-id=' + latestVer + '#signing')
   })
 
   it('creates authMapEntry', async () => {
@@ -127,7 +127,7 @@ describe('ThreeIDX', () => {
     expect(threeIdx.docs[accountId].content).toEqual('did:3:asdf')
   })
 
-  it('createIDX', async () => {
+  it('createIDX with new auth entry', async () => {
     await setup3id(threeIdx, keyring)
     const { newAuthEntry, accountId } = await genAuthEntryCreate()
     await threeIdx.createIDX(newAuthEntry)
@@ -150,16 +150,29 @@ describe('ThreeIDX', () => {
     ].map(docid => docid.replace('ceramic://', '/ceramic/'))))
   })
 
+  it('createIDX with no auth entry', async () => {
+    await setup3id(threeIdx, keyring)
+    await threeIdx.createIDX()
+
+    expect(threeIdx.docs.idx.content).toEqual({ 'auth-keychain': threeIdx.docs['auth-keychain'].id })
+    expect(threeIdx.docs.threeId.content).toEqual(expect.objectContaining({ 'idx': threeIdx.docs.idx.id }))
+    // should be pinned
+    expect(await all(await ceramic.pin.ls())).toEqual(expect.arrayContaining([
+      threeIdx.docs.threeId.id,
+      threeIdx.docs.idx.id,
+    ].map(docid => docid.replace('ceramic://', '/ceramic/'))))
+  })
+
   it('loadIDX fails if authLink does not exist', async () => {
     await setup3id(threeIdx, keyring)
-    const { newAuthEntry, accountId } = await genAuthEntryCreate(threeIdx.DID)
+    const { newAuthEntry, accountId } = await genAuthEntryCreate(threeIdx.id)
 
     expect(await threeIdx.loadIDX(accountId)).toEqual(null)
   })
 
   it('loadIDX works if IDX created', async () => {
     await setup3id(threeIdx, keyring)
-    const { newAuthEntry, accountId } = await genAuthEntryCreate(threeIdx.DID)
+    const { newAuthEntry, accountId } = await genAuthEntryCreate(threeIdx.id)
     await threeIdx.createIDX(newAuthEntry)
 
     expect(await threeIdx.loadIDX(accountId)).toEqual(newAuthEntry.data)
@@ -167,14 +180,14 @@ describe('ThreeIDX', () => {
 
   it('addAuthEntries', async () => {
     await setup3id(threeIdx, keyring)
-    const { newAuthEntry: nae1, accountId: ai1 } = await genAuthEntryCreate(threeIdx.DID)
+    const { newAuthEntry: nae1, accountId: ai1 } = await genAuthEntryCreate(threeIdx.id)
     await threeIdx.createIDX(nae1)
 
     const authEntry1 = { pub: nae1.pub, data: nae1.data, id: nae1.id }
     expect(threeIdx.getAllAuthEntries()).toEqual([authEntry1])
 
-    const { newAuthEntry: nae2, accountId: ai2 } = await genAuthEntryCreate(threeIdx.DID)
-    const { newAuthEntry: nae3, accountId: ai3 } = await genAuthEntryCreate(threeIdx.DID)
+    const { newAuthEntry: nae2, accountId: ai2 } = await genAuthEntryCreate(threeIdx.id)
+    const { newAuthEntry: nae3, accountId: ai3 } = await genAuthEntryCreate(threeIdx.id)
     const authEntry2 = { pub: nae2.pub, data: nae2.data, id: nae2.id }
     const authEntry3 = { pub: nae3.pub, data: nae3.data, id: nae3.id }
     await threeIdx.addAuthEntries([nae2, nae3])

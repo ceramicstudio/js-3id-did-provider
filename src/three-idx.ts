@@ -57,7 +57,7 @@ export class ThreeIDX {
     await this.ceramic.setDIDProvider(provider)
   }
 
-  get DID(): string {
+  get id(): string {
     return `did:3:${this.docs.threeId.id.split('//')[1]}`
   }
 
@@ -74,7 +74,7 @@ export class ThreeIDX {
     // key id of a key-did: https://w3c-ccg.github.io/did-method-key/
     if (keyName === 'management') return `${this.managementDID}#${this.managementDID.split(':')[2]}`
     const version = (await this.ceramic.listVersions(this.docs.threeId.id)).pop() || 0
-    return `${this.DID}?version-id=${version}#${keyName}`
+    return `${this.id}?version-id=${version}#${keyName}`
   }
 
   parseKeyName(kid: string): string | undefined {
@@ -83,7 +83,7 @@ export class ThreeIDX {
     if (did === this.managementDID) {
       return 'management'
     }
-    if (this.DID == null || did !== this.DID) {
+    if (this.id == null || did !== this.id) {
       throw new Error('Invalid DID')
     }
     return keyName
@@ -110,14 +110,14 @@ export class ThreeIDX {
   /**
    * Create a new IDX structure that has a given authEntry in it's keychain.
    */
-  async createIDX(authEntry: NewAuthEntry): Promise<void> {
-    const entry = await this.createAuthMapEntry(authEntry)
+  async createIDX(authEntry?: NewAuthEntry): Promise<void> {
+    const entry = authEntry ? await this.createAuthMapEntry(authEntry) : {}
     this.docs[CDefs.authKeychain] = await this.ceramic.createDocument('tile', {
-      metadata: { owners: [this.DID] },
+      metadata: { owners: [this.id] },
       content: entry,
     })
     this.docs.idx = await this.ceramic.createDocument('tile', {
-      metadata: { owners: [this.DID] },
+      metadata: { owners: [this.id] },
       content: { [CDefs.authKeychain]: this.docs[CDefs.authKeychain].id },
     })
     await this.docs.threeId.change({

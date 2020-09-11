@@ -39,7 +39,7 @@ export const didMethods: HandlerMethods<Context> = {
     // paths should be an array if permission granted
     // may be a subset or requested paths or empty array
     if (paths === null) throw new RPCError(4001, 'User Rejected Request')
-    return { did: threeIdx.DID, paths }
+    return { did: threeIdx.id, paths }
   },
   did_createJWS: async ({ permissions, keyring, threeIdx, origin }, params: CreateJWSParams) => {
     if (!permissions.has(origin)) {
