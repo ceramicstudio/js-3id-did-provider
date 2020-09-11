@@ -54,7 +54,7 @@ describe('IdentityWallet', () => {
         ceramic
       }
       const idw = await IdentityWallet.create(config)
-      expect(await ceramic.context.resolver.resolve(idw.id)).toMatchSnapshot()
+      expect(await ceramic.context.resolver.resolve(idw.id)).toBeDefined()
       expect(idw.keychain.list()).toEqual([])
     })
 
@@ -66,6 +66,7 @@ describe('IdentityWallet', () => {
         ceramic
       }
       const idw = await IdentityWallet.create(config)
+      expect(await ceramic.context.resolver.resolve(idw.id)).toBeDefined()
       expect(idw.keychain.list()).toEqual(['testAuth'])
     })
 
@@ -77,6 +78,7 @@ describe('IdentityWallet', () => {
         ceramic
       }
       const idw1 = await IdentityWallet.create(config)
+      expect(await ceramic.context.resolver.resolve(idw1.id)).toBeDefined()
       expect(idw1.keychain.list()).toEqual(['testAuth'])
 
       const idw2 = await IdentityWallet.create(config)
