@@ -8,7 +8,7 @@ import type { DidProvider } from './did-provider'
 
 const gen3IDgenesis = (pubkeys: PublicKeys): Record<string, any> => {
   return {
-    metadata: { owners: [`did:key:${pubkeys.managementKey as string}`] },
+    metadata: { tags: ['3id'], owners: [`did:key:${pubkeys.managementKey as string}`] },
     content: {
       publicKeys: {
         signing: pubkeys.signingKey,
@@ -67,7 +67,7 @@ export class ThreeIDX {
 
   async create3idDoc(publicKeys: PublicKeys): Promise<void> {
     const docParams = gen3IDgenesis(publicKeys)
-    this.docs.threeId = await this.ceramic.createDocument('3id', docParams)
+    this.docs.threeId = await this.ceramic.createDocument('tile', docParams)
   }
 
   async encodeKidWithVersion(keyName = 'signing'): Promise<string> {
