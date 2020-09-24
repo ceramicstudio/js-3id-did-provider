@@ -21,6 +21,7 @@ export type Context = {
   threeIdx: ThreeIDX
   keyring: Keyring
   origin: Origin
+  forcedDID?: string
 }
 
 interface CreateJWSParams {
@@ -34,12 +35,12 @@ interface AuthParams {
 }
 
 export const didMethods: HandlerMethods<Context> = {
-  did_authenticate: async ({ permissions, threeIdx, origin }, params: AuthParams) => {
+  did_authenticate: async ({ permissions, threeIdx, origin, forcedDID }, params: AuthParams) => {
     const paths = await permissions.request(origin, params.paths || [])
     // paths should be an array if permission granted
     // may be a subset or requested paths or empty array
     if (paths === null) throw new RPCError(4001, 'User Rejected Request')
-    return { did: threeIdx.id, paths }
+    return { did: forcedDID || threeIdx.id, paths }
   },
   did_createJWS: async ({ permissions, keyring, threeIdx, origin }, params: CreateJWSParams) => {
     if (!permissions.has(origin)) {
@@ -61,12 +62,13 @@ export interface ProviderConfig {
   threeIdx: ThreeIDX
   keyring: Keyring
   forcedOrigin?: string
+  forcedDID?: string
 }
 
 export class DidProvider implements RPCConnection {
   protected _handle: RequestHandler
 
-  constructor({ permissions, threeIdx, keyring, forcedOrigin }: ProviderConfig) {
+  constructor({ permissions, threeIdx, keyring, forcedOrigin, forcedDID }: ProviderConfig) {
     const handler = createHandler<Context>(didMethods)
     this._handle = (origin: string, msg: RPCRequest) => {
       return handler(
@@ -75,6 +77,7 @@ export class DidProvider implements RPCConnection {
           permissions,
           threeIdx,
           keyring,
+          forcedDID,
         },
         msg
       )
