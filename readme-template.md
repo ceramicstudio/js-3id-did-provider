@@ -44,6 +44,15 @@ The function is called with one parameter which is the `request` object. It look
 ```
 In the above example the app with origin `https://my.app.origin` is requesting access to `/path/1` and `/path/2`. If the user consents to this the function should just return the `paths` array, otherwise an empty array. Note that an array containing only some of the requested paths may also be returned.
 
+#### Creating a wallet with an authentication method
+To create a wallet with an auth method you can pass two params to the create method of IDW as shown below. If the auth method doesn't have a 3ID associated with it yet IDW will create a new 3ID.
+```js
+const authSecret = new Uint8Array([ ... ]) // Entropy used to authenticate
+const authId = 'myAuthenticationMethod' // a name of the auth method
+
+const idWallet = await IdentityWallet.create({ getPermission, authSecret, authId })
+```
+
 #### Creating a wallet with a seed
 To create a wallet with a seed you can simply pass it as an option to the constructor. This will create an instance of the IdentityWallet that derives all it's keys from this seed. Be careful, if this seed is lost the identity and all of it's data will be lost as well.
 ```js
