@@ -73,6 +73,16 @@ export default class IdentityWallet {
       keyring = new Keyring(config.seed)
       keychain = new Keychain(keyring, threeIdx)
       const pubkeys = keyring.getPublicKeys({ mgmtPub: true, useMulticodec: true })
+      // Temporarily set DID provider to create 3ID document
+      await threeIdx.setDIDProvider(
+        new DidProvider({
+          keyring,
+          permissions,
+          threeIdx,
+          forcedOrigin: SELF_ORIGIN,
+          forcedDID: `did:key:${pubkeys.managementKey as string}`,
+        })
+      )
       await threeIdx.create3idDoc(pubkeys)
     } else if (config.authSecret) {
       keychain = await Keychain.load(threeIdx, config.authSecret)

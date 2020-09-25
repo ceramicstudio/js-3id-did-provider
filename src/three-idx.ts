@@ -45,6 +45,7 @@ export interface NewAuthEntry extends AuthEntry {
 }
 
 export class ThreeIDX {
+  private _managementDID: string
   public docs: Record<string, Doctype>
   public ceramic: CeramicApi
 
@@ -62,11 +63,12 @@ export class ThreeIDX {
   }
 
   get managementDID(): string {
-    return this.docs.threeId.owners[0]
+    return this._managementDID
   }
 
   async create3idDoc(publicKeys: PublicKeys): Promise<void> {
     const docParams = gen3IDgenesis(publicKeys)
+    this._managementDID = docParams.metadata.owners[0]
     this.docs.threeId = await this.ceramic.createDocument('tile', docParams)
   }
 
