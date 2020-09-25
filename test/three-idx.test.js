@@ -51,8 +51,11 @@ const genAuthEntryCreate = async (did) => {
 
 const setup3id = async (threeIdx, keyring) => {
   const pubkeys = keyring.getPublicKeys({ mgmtPub: true, useMulticodec: true })
+  const forcedDID = `did:key:${pubkeys.managementKey}`
+  let didProvider = new DidProvider({ permissions: mockedPermissions, threeIdx, keyring, forcedDID })
+  await threeIdx.setDIDProvider(didProvider)
   await threeIdx.create3idDoc(pubkeys)
-  const didProvider = new DidProvider({ permissions: mockedPermissions, threeIdx, keyring })
+  didProvider = new DidProvider({ permissions: mockedPermissions, threeIdx, keyring })
   await threeIdx.setDIDProvider(didProvider)
 }
 
@@ -86,14 +89,12 @@ describe('ThreeIDX', () => {
 
   it('creates 3id doc', async () => {
     keyring = new Keyring(seed)
-    const pubkeys = keyring.getPublicKeys({ mgmtPub: true, useMulticodec: true })
-    await threeIdx.create3idDoc(pubkeys)
+    await setup3id(threeIdx, keyring)
     expect(threeIdx.docs.threeId.state).toMatchSnapshot()
   })
 
   it('parses key name correctly', async () => {
-    const pubkeys = keyring.getPublicKeys({ mgmtPub: true, useMulticodec: true })
-    await threeIdx.create3idDoc(pubkeys)
+    await setup3id(threeIdx, keyring)
     const badKid = 'did:3:bayfiuherg98h349h#signing'
     expect(() => threeIdx.parseKeyName(badKid)).toThrow('Invalid DID')
     const goodKid = threeIdx.id + '#signing'
@@ -101,8 +102,7 @@ describe('ThreeIDX', () => {
   })
 
   it('encodes kid with version', async () => {
-    const pubkeys = keyring.getPublicKeys({ mgmtPub: true, useMulticodec: true })
-    await threeIdx.create3idDoc(pubkeys)
+    await setup3id(threeIdx, keyring)
     // with no anchor
     expect(await threeIdx.encodeKidWithVersion()).toEqual(threeIdx.id + '?version-id=0#signing')
     expect(await threeIdx.encodeKidWithVersion('management')).toEqual(`${threeIdx.managementDID}#${threeIdx.managementDID.split(':')[2]}`)
