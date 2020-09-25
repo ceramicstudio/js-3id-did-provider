@@ -1,4 +1,5 @@
 import type { ThreeIDX, AuthEntry, NewAuthEntry } from './three-idx'
+import type { DidProvider } from './did-provider'
 import Keyring from './keyring'
 import { AsymEncryptedMessage, asymDecrypt, asymEncrypt, naclRandom } from './crypto'
 import { encodeKey, fakeEthProvider } from './utils'
@@ -102,7 +103,11 @@ export class Keychain {
     }
   }
 
-  static async load(threeIdx: ThreeIDX, authSecret: Uint8Array): Promise<Keychain> {
+  static async load(
+    threeIdx: ThreeIDX,
+    authSecret: Uint8Array,
+    makeTmpProvider: (keyring: Keyring, managementKey: string) => DidProvider
+  ): Promise<Keychain> {
     const { secretKey } = Keyring.authSecretToKeyPair(authSecret)
     const wallet = Keyring.authSecretToWallet(authSecret)
     const accountId = new AccountID({ address: wallet.address.toLowerCase(), chainId: 'eip155:1' })
@@ -120,6 +125,7 @@ export class Keychain {
       const seed = '0x' + Buffer.from(naclRandom(32)).toString('hex')
       keyring = new Keyring(seed)
       const pubkeys = keyring.getPublicKeys({ mgmtPub: true, useMulticodec: true })
+      await threeIdx.setDIDProvider(makeTmpProvider(keyring, pubkeys.managementKey as string))
       await threeIdx.create3idDoc(pubkeys)
     }
     return new Keychain(keyring, threeIdx)

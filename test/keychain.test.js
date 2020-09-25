@@ -26,6 +26,7 @@ describe('Keychain', () => {
       id: 'did:3:asdf',
       addAuthEntry: jest.fn(),
       loadIDX: jest.fn(async () => null),
+      setDIDProvider: jest.fn(),
       create3idDoc: jest.fn(),
       createIDX: jest.fn(async entry => authEntries.push(entry)),
       addAuthEntries: jest.fn(async entries => authEntries = authEntries.concat(entries)),
@@ -34,8 +35,9 @@ describe('Keychain', () => {
   })
 
   it('load, no IDX present', async () => {
-    const keychain = await Keychain.load(threeIdx, randomAuthSecret())
+    const keychain = await Keychain.load(threeIdx, randomAuthSecret(), () => {})
     expect(threeIdx.loadIDX).toHaveBeenCalledTimes(1)
+    expect(threeIdx.setDIDProvider).toHaveBeenCalledTimes(1)
     expect(threeIdx.create3idDoc).toHaveBeenCalledTimes(1)
     //expect(threeIdx.createIDX).toHaveBeenCalledTimes(1)
     expect(keychain.list()).toEqual([])
@@ -44,11 +46,11 @@ describe('Keychain', () => {
   it('load, IDX present', async () => {
     const authSecret = randomAuthSecret()
     // add the auth entry to IDX
-    const tmpKc = await Keychain.load(threeIdx, authSecret)
+    const tmpKc = await Keychain.load(threeIdx, authSecret, () => {})
     threeIdx.createIDX(await newAuthEntry(tmpKc._keyring, threeIdx.id, 'authid', authSecret))
 
     threeIdx.loadIDX = jest.fn(async () => threeIdx.getAllAuthEntries()[0].data)
-    const keychain = await Keychain.load(threeIdx, authSecret)
+    const keychain = await Keychain.load(threeIdx, authSecret, () => {})
     expect(threeIdx.loadIDX).toHaveBeenCalledTimes(1)
     expect(keychain.list()).toEqual(['authid'])
   })
@@ -80,7 +82,7 @@ describe('Keychain', () => {
   })
 
   it('add updates status', async () => {
-    const keychain = await Keychain.load(threeIdx, randomAuthSecret())
+    const keychain = await Keychain.load(threeIdx, randomAuthSecret(), () => {})
     expect(keychain.status()).toEqual({ clean: true, adding: [], removing: [] })
     await keychain.add('auth1', randomAuthSecret())
     await keychain.add('auth2', randomAuthSecret())

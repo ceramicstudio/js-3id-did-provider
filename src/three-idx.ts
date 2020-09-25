@@ -45,7 +45,7 @@ export interface NewAuthEntry extends AuthEntry {
 }
 
 export class ThreeIDX {
-  private _managementDID: string
+  private _managementDID?: string
   public docs: Record<string, Doctype>
   public ceramic: CeramicApi
 
@@ -63,7 +63,7 @@ export class ThreeIDX {
   }
 
   get managementDID(): string {
-    return this._managementDID
+    return this._managementDID as string
   }
 
   async create3idDoc(publicKeys: PublicKeys): Promise<void> {
