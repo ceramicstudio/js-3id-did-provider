@@ -1,4 +1,4 @@
-import { createJWS } from 'did-jwt'
+import { createJWS, decryptJWE, JWE } from 'did-jwt'
 import {
   HandlerMethods,
   RequestHandler,
@@ -12,7 +12,7 @@ import {
 import Keyring from './keyring'
 import { ThreeIDX } from './three-idx'
 import Permissions from './permissions'
-import { toStableObject } from './utils'
+import { toStableObject, encodeBase64, decodeJWEData } from './utils'
 
 type Origin = string | null | undefined
 
@@ -30,6 +30,11 @@ interface CreateJWSParams {
   did: string
 }
 
+interface DecryptJWEParams {
+  jwe: JWE
+  did?: string
+}
+
 interface AuthParams {
   paths: Array<string>
 }
@@ -43,9 +48,7 @@ export const didMethods: HandlerMethods<Context> = {
     return { did: forcedDID || threeIdx.id, paths }
   },
   did_createJWS: async ({ permissions, keyring, threeIdx, origin }, params: CreateJWSParams) => {
-    if (!permissions.has(origin)) {
-      throw new RPCError(4100, 'Unauthorized')
-    }
+    if (!permissions.has(origin)) throw new RPCError(4100, 'Unauthorized')
     // TODO - if the requesting DID is our management key
     // (did:key) we should request explicit permission.
     const keyName = threeIdx.parseKeyName(params.did)
@@ -54,6 +57,20 @@ export const didMethods: HandlerMethods<Context> = {
     const header = toStableObject(Object.assign(params.protected || {}, { kid }))
     const jws = await createJWS(toStableObject(params.payload), signer, header)
     return { jws }
+  },
+  did_decryptJWE: async ({ permissions, keyring, origin }, params: DecryptJWEParams) => {
+    if (!permissions.has(origin)) throw new RPCError(4100, 'Unauthorized')
+    const decrypter = keyring.getAsymDecrypter()
+    const bytes = await decryptJWE(params.jwe, decrypter)
+    let obj
+    try {
+      obj = decodeJWEData(bytes)
+    } catch (e) {
+      // There was an error decoding, which means that this is not a cleartext encoded as a CID
+      // TODO - We should explicitly ask for permission.
+    }
+    if (obj && !permissions.has(origin, obj.paths)) throw new RPCError(4100, 'Unauthorized')
+    return encodeBase64(bytes)
   },
 }
 

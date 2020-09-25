@@ -1,4 +1,22 @@
 import { DidProvider } from '../src/did-provider'
+import { RPCError } from 'rpc-utils'
+import { createJWE, x25519Encrypter } from 'did-jwt'
+import { randomBytes } from '@stablelib/random'
+import { generateKeyPairFromSeed } from '@stablelib/x25519'
+import Keyring from '../src/keyring'
+import dagCBOR from 'ipld-dag-cbor'
+import CID from 'cids'
+import * as u8a from 'uint8arrays'
+import multihashes from 'multihashes'
+
+const blockSize = 24
+export function encodeCleartext(cleartext: Record<string, any>): CID {
+  const block = dagCBOR.util.serialize(cleartext)
+  const idMultiHash = multihashes.encode(block, 0)
+  const bytes = (new CID(1, 133, idMultiHash)).bytes
+  const padLen = blockSize - (bytes.length % blockSize)
+  return u8a.concat([bytes, new Uint8Array([128]), new Uint8Array(padLen - 1)])
+}
 
 describe('DidProvider', () => {
   let nextId = 0
@@ -9,6 +27,10 @@ describe('DidProvider', () => {
       id,
       ...res,
     })
+  }
+  async function expectRPCError(provider, origin, req, error) {
+    const id = nextId++
+    return await expect(provider.send({ jsonrpc: '2.0', id, ...req }, origin)).resolves.toEqual(error)
   }
 
   test('has a `isDidProvider` prop', () => {
@@ -73,6 +95,50 @@ describe('DidProvider', () => {
       null,
       { method: 'did_createJWS', params: { payload, protected, did } },
       { result: { jws: 'eyJiYXIiOiJiYXoiLCJraWQiOiJkaWQ6Mzphc2RmP3ZlcnNpb249MCNtYW5hZ2VtZW50IiwiYWxnIjoiRVMyNTZLIn0.eyJmb28iOiJiYXIifQ.signed' } }
+    )
+  })
+
+  test('`did_decryptJWE` correctly decrypts a JWE', async () => {
+    const keyring = new Keyring('0xf0e4c2f76c58916ec258f246851bea091d14d4247a2fc3e18694461b1816e13b')
+    const encrypter = x25519Encrypter(u8a.fromString(keyring.getPublicKeys().asymEncryptionKey, 'base64pad'))
+    const cleartext = encodeCleartext({ asdf: 234 })
+    const jwe = await createJWE(cleartext, [encrypter])
+    const config = {
+      permissions: { has: jest.fn(() => true) },
+      keyring,
+    }
+    await expectRPC(
+      new DidProvider(config),
+      null,
+      { method: 'did_decryptJWE', params: { jwe } },
+      { result: u8a.toString(cleartext, 'base64pad') }
+    )
+  })
+
+  test('`did_decryptJWE` correctly respects permissions', async () => {
+    const keyring = new Keyring('0xf0e4c2f76c58916ec258f246851bea091d14d4247a2fc3e18694461b1816e13b')
+    const encrypter = x25519Encrypter(u8a.fromString(keyring.getPublicKeys().asymEncryptionKey, 'base64pad'))
+    const cleartext1 = encodeCleartext({ paths: ['a'] })
+    const cleartext2 = encodeCleartext({ paths: ['b'] })
+    const jwe1 = await createJWE(cleartext1, [encrypter])
+    const jwe2 = await createJWE(cleartext2, [encrypter])
+    const config = {
+      permissions: { has: jest.fn((o, paths) => {
+        return paths ? paths.includes('a') : true
+      }) },
+      keyring,
+    }
+    await expectRPC(
+      new DidProvider(config),
+      null,
+      { method: 'did_decryptJWE', params: { jwe: jwe1 } },
+      { result: u8a.toString(cleartext1, 'base64pad') }
+    )
+    await expectRPC(
+      new DidProvider(config),
+      null,
+      { method: 'did_decryptJWE', params: { jwe: jwe2 } },
+      { error: { code: 4100, data: undefined, message: 'Unauthorized' }}
     )
   })
 })

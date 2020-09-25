@@ -2,7 +2,7 @@ import nacl, { BoxKeyPair } from 'tweetnacl'
 import naclutil from 'tweetnacl-util'
 import { HDNode } from '@ethersproject/hdnode'
 import { Wallet } from '@ethersproject/wallet'
-import { EllipticSigner, Signer } from 'did-jwt'
+import { EllipticSigner, Signer, Decrypter, x25519Decrypter } from 'did-jwt'
 import { sha256 } from 'js-sha256'
 import { ec as EC } from 'elliptic'
 
@@ -181,6 +181,10 @@ export default class Keyring {
   managementWallet(): Wallet {
     const node = this._rootKeys!.managementKey as HDNode
     return new Wallet(node.privateKey)
+  }
+
+  getAsymDecrypter(): Decrypter {
+    return x25519Decrypter(this._getKeys().asymEncryptionKey.secretKey)
   }
 
   getJWTSigner(space?: string, useMgmt?: boolean): Signer {
