@@ -1,7 +1,7 @@
 import type { ThreeIDX, AuthEntry, NewAuthEntry } from './three-idx'
 import type { DidProvider } from './did-provider'
 import Keyring from './keyring'
-import { AsymEncryptedMessage, asymDecrypt, asymEncrypt, naclRandom } from './crypto'
+import { AsymEncryptedMessage, asymDecrypt, asymEncrypt, randomBytes } from './crypto'
 import { encodeKey, fakeEthProvider, u8aToHex } from './utils'
 
 import { createLink } from '3id-blockchain-utils'
@@ -122,7 +122,7 @@ export class Keychain {
       )
       keyring = new Keyring(seed)
     } else {
-      const seed = '0x' + u8aToHex(naclRandom(32))
+      const seed = '0x' + u8aToHex(randomBytes(32))
       keyring = new Keyring(seed)
       const pubkeys = keyring.getPublicKeys({ mgmtPub: true, useMulticodec: true })
       await threeIdx.setDIDProvider(makeTmpProvider(keyring, pubkeys.managementKey as string))

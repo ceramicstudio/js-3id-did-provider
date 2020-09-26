@@ -1,5 +1,8 @@
-import nacl from 'tweetnacl'
-import naclutil from 'tweetnacl-util'
+import { encodeBase64, decodeBase64 } from './utils'
+import * as u8a from 'uint8arrays'
+import { box, openBox, secretBox, openSecretBox, generateKeyPair } from '@stablelib/nacl'
+import { randomBytes } from '@stablelib/random'
+export { randomBytes }
 
 export interface EncryptedMessage {
   ciphertext: string
@@ -10,12 +13,8 @@ export interface AsymEncryptedMessage extends EncryptedMessage {
   ephemeralFrom: string
 }
 
-export function naclRandom(length: number): Uint8Array {
-  return nacl.randomBytes(length)
-}
-
 export function randomNonce(): Uint8Array {
-  return naclRandom(24)
+  return randomBytes(24)
 }
 
 export function symEncryptBase(
@@ -24,11 +23,11 @@ export function symEncryptBase(
   providedNonce?: Uint8Array
 ): EncryptedMessage {
   const nonce = providedNonce ?? randomNonce()
-  const msg = typeof message === 'string' ? naclutil.decodeUTF8(message) : message
-  const ciphertext = nacl.secretbox(msg, nonce, symKey)
+  const msg = typeof message === 'string' ? u8a.fromString(message) : message
+  const ciphertext = secretBox(symKey, nonce, msg)
   return {
-    nonce: naclutil.encodeBase64(nonce),
-    ciphertext: naclutil.encodeBase64(ciphertext),
+    nonce: encodeBase64(nonce),
+    ciphertext: encodeBase64(ciphertext),
   }
 }
 
@@ -37,15 +36,11 @@ export function symDecryptBase(
   symKey: Uint8Array,
   nonce: string
 ): string | null {
-  const cleartext = nacl.secretbox.open(
-    naclutil.decodeBase64(ciphertext),
-    naclutil.decodeBase64(nonce),
-    symKey
-  )
+  const cleartext = openSecretBox(symKey, decodeBase64(nonce), decodeBase64(ciphertext))
   if (cleartext == null) {
     return null
   }
-  return naclutil.encodeUTF8(cleartext)
+  return u8a.toString(cleartext)
 }
 
 export function asymEncrypt(
@@ -54,18 +49,18 @@ export function asymEncrypt(
   providedNonce?: Uint8Array
 ): AsymEncryptedMessage {
   const nonce = providedNonce ?? randomNonce()
-  const msg = typeof message === 'string' ? naclutil.decodeUTF8(message) : message
-  const ephemneralKeypair = nacl.box.keyPair()
-  const ciphertext = nacl.box(
-    msg,
+  const msg = typeof message === 'string' ? u8a.fromString(message) : message
+  const ephemneralKeypair = generateKeyPair()
+  const ciphertext = box(
+    typeof toPublic === 'string' ? decodeBase64(toPublic) : toPublic,
+    ephemneralKeypair.secretKey,
     nonce,
-    typeof toPublic === 'string' ? naclutil.decodeBase64(toPublic) : toPublic,
-    ephemneralKeypair.secretKey
+    msg
   )
   return {
-    nonce: naclutil.encodeBase64(nonce),
-    ephemeralFrom: naclutil.encodeBase64(ephemneralKeypair.publicKey),
-    ciphertext: naclutil.encodeBase64(ciphertext),
+    nonce: encodeBase64(nonce),
+    ephemeralFrom: encodeBase64(ephemneralKeypair.publicKey),
+    ciphertext: encodeBase64(ciphertext),
   }
 }
 
@@ -75,14 +70,14 @@ export function asymDecrypt(
   toSecret: Uint8Array,
   nonce: string
 ): string | null {
-  const cleartext = nacl.box.open(
-    naclutil.decodeBase64(ciphertext),
-    naclutil.decodeBase64(nonce),
-    naclutil.decodeBase64(fromPublic),
-    toSecret
+  const cleartext = openBox(
+    decodeBase64(fromPublic),
+    toSecret,
+    decodeBase64(nonce),
+    decodeBase64(ciphertext)
   )
   if (cleartext == null) {
     return null
   }
-  return naclutil.encodeUTF8(cleartext)
+  return u8a.toString(cleartext)
 }

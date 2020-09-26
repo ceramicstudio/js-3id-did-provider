@@ -12,6 +12,7 @@ const PAD_FIRST_BYTE = 128
 const DAG_CBOR_CODE = 133
 const ID_MULTIHASH = 0
 const B16 = 'base16'
+const B64 = 'base64pad'
 
 export interface PublicKeys {
   signingKey: string
@@ -85,7 +86,11 @@ export function u8aToHex(b: Uint8Array): string {
 }
 
 export function encodeBase64(b: Uint8Array): string {
-  return u8a.toString(b, 'base64pad')
+  return u8a.toString(b, B64)
+}
+
+export function decodeBase64(s: string): Uint8Array {
+  return u8a.fromString(s, B64)
 }
 
 export function toStableObject(obj: Record<string, any>): Record<string, any> {
