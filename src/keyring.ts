@@ -104,7 +104,7 @@ export default class Keyring {
     return {
       signingKey: hdNode.derivePath('0'),
       asymEncryptionKey: nacl.box.keyPair.fromSecretKey(
-        new Uint8Array(Buffer.from(hdNode.derivePath('2').privateKey.slice(2), 'hex'))
+        hexToU8A(hdNode.derivePath('2').privateKey.slice(2))
       ),
       symEncryptionKey: hexToU8A(hdNode.derivePath('3').privateKey.slice(2)),
     }
@@ -224,7 +224,7 @@ export default class Keyring {
       ? (keys as RootKeySet).managementKey.publicKey!.slice(2)
       : (keys as RootKeySet).managementKey.address
     if (uncompressed) {
-      signingKey = ec.keyFromPublic(Buffer.from(signingKey, 'hex')).getPublic(false, 'hex')
+      signingKey = ec.keyFromPublic(hexToU8A(signingKey)).getPublic(false, 'hex')
     }
     return {
       signingKey: useMulticodec ? encodeKey(hexToU8A(signingKey), 'secp256k1') : signingKey,

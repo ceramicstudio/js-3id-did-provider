@@ -11,6 +11,7 @@ const ENC_BLOCK_SIZE = 24
 const PAD_FIRST_BYTE = 128
 const DAG_CBOR_CODE = 133
 const ID_MULTIHASH = 0
+const B16 = 'base16'
 
 export interface PublicKeys {
   signingKey: string
@@ -58,7 +59,7 @@ export const fakeEthProvider = (wallet: Wallet): any => ({
     } else {
       let message = request.params[0] as string
       if (message.startsWith('0x')) {
-        message = Buffer.from(message.slice(2), 'hex').toString('utf8')
+        message = u8a.toString(hexToU8A(message.slice(2)))
       }
       callback(null, { result: wallet.signMessage(message) })
     }
@@ -75,8 +76,12 @@ export function decodeJWEData(bytes: Uint8Array): Record<string, any> {
   return dagCBOR.util.deserialize(digest)
 }
 
-export function hexToU8A(str: string): Uint8Array {
-  return new Uint8Array(Buffer.from(str, 'hex'))
+export function hexToU8A(s: string): Uint8Array {
+  return u8a.fromString(s, B16)
+}
+
+export function u8aToHex(b: Uint8Array): string {
+  return u8a.toString(b, B16)
 }
 
 export function encodeBase64(b: Uint8Array): string {
