@@ -6,12 +6,12 @@ import {
   AsymEncryptedMessage,
   asymDecrypt,
   asymEncrypt,
-  naclRandom,
+  randomBytes,
 } from '../src/crypto'
 
 const seed = '0x8e641c0dc77f6916cc7f743dad774cdf9f6f7bcb880b11395149dd878377cd398650bbfd4607962b49953c87da4d7f3ff247ed734b06f96bdd69479377bc612b'
-const randomAuthSecret = () => naclRandom(32)
-const randomSecret = () => '0x' + Buffer.from(naclRandom(32)).toString('hex')
+const randomAuthSecret = () => randomBytes(32)
+const randomSecret = () => '0x' + Buffer.from(randomBytes(32)).toString('hex')
 
 describe('Keychain', () => {
   let keyring, threeIdx

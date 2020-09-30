@@ -1,5 +1,4 @@
-import nacl, { BoxKeyPair } from 'tweetnacl'
-import naclutil from 'tweetnacl-util'
+import { generateKeyPairFromSeed, KeyPair } from '@stablelib/x25519'
 import { HDNode } from '@ethersproject/hdnode'
 import { Wallet } from '@ethersproject/wallet'
 import { EllipticSigner, Signer, Decrypter, x25519Decrypter } from 'did-jwt'
@@ -14,7 +13,7 @@ import {
   symDecryptBase,
   symEncryptBase,
 } from './crypto'
-import { PublicKeys, encodeKey, hexToU8A } from './utils'
+import { PublicKeys, encodeKey, encodeBase64, hexToU8A } from './utils'
 
 const ec = new EC('secp256k1')
 
@@ -45,7 +44,7 @@ interface MigratedKeys {
 
 export interface KeySet {
   signingKey: HDNode
-  asymEncryptionKey: BoxKeyPair
+  asymEncryptionKey: KeyPair
   symEncryptionKey: Uint8Array
 }
 
@@ -103,8 +102,8 @@ export default class Keyring {
   _deriveKeySet(hdNode: HDNode): KeySet {
     return {
       signingKey: hdNode.derivePath('0'),
-      asymEncryptionKey: nacl.box.keyPair.fromSecretKey(
-        new Uint8Array(Buffer.from(hdNode.derivePath('2').privateKey.slice(2), 'hex'))
+      asymEncryptionKey: generateKeyPairFromSeed(
+        hexToU8A(hdNode.derivePath('2').privateKey.slice(2))
       ),
       symEncryptionKey: hexToU8A(hdNode.derivePath('3').privateKey.slice(2)),
     }
@@ -224,7 +223,7 @@ export default class Keyring {
       ? (keys as RootKeySet).managementKey.publicKey!.slice(2)
       : (keys as RootKeySet).managementKey.address
     if (uncompressed) {
-      signingKey = ec.keyFromPublic(Buffer.from(signingKey, 'hex')).getPublic(false, 'hex')
+      signingKey = ec.keyFromPublic(hexToU8A(signingKey)).getPublic(false, 'hex')
     }
     return {
       signingKey: useMulticodec ? encodeKey(hexToU8A(signingKey), 'secp256k1') : signingKey,
@@ -233,7 +232,7 @@ export default class Keyring {
         : managementKey,
       asymEncryptionKey: useMulticodec
         ? encodeKey(keys.asymEncryptionKey.publicKey, 'x25519')
-        : naclutil.encodeBase64(keys.asymEncryptionKey.publicKey),
+        : encodeBase64(keys.asymEncryptionKey.publicKey),
     }
   }
 
@@ -241,9 +240,9 @@ export default class Keyring {
     return this._seed
   }
 
-  static authSecretToKeyPair(authSecret: Uint8Array): BoxKeyPair {
+  static authSecretToKeyPair(authSecret: Uint8Array): KeyPair {
     const node = HDNode.fromSeed(authSecret).derivePath(AUTH_PATH_ASYM_ENCRYPTION)
-    return nacl.box.keyPair.fromSecretKey(hexToU8A(node.privateKey.slice(2)))
+    return generateKeyPairFromSeed(hexToU8A(node.privateKey.slice(2)))
   }
 
   static authSecretToWallet(authSecret: Uint8Array): Wallet {

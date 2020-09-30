@@ -1,6 +1,6 @@
 import { mnemonicToSeed } from '@ethersproject/hdnode'
 
-import { naclRandom } from '../src/crypto'
+import { randomBytes } from '../src/crypto'
 import Keyring from '../src/keyring'
 
 const migratedKeys = JSON.stringify({
@@ -71,7 +71,7 @@ describe('Keyring', () => {
 
     it('encrypts and decrypts correctly with authSecret', () => {
       const testMsg = 'Very secret test message'
-      const authSecret = Buffer.from(naclRandom(32)).toString('hex')
+      const authSecret = Buffer.from(randomBytes(32)).toString('hex')
 
       const box = Keyring.symEncryptWithAuthSecret(testMsg, authSecret)
       const cleartext = Keyring.symDecryptWithAuthSecret(box.ciphertext, box.nonce, authSecret)

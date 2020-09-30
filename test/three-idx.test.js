@@ -12,7 +12,7 @@ import {
   AsymEncryptedMessage,
   asymDecrypt,
   asymEncrypt,
-  naclRandom,
+  randomBytes,
 } from '../src/crypto'
 import { fakeEthProvider } from '../src/utils'
 
@@ -35,7 +35,7 @@ const genIpfsConf = (folder) => {
   }
 }
 
-const randomSecret = () => '0x' + Buffer.from(naclRandom(32)).toString('hex')
+const randomSecret = () => '0x' + Buffer.from(randomBytes(32)).toString('hex')
 
 const genAuthEntryCreate = async (did) => {
   const wallet = Keyring.authSecretToWallet(randomSecret())
