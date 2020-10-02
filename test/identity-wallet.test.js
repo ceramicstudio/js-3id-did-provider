@@ -57,7 +57,7 @@ describe('IdentityWallet', () => {
       }
       const idw = await IdentityWallet.create(config)
       expect(await ceramic.context.resolver.resolve(idw.id)).toBeDefined()
-      expect(idw.keychain.list()).toEqual([])
+      expect(await idw.keychain.list()).toEqual([])
     })
 
     it('Creates instance from authSecret, new DID', async () => {
@@ -69,7 +69,7 @@ describe('IdentityWallet', () => {
       }
       const idw = await IdentityWallet.create(config)
       expect(await ceramic.context.resolver.resolve(idw.id)).toBeDefined()
-      expect(idw.keychain.list()).toEqual(['testAuth'])
+      expect(await idw.keychain.list()).toEqual(['testAuth'])
     })
 
     it('Creates instance from authSecret, existing DID', async () => {
@@ -81,10 +81,10 @@ describe('IdentityWallet', () => {
       }
       const idw1 = await IdentityWallet.create(config)
       expect(await ceramic.context.resolver.resolve(idw1.id)).toBeDefined()
-      expect(idw1.keychain.list()).toEqual(['testAuth'])
+      expect(await idw1.keychain.list()).toEqual(['testAuth'])
 
       const idw2 = await IdentityWallet.create(config)
-      expect(idw2.keychain.list()).toEqual(['testAuth'])
+      expect(await idw2.keychain.list()).toEqual(['testAuth'])
       expect(idw1.id).toEqual(idw2.id)
     })
   })
@@ -93,17 +93,17 @@ describe('IdentityWallet', () => {
     it('Adds authSecret to the keychain', async () => {
       const config1 = { getPermission: getPermissionMock, seed, ceramic }
       const idw1 = await IdentityWallet.create(config1)
-      expect(idw1.keychain.list()).toEqual([])
+      expect(await idw1.keychain.list()).toEqual([])
 
       await idw1.keychain.add('auth2', randomAuthSecret())
       await idw1.keychain.commit()
-      expect(idw1.keychain.list()).toEqual(['auth2'])
+      expect(await idw1.keychain.list()).toEqual(['auth2'])
     })
 
     it('Creates instance from added authSecret', async () => {
       const config1 = { getPermission: getPermissionMock, seed, ceramic }
       const idw1 = await IdentityWallet.create(config1)
-      expect(idw1.keychain.list()).toEqual([])
+      expect(await idw1.keychain.list()).toEqual([])
 
       const config2 = {
         getPermission: getPermissionMock,
@@ -115,7 +115,7 @@ describe('IdentityWallet', () => {
       await idw1.keychain.commit()
 
       const idw2 = await IdentityWallet.create(config2)
-      expect(idw2.keychain.list()).toEqual(['auth2'])
+      expect(await idw2.keychain.list()).toEqual(['auth2'])
       expect(idw1.id).toEqual(idw2.id)
     })
   })

@@ -3,6 +3,8 @@ import * as u8a from 'uint8arrays'
 import { box, openBox, secretBox, openSecretBox, generateKeyPair } from '@stablelib/nacl'
 import { randomBytes } from '@stablelib/random'
 export { randomBytes }
+import { createJWE, decryptJWE, JWE, x25519Encrypter, x25519Decrypter } from 'did-jwt'
+import { prepareCleartext, decodeCleartext } from 'dag-jose-utils'
 
 export interface EncryptedMessage {
   ciphertext: string
@@ -80,4 +82,20 @@ export function asymDecrypt(
     return null
   }
   return u8a.toString(cleartext)
+}
+
+export async function asymEncryptJWE(
+  cleartext: Record<string, any>,
+  publicKey: Uint8Array
+): Promise<JWE> {
+  const encrypter = x25519Encrypter(publicKey)
+  return createJWE(prepareCleartext(cleartext), [encrypter])
+}
+
+export async function asymDecryptJWE(
+  jwe: JWE,
+  secretKey: Uint8Array
+): Promise<Record<string, any>> {
+  const decrypter = x25519Decrypter(secretKey)
+  return decodeCleartext(await decryptJWE(jwe, decrypter))
 }

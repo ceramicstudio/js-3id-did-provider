@@ -40,7 +40,7 @@ describe('Keychain', () => {
     expect(threeIdx.setDIDProvider).toHaveBeenCalledTimes(1)
     expect(threeIdx.create3idDoc).toHaveBeenCalledTimes(1)
     //expect(threeIdx.createIDX).toHaveBeenCalledTimes(1)
-    expect(keychain.list()).toEqual([])
+    expect(await keychain.list()).toEqual([])
   })
 
   it('load, IDX present', async () => {
@@ -52,7 +52,7 @@ describe('Keychain', () => {
     threeIdx.loadIDX = jest.fn(async () => threeIdx.getAllAuthEntries()[0].data)
     const keychain = await Keychain.load(threeIdx, authSecret, () => {})
     expect(threeIdx.loadIDX).toHaveBeenCalledTimes(1)
-    expect(keychain.list()).toEqual(['authid'])
+    expect(await keychain.list()).toEqual(['authid'])
   })
 
   it('commit adds, no IDX created yet', async () => {
@@ -60,12 +60,12 @@ describe('Keychain', () => {
     expect(threeIdx.createIDX).toHaveBeenCalledTimes(0)
     await keychain.add('auth1', randomAuthSecret())
     await keychain.add('auth2', randomAuthSecret())
-    expect(keychain.list()).toEqual([])
+    expect(await keychain.list()).toEqual([])
     await keychain.commit()
     expect(threeIdx.createIDX).toHaveBeenCalledTimes(1)
     expect(threeIdx.addAuthEntries).toHaveBeenCalledTimes(1)
     expect(threeIdx.addAuthEntries).toHaveBeenCalledTimes(1)
-    expect(keychain.list()).toEqual(['auth2', 'auth1'])
+    expect(await keychain.list()).toEqual(['auth2', 'auth1'])
   })
 
   it('commit adds, IDX already created', async () => {
@@ -74,11 +74,11 @@ describe('Keychain', () => {
 
     await keychain.add('auth1', randomAuthSecret())
     await keychain.add('auth2', randomAuthSecret())
-    expect(keychain.list()).toEqual(['authid'])
+    expect(await keychain.list()).toEqual(['authid'])
     await keychain.commit()
     expect(threeIdx.createIDX).toHaveBeenCalledTimes(1)
     expect(threeIdx.addAuthEntries).toHaveBeenCalledTimes(1)
-    expect(keychain.list()).toEqual(['authid', 'auth1', 'auth2'])
+    expect(await keychain.list()).toEqual(['authid', 'auth1', 'auth2'])
   })
 
   it('add updates status', async () => {

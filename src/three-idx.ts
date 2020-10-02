@@ -6,6 +6,7 @@ import { LinkProof } from '3id-blockchain-utils'
 import { PublicKeys } from './utils'
 import type { AsymEncryptedMessage } from './crypto'
 import type { DidProvider } from './did-provider'
+import type { JWE } from 'did-jwt'
 
 const gen3IDgenesis = (pubkeys: PublicKeys): Record<string, any> => {
   return {
@@ -26,9 +27,9 @@ const CDefs = {
   rotatedKeys: 'rotated-keys',
 }
 
-interface EncData {
-  jwe?: string
-  box: AsymEncryptedMessage
+export interface EncData {
+  jwe?: JWE
+  box?: AsymEncryptedMessage
 }
 
 export interface AuthEntry {

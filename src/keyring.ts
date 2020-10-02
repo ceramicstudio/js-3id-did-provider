@@ -1,7 +1,7 @@
 import { generateKeyPairFromSeed, KeyPair } from '@stablelib/x25519'
 import { HDNode } from '@ethersproject/hdnode'
 import { Wallet } from '@ethersproject/wallet'
-import { EllipticSigner, Signer, Decrypter, x25519Decrypter } from 'did-jwt'
+import { EllipticSigner, Signer, Decrypter, x25519Decrypter, JWE } from 'did-jwt'
 import { sha256 } from 'js-sha256'
 import { ec as EC } from 'elliptic'
 
@@ -9,6 +9,7 @@ import {
   AsymEncryptedMessage,
   EncryptedMessage,
   asymDecrypt,
+  asymDecryptJWE,
   asymEncrypt,
   symDecryptBase,
   symEncryptBase,
@@ -161,6 +162,10 @@ export default class Keyring {
     return asymDecrypt(ciphertext, fromPublic, key, nonce)
   }
 
+  async asymDecryptJWE(jwe: JWE): Promise<Record<string, any>> {
+    return asymDecryptJWE(jwe, this._getKeys().asymEncryptionKey.secretKey)
+  }
+
   symEncrypt(
     msg: string | Uint8Array,
     { space, nonce }: { space?: string; nonce?: Uint8Array } = {}
@@ -170,16 +175,6 @@ export default class Keyring {
 
   symDecrypt(ciphertext: string, nonce: string, { space }: DecryptOptions = {}): string | null {
     return symDecryptBase(ciphertext, this._getKeys(space).symEncryptionKey, nonce)
-  }
-
-  async managementPersonalSign(message: ArrayLike<number> | string): Promise<string> {
-    const wallet = this.managementWallet()
-    return await wallet.signMessage(message)
-  }
-
-  managementWallet(): Wallet {
-    const node = this._rootKeys!.managementKey as HDNode
-    return new Wallet(node.privateKey)
   }
 
   getAsymDecrypter(): Decrypter {

@@ -97,7 +97,7 @@ export default class IdentityWallet {
     permissions.setDID(threeIdx.id)
     const idw = new IdentityWallet(keyring as Keyring, threeIdx, permissions, keychain as Keychain)
     await idw._threeIdx.setDIDProvider(idw.getDidProvider(SELF_ORIGIN))
-    if (config.authId && !keychain?.list().length) {
+    if (config.authId && !(await keychain?.list())?.length) {
       // Add the auth method to the keychain
       await idw.keychain.add(config.authId, config.authSecret as Uint8Array)
       await idw.keychain.commit()
