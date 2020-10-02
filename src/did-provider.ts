@@ -1,4 +1,5 @@
 import { createJWS, decryptJWE, JWE } from 'did-jwt'
+import { decodeCleartext } from 'dag-jose-utils'
 import {
   HandlerMethods,
   RequestHandler,
@@ -12,7 +13,7 @@ import {
 import Keyring from './keyring'
 import { ThreeIDX } from './three-idx'
 import Permissions from './permissions'
-import { toStableObject, encodeBase64, decodeJWEData } from './utils'
+import { toStableObject, encodeBase64 } from './utils'
 
 type Origin = string | null | undefined
 
@@ -64,7 +65,7 @@ export const didMethods: HandlerMethods<Context> = {
     const bytes = await decryptJWE(params.jwe, decrypter)
     let obj
     try {
-      obj = decodeJWEData(bytes)
+      obj = decodeCleartext(bytes)
     } catch (e) {
       // There was an error decoding, which means that this is not a cleartext encoded as a CID
       // TODO - We should explicitly ask for permission.
