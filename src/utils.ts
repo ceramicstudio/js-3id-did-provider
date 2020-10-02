@@ -3,14 +3,8 @@ import Multihash from 'multihashes'
 import { Wallet } from '@ethersproject/wallet'
 import stringify from 'fast-json-stable-stringify'
 import * as u8a from 'uint8arrays'
-import dagCBOR from 'ipld-dag-cbor'
-import multihashes from 'multihashes'
-import CID from 'cids'
 
 const ENC_BLOCK_SIZE = 24
-const PAD_FIRST_BYTE = 128
-const DAG_CBOR_CODE = 133
-const ID_MULTIHASH = 0
 const B16 = 'base16'
 const B64 = 'base64pad'
 
@@ -66,16 +60,6 @@ export const fakeEthProvider = (wallet: Wallet): any => ({
     }
   },
 })
-
-export function decodeJWEData(bytes: Uint8Array): Record<string, any> {
-  bytes = bytes.slice(0, bytes.lastIndexOf(PAD_FIRST_BYTE))
-  const cid = new CID(bytes)
-  CID.validateCID(cid)
-  if (cid.code !== DAG_CBOR_CODE) throw new Error('Cleartext codec must be dag-cbor')
-  const { code, digest } = multihashes.decode(cid.multihash)
-  if (code !== ID_MULTIHASH) throw new Error('Cleartext must be identity multihash')
-  return dagCBOR.util.deserialize(digest)
-}
 
 export function hexToU8A(s: string): Uint8Array {
   return u8a.fromString(s, B16)
