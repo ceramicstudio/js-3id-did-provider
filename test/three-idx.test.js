@@ -101,7 +101,7 @@ describe('ThreeIDX', () => {
     expect(threeIdx.parseKeyName(goodKid)).toEqual('signing')
   })
 
-  it('encodes kid with version', async () => {
+  it.skip('encodes kid with version', async () => {
     await setup3id(threeIdx, keyring)
     // with no anchor
     expect(await threeIdx.encodeKidWithVersion()).toEqual(threeIdx.id + '?version-id=0#signing')

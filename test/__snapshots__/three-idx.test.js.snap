@@ -2,7 +2,7 @@
 
 exports[`ThreeIDX creates 3id doc 1`] = `
 Object {
-  "anchorStatus": 1,
+  "anchorStatus": 0,
   "content": Object {
     "publicKeys": Object {
       "encryption": "z6LSfQabSbJzX8WAm1qdQcHCHTzVv8a2u6F7kmzdodfvUCo9",
