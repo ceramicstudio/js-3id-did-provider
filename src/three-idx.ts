@@ -69,7 +69,7 @@ export class ThreeIDX {
   async create3idDoc(publicKeys: PublicKeys): Promise<void> {
     const docParams = gen3IDgenesis(publicKeys)
     this._managementDID = docParams.metadata.owners[0]
-    this.docs.threeId = await this.ceramic.createDocument('tile', docParams)
+    this.docs.threeId = await this.ceramic.createDocument('tile', docParams, { applyOnly: true })
   }
 
   async encodeKidWithVersion(keyName = 'signing'): Promise<string> {
