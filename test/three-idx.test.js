@@ -10,19 +10,15 @@ import { publishIDXConfig } from '@ceramicstudio/idx-tools'
 import { ThreeIDX } from '../src/three-idx'
 import { DidProvider } from '../src/did-provider'
 import Keyring from '../src/keyring'
-import {
-  AsymEncryptedMessage,
-  asymDecrypt,
-  asymEncrypt,
-  randomBytes,
-} from '../src/crypto'
+import { randomBytes } from '../src/crypto'
 import { fakeEthProvider } from '../src/utils'
 
 import dagJose from 'dag-jose'
 import basicsImport from 'multiformats/cjs/src/basics-import.js'
 import legacy from 'multiformats/cjs/src/legacy.js'
+import * as u8a from 'uint8arrays'
 
-const seed = '0x8e641c0dc77f6916cc7f743dad774cdf9f6f7bcb880b11395149dd878377cd398650bbfd4607962b49953c87da4d7f3ff247ed734b06f96bdd69479377bc612b'
+const seed = u8a.fromString('8e641c0dc77f6916cc7f743dad774cdf9f6f7bcb880b11395149dd878377cd398650bbfd4607962b49953c87da4d7f3ff247ed734b06f96bdd69479377bc612b', 'base16')
 
 const genIpfsConf = (folder) => {
   basicsImport.multicodec.add(dagJose)
@@ -52,11 +48,11 @@ const genAuthEntryCreate = async (did) => {
 }
 
 const setup3id = async (threeIdx, keyring) => {
-  const pubkeys = keyring.getPublicKeys({ mgmtPub: true, useMulticodec: true })
-  const forcedDID = `did:key:${pubkeys.managementKey}`
+  const genState = keyring.get3idState(true)
+  const forcedDID = genState.metadata.owners[0]
   let didProvider = new DidProvider({ permissions: mockedPermissions, threeIdx, keyring, forcedDID })
   await threeIdx.setDIDProvider(didProvider)
-  await threeIdx.create3idDoc(pubkeys)
+  await threeIdx.create3idDoc(genState)
   didProvider = new DidProvider({ permissions: mockedPermissions, threeIdx, keyring })
   await threeIdx.setDIDProvider(didProvider)
 }
@@ -86,7 +82,7 @@ describe('ThreeIDX', () => {
   })
 
   beforeEach(async () => {
-    keyring = new Keyring(randomSecret())
+    keyring = new Keyring(randomBytes(32))
     threeIdx = new ThreeIDX(ceramic)
   })
 

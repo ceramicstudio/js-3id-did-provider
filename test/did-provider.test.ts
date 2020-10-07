@@ -92,7 +92,7 @@ describe('DidProvider', () => {
 
   test('`did_decryptJWE` correctly decrypts a JWE', async () => {
     const keyring = new Keyring('0xf0e4c2f76c58916ec258f246851bea091d14d4247a2fc3e18694461b1816e13b')
-    const encrypter = x25519Encrypter(u8a.fromString(keyring.getPublicKeys().asymEncryptionKey, 'base64pad'))
+    const encrypter = x25519Encrypter(keyring.getEncryptionPublicKey())
     const cleartext = prepareCleartext({ asdf: 234 })
     const jwe = await createJWE(cleartext, [encrypter])
     const config = {
@@ -109,7 +109,7 @@ describe('DidProvider', () => {
 
   test('`did_decryptJWE` correctly respects permissions', async () => {
     const keyring = new Keyring('0xf0e4c2f76c58916ec258f246851bea091d14d4247a2fc3e18694461b1816e13b')
-    const encrypter = x25519Encrypter(u8a.fromString(keyring.getPublicKeys().asymEncryptionKey, 'base64pad'))
+    const encrypter = x25519Encrypter(keyring.getEncryptionPublicKey())
     const cleartext1 = prepareCleartext({ paths: ['a'] })
     const cleartext2 = prepareCleartext({ paths: ['b'] })
     const jwe1 = await createJWE(cleartext1, [encrypter])

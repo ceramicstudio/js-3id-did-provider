@@ -3,22 +3,8 @@ import CeramicClient from '@ceramicnetwork/ceramic-http-client'
 import { schemas } from '@ceramicstudio/idx-constants'
 import { LinkProof } from '3id-blockchain-utils'
 
-import { PublicKeys } from './utils'
-import type { AsymEncryptedMessage } from './crypto'
 import type { DidProvider } from './did-provider'
 import type { JWE } from 'did-jwt'
-
-const gen3IDgenesis = (pubkeys: PublicKeys): Record<string, any> => {
-  return {
-    metadata: { tags: ['3id'], owners: [`did:key:${pubkeys.managementKey as string}`] },
-    content: {
-      publicKeys: {
-        signing: pubkeys.signingKey,
-        encryption: pubkeys.asymEncryptionKey,
-      },
-    },
-  }
-}
 
 // map of collection definitions
 const CDefs = {
@@ -29,7 +15,6 @@ const CDefs = {
 
 export interface EncData {
   jwe?: JWE
-  box?: AsymEncryptedMessage
 }
 
 export interface AuthEntry {
@@ -68,10 +53,9 @@ export class ThreeIDX {
     return this._managementDID as string
   }
 
-  async create3idDoc(publicKeys: PublicKeys): Promise<void> {
-    const docParams = gen3IDgenesis(publicKeys)
+  async create3idDoc(docParams: Record<string, any>): Promise<void> {
     this._managementDID = docParams.metadata.owners[0]
-    this.docs.threeId = await this.ceramic.createDocument('tile', docParams, { applyOnly: true })
+    this.docs.threeId = await this.ceramic.createDocument('tile', docParams, { applyOnly: true, isUnique: false })
   }
 
   async encodeKidWithVersion(keyName = 'signing'): Promise<string> {
@@ -184,8 +168,11 @@ export class ThreeIDX {
    * Will update the keys in the 3id document, and create a new auth keychain
    * with the given authEntries.
    */
-  //async rotateKeys(publicKeys: PublicKeys, updatedAuthEntries: Array<AuthEntry>): Promise<void> {
-  //}
+  async rotateKeys(docUpdate: Record<string, any>, updatedAuthEntries: Array<AuthEntry>): Promise<void> {
+    this.docs.threeId.change({
+      metadata,
+      content: Object.assign(this.docs.threeId.content, content)
+    })
+    // TODO - new keychain
+  }
 }
-
-//function updateDoc(doc: any, )

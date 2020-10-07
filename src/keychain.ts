@@ -1,8 +1,8 @@
 import type { ThreeIDX, AuthEntry, NewAuthEntry, EncData } from './three-idx'
 import type { DidProvider } from './did-provider'
 import Keyring from './keyring'
-import { asymDecryptJWE, asymEncryptJWE, asymDecrypt, randomBytes } from './crypto'
-import { encodeKey, fakeEthProvider, u8aToHex, decodeBase64 } from './utils'
+import { asymDecryptJWE, asymEncryptJWE } from './crypto'
+import { encodeKey, fakeEthProvider, u8aToHex } from './utils'
 
 import { createLink } from '3id-blockchain-utils'
 import { AccountID } from 'caip'
@@ -19,17 +19,23 @@ export async function newAuthEntry(
   authId: string,
   authSecret: Uint8Array
 ): Promise<NewAuthEntry> {
-  const mainPub = decodeBase64(keyring.getPublicKeys().asymEncryptionKey)
+  const mainPub = keyring.getEncryptionPublicKey()
   const { publicKey } = Keyring.authSecretToKeyPair(authSecret)
   const wallet = Keyring.authSecretToWallet(authSecret)
   const accountId = new AccountID({ address: wallet.address, chainId: 'eip155:1' })
   return {
     pub: encodeKey(publicKey, 'x25519'),
-    data: { jwe: await asymEncryptJWE({ seed: keyring.serialize() }, publicKey) },
+    data: { jwe: await asymEncryptJWE({ seed: keyring.serialize()['latest'] }, publicKey) },
     id: { jwe: await asymEncryptJWE({ id: authId }, mainPub) },
     linkProof: await createLink(did, accountId, fakeEthProvider(wallet)),
   }
 }
+
+//function 
+
+//export async function updateAuthEntry(
+  //keyring: Keyring,
+//)
 
 interface PendingAdd {
   authId: string
@@ -38,19 +44,15 @@ interface PendingAdd {
 
 export class Keychain {
   private _pendingAdds: Array<PendingAdd> = []
+  private _pendingRms: Array<authId> = []
   /**
    * The Keychain enables adding and removing of authentication methods.
    */
   constructor(public _keyring: Keyring, protected _threeIdx: ThreeIDX) {}
 
   async _keyringDecrypt(encrypted: EncData): Promise<string | null> {
-    if (encrypted.jwe) {
-      return (await this._keyring.asymDecryptJWE(encrypted.jwe)).id as string
-    } else if (encrypted.box) {
-      const { box } = encrypted
-      return this._keyring.asymDecrypt(box.ciphertext, box.ephemeralFrom, box.nonce)
-    }
-    throw new Error('Invalid encrypted block')
+    if (!encrypted.jwe) throw new Error('Invalid encrypted block')
+    return (await asymDecryptJWE(encrypted.jwe, null, this._keyring.getAsymDecrypter())).id as string
   }
 
   /**
@@ -87,7 +89,7 @@ export class Keychain {
    * @param     {String}            authId          An identifier for the auth method
    */
   async remove(authId: string): Promise<void> { // eslint-disable-line
-    throw new Error('Not implmeented yet')
+    this._pendingRms.push(authId)
   }
 
   /**
@@ -110,10 +112,14 @@ export class Keychain {
    * Commit the staged changes to the keychain.
    */
   async commit(): Promise<void> {
-    if (!this._pendingAdds.length) throw new Error('Nothing to commit')
+    if (!this._pendingAdds.length || !this._pendingRms) throw new Error('Nothing to commit')
     if (this._threeIdx.getAllAuthEntries().length === 0) {
+      if (!this._pendingAdds.length) throw new Error('Can not remove non existant auth method')
       // Create IDX structure if not present
       await this._threeIdx.createIDX(this._pendingAdds.pop()?.entry)
+    }
+    if (this._pendingRms.length) {
+      // TODO - rotate key in keyring
     }
     if (this._pendingAdds.length) {
       const entries = this._pendingAdds.map((e) => e.entry)
@@ -131,29 +137,25 @@ export class Keychain {
     const wallet = Keyring.authSecretToWallet(authSecret)
     const accountId = new AccountID({ address: wallet.address.toLowerCase(), chainId: 'eip155:1' })
     const authData = await threeIdx.loadIDX(accountId.toString())
-    let keyring
     if (authData) {
-      let seed
-      if (authData.jwe) {
-        seed = (await asymDecryptJWE(authData.jwe, secretKey)).seed as string
-      } else if (authData.box) {
-        seed = asymDecrypt(
-          authData.box.ciphertext,
-          authData.box.ephemeralFrom,
-          secretKey,
-          authData.box.nonce
-        )
-      } else {
-        throw new Error('Unable to find auth data')
-      }
-      keyring = new Keyring(seed)
-    } else {
-      const seed = '0x' + u8aToHex(randomBytes(32))
-      keyring = new Keyring(seed)
-      const pubkeys = keyring.getPublicKeys({ mgmtPub: true, useMulticodec: true })
-      await threeIdx.setDIDProvider(makeTmpProvider(keyring, pubkeys.managementKey as string))
-      await threeIdx.create3idDoc(pubkeys)
+      if (!authData.jwe) throw new Error('Unable to find auth data')
+      const seed = new Uint8Array((await asymDecryptJWE(authData.jwe, secretKey)).seed)
+      const keyring = new Keyring(seed)
+      return new Keychain(keyring, threeIdx)
     }
+    return Keychain.create(threeIdx, makeTmpProvider)
+  }
+
+  static async create(
+    threeIdx: ThreeIDX,
+    makeTmpProvider: (keyring: Keyring, managementKey: string) => DidProvider,
+    seed?: Uint8Array
+  ): Promise<Keychain> {
+    const keyring = new Keyring(seed)
+    const docParams = keyring.get3idState(true)
+    // Temporarily set DID provider to create 3ID document
+    await threeIdx.setDIDProvider(makeTmpProvider(keyring, docParams.metadata.owners[0] as string))
+    await threeIdx.create3idDoc(docParams)
     return new Keychain(keyring, threeIdx)
   }
 }
