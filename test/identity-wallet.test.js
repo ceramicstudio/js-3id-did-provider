@@ -6,6 +6,7 @@ import { Resolver } from 'did-resolver'
 import tmp from 'tmp-promise'
 import Ceramic from '@ceramicnetwork/ceramic-core'
 import Ipfs from 'ipfs'
+import { publishIDXConfig } from '@ceramicstudio/idx-tools'
 
 import dagJose from 'dag-jose'
 import basicsImport from 'multiformats/cjs/src/basics-import.js'
@@ -38,6 +39,7 @@ describe('IdentityWallet', () => {
     tmpFolder = await tmp.dir({ unsafeCleanup: true })
     ipfs = await Ipfs.create(genIpfsConf(tmpFolder.path))
     ceramic = await Ceramic.create(ipfs, { stateStorePath: tmpFolder.path + '/ceramic/'})
+    await publishIDXConfig(ceramic)
   })
 
   afterAll(async () => {

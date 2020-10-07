@@ -3,6 +3,7 @@
     "module": "commonjs",
     "lib": ["dom", "es2017"],
     "target": "es6",
+    "resolveJsonModule": true,
     "strict": true,
     "declaration": true,
     "noImplicitAny": true,

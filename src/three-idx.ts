@@ -1,5 +1,6 @@
 import { CeramicApi, Doctype } from '@ceramicnetwork/ceramic-common'
 import CeramicClient from '@ceramicnetwork/ceramic-http-client'
+import { schemas } from '@ceramicstudio/idx-constants'
 import { LinkProof } from '3id-blockchain-utils'
 
 import { PublicKeys } from './utils'
@@ -119,7 +120,7 @@ export class ThreeIDX {
       content: entry,
     })
     this.docs.idx = await this.ceramic.createDocument('tile', {
-      metadata: { owners: [this.id] },
+      metadata: { owners: [this.id], schema: schemas.IdentityIndex },
       content: { [CDefs.authKeychain]: this.docs[CDefs.authKeychain].id },
     })
     await this.docs.threeId.change({

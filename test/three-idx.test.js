@@ -4,6 +4,8 @@ import Ipfs from 'ipfs'
 import all from 'it-all'
 import { AccountID } from 'caip'
 import { createLink } from '3id-blockchain-utils'
+import { schemas } from '@ceramicstudio/idx-constants'
+import { publishIDXConfig } from '@ceramicstudio/idx-tools'
 
 import { ThreeIDX } from '../src/three-idx'
 import { DidProvider } from '../src/did-provider'
@@ -74,6 +76,7 @@ describe('ThreeIDX', () => {
     tmpFolder = await tmp.dir({ unsafeCleanup: true })
     ipfs = await Ipfs.create(genIpfsConf(tmpFolder.path))
     ceramic = await Ceramic.create(ipfs, { stateStorePath: tmpFolder.path + '/ceramic/'})
+    await publishIDXConfig(ceramic)
   })
 
   afterAll(async () => {
@@ -140,6 +143,7 @@ describe('ThreeIDX', () => {
       }
     })
     expect(threeIdx.docs.idx.content).toEqual({ 'auth-keychain': threeIdx.docs['auth-keychain'].id })
+    expect(threeIdx.docs.idx.metadata.schema).toBe(schemas.IdentityIndex)
     expect(threeIdx.docs.threeId.content).toEqual(expect.objectContaining({ 'idx': threeIdx.docs.idx.id }))
     // should be pinned
     expect(await all(await ceramic.pin.ls())).toEqual(expect.arrayContaining([
@@ -155,6 +159,7 @@ describe('ThreeIDX', () => {
     await threeIdx.createIDX()
 
     expect(threeIdx.docs.idx.content).toEqual({ 'auth-keychain': threeIdx.docs['auth-keychain'].id })
+    expect(threeIdx.docs.idx.metadata.schema).toBe(schemas.IdentityIndex)
     expect(threeIdx.docs.threeId.content).toEqual(expect.objectContaining({ 'idx': threeIdx.docs.idx.id }))
     // should be pinned
     expect(await all(await ceramic.pin.ls())).toEqual(expect.arrayContaining([
