@@ -120,3 +120,49 @@ describe('IdentityWallet', () => {
     })
   })
 })
+
+describe('IdentityWallet with disabled IDX', () => {
+  jest.setTimeout(15000)
+  let tmpFolder
+  let ipfs, ceramic
+
+  beforeAll(async () => {
+    tmpFolder = await tmp.dir({ unsafeCleanup: true })
+    ipfs = await Ipfs.create(genIpfsConf(tmpFolder.path))
+    ceramic = await Ceramic.create(ipfs, { stateStorePath: tmpFolder.path + '/ceramic/' })
+  })
+
+  afterAll(async () => {
+    await ceramic.close()
+    await ipfs.stop()
+    await tmpFolder.cleanup()
+  })
+
+  describe('.create', () => {
+    it('Creates instance from seed', async () => {
+      const config = {
+        getPermission: getPermissionMock,
+        seed,
+        ceramic,
+        disableIDX: true,
+      }
+      const idw = await IdentityWallet.create(config)
+      expect(await ceramic.context.resolver.resolve(idw.id)).toBeDefined()
+      expect(idw.keychain.list()).toEqual([])
+      expect(idw._threeIdx.docs.idx).toBeUndefined()
+    })
+
+    it('Throws when trying to creates instance from authSecret', async () => {
+      const config = {
+        getPermission: getPermissionMock,
+        authSecret: randomAuthSecret(),
+        authId: 'testAuth',
+        ceramic,
+        disableIDX: true,
+      }
+      await expect(IdentityWallet.create(config)).rejects.toThrow(
+        'AuthId cannot be used with disableIDX'
+      )
+    })
+  })
+})
