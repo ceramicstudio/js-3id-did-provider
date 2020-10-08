@@ -14,6 +14,7 @@ interface IDWConfig {
   authId?: string
   externalAuth?: (req: any) => Promise<any>
   ceramic: CeramicApi
+  disableIDX?: boolean
 }
 
 export default class IdentityWallet {
@@ -58,6 +59,7 @@ export default class IdentityWallet {
    * @param     {Uint8Array}    config.authSecret       The authSecret to use, 32 bytes
    * @param     {String}        config.authId           The authId is used to identify the authSecret
    * @param     {String}        config.externalAuth     External auth function, directly returns key material, used to migrate legacy 3box accounts
+   * @param     {Boolean}       config.disableIDX       Disable creation of the IDX document
    * @return    {IdentityWallet}                        An IdentityWallet instance
    */
   static async create(config: IDWConfig): Promise<IdentityWallet> {
@@ -65,6 +67,9 @@ export default class IdentityWallet {
     if (!config.seed && !config.authSecret) throw new Error('Either seed or authSecret is needed')
     if (config.authSecret && !config.authId) {
       throw new Error('AuthId must be given along with authSecret')
+    }
+    if (config.authId && config.disableIDX) {
+      throw new Error('AuthId cannot be used with disableIDX')
     }
     const threeIdx = new ThreeIDX(config.ceramic)
     const permissions = new Permissions(config.getPermission)
@@ -97,7 +102,7 @@ export default class IdentityWallet {
       await idw.keychain.add(config.authId, config.authSecret as Uint8Array)
       await idw.keychain.commit()
     }
-    if (idw._threeIdx.docs.idx == null) {
+    if (idw._threeIdx.docs.idx == null && !config.disableIDX) {
       // Ensure IDX is created and linked to the DID
       await idw._threeIdx.createIDX()
     }
