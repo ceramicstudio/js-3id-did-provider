@@ -67,10 +67,16 @@ describe('DidProvider', () => {
     const config = {
       permissions: { has: jest.fn(() => true) },
       threeIdx: {
-        parseKeyName: (did) => did.split('#')[1] || 'signing',
-        encodeKidWithVersion: async (keyName) => Promise.resolve('did:3:asdf?version=0#' + keyName),
+        id: 'did:3:asdf',
+        get3idVersion: jest.fn(async () => '0'),
+        //parseKeyName: (did) => did.split('#')[1] || 'signing',
+        //encodeKidWithVersion: async (keyName) => Promise.resolve('did:3:asdf?version=0#' + keyName),
       },
-      keyring: { getSigner: () => () => Promise.resolve('signed') },
+      keyring: {
+        getSigner: () => () => Promise.resolve('signed'),
+        getMgmtSigner: () => () => Promise.resolve('signed'),
+        getKeyFragment: jest.fn(() => 'ab832')
+      },
     }
     const payload = { foo: 'bar' }
     const protected = { bar: 'baz' }
@@ -79,14 +85,14 @@ describe('DidProvider', () => {
       new DidProvider(config),
       null,
       { method: 'did_createJWS', params: { payload, protected, did } },
-      { result: { jws: 'eyJiYXIiOiJiYXoiLCJraWQiOiJkaWQ6Mzphc2RmP3ZlcnNpb249MCNzaWduaW5nIiwiYWxnIjoiRVMyNTZLIn0.eyJmb28iOiJiYXIifQ.signed' } }
+      { result: { jws: 'eyJiYXIiOiJiYXoiLCJraWQiOiJkaWQ6Mzphc2RmP3ZlcnNpb24taWQ9MCNhYjgzMiIsImFsZyI6IkVTMjU2SyJ9.eyJmb28iOiJiYXIifQ.signed' } }
     )
-    did = 'did:3:asdf#management'
+    did = 'did:key:fewfq'
     await expectRPC(
       new DidProvider(config),
       null,
       { method: 'did_createJWS', params: { payload, protected, did } },
-      { result: { jws: 'eyJiYXIiOiJiYXoiLCJraWQiOiJkaWQ6Mzphc2RmP3ZlcnNpb249MCNtYW5hZ2VtZW50IiwiYWxnIjoiRVMyNTZLIn0.eyJmb28iOiJiYXIifQ.signed' } }
+      { result: { jws: 'eyJiYXIiOiJiYXoiLCJraWQiOiJkaWQ6a2V5OmZld2ZxI2Zld2ZxIiwiYWxnIjoiRVMyNTZLIn0.eyJmb28iOiJiYXIifQ.signed' } }
     )
   })
 

@@ -4,17 +4,22 @@ import { schemas } from '@ceramicstudio/idx-constants'
 import { LinkProof } from '3id-blockchain-utils'
 
 import type { DidProvider } from './did-provider'
+import type { ThreeIdState } from './keyring'
 import type { JWE } from 'did-jwt'
 
 // map of collection definitions
 const CDefs = {
   // TODO user actual collection definition docs
   authKeychain: 'auth-keychain',
-  rotatedKeys: 'rotated-keys',
 }
 
 export interface EncData {
   jwe?: JWE
+}
+
+export interface EncKeyMaterial {
+  seed: EncData
+  pastSeeds: Array<JWE>
 }
 
 export interface AuthEntry {
@@ -23,7 +28,7 @@ export interface AuthEntry {
   id: EncData
 }
 
-interface AuthMapEntry {
+interface AuthEntryMap {
   [link: string]: AuthEntry
 }
 
@@ -32,7 +37,6 @@ export interface NewAuthEntry extends AuthEntry {
 }
 
 export class ThreeIDX {
-  private _managementDID?: string
   public docs: Record<string, Doctype>
   public ceramic: CeramicApi
 
@@ -49,35 +53,17 @@ export class ThreeIDX {
     return `did:3:${this.docs.threeId.id.split('//')[1]}`
   }
 
-  get managementDID(): string {
-    return this._managementDID as string
-  }
-
   async create3idDoc(docParams: Record<string, any>): Promise<void> {
-    this._managementDID = docParams.metadata.owners[0]
-    this.docs.threeId = await this.ceramic.createDocument('tile', docParams, { applyOnly: true, isUnique: false })
+    this.docs.threeId = await this.ceramic.createDocument('tile', docParams, {
+      applyOnly: true,
+    })
   }
 
-  async encodeKidWithVersion(keyName = 'signing'): Promise<string> {
-    // key id of a key-did: https://w3c-ccg.github.io/did-method-key/
-    if (keyName === 'management') return `${this.managementDID}#${this.managementDID.split(':')[2]}`
-    const version = (await this.ceramic.listVersions(this.docs.threeId.id)).pop() || 0
-    return `${this.id}?version-id=${version}#${keyName}`
+  async get3idVersion(): Promise<string> {
+    return (await this.ceramic.listVersions(this.docs.threeId.id)).pop() || '0'
   }
 
-  parseKeyName(kid: string): string | undefined {
-    if (!kid) return
-    const [did, keyName] = kid.split('#')
-    if (did === this.managementDID) {
-      return 'management'
-    }
-    if (this.id == null || did !== this.id) {
-      throw new Error('Invalid DID')
-    }
-    return keyName
-  }
-
-  async createAuthMapEntry(authEntry: NewAuthEntry): Promise<AuthMapEntry> {
+  async createAuthMapEntry(authEntry: NewAuthEntry): Promise<AuthEntryMap> {
     const authLink = authEntry.linkProof.account
     // tmp if statement, can be removed when fix released:
     // https://github.com/ceramicnetwork/js-ceramic/pull/287
@@ -100,10 +86,7 @@ export class ThreeIDX {
    */
   async createIDX(authEntry?: NewAuthEntry): Promise<void> {
     const entry = authEntry ? await this.createAuthMapEntry(authEntry) : {}
-    this.docs[CDefs.authKeychain] = await this.ceramic.createDocument('tile', {
-      metadata: { owners: [this.id] },
-      content: entry,
-    })
+    await this.createKeychainDoc(entry)
     this.docs.idx = await this.ceramic.createDocument('tile', {
       metadata: { owners: [this.id], schema: schemas.IdentityIndex },
       content: { [CDefs.authKeychain]: this.docs[CDefs.authKeychain].id },
@@ -117,7 +100,7 @@ export class ThreeIDX {
   /**
    * Returns the encrypted JWE for the given authLink
    */
-  async loadIDX(authLink: string): Promise<EncData | null> {
+  async loadIDX(authLink: string): Promise<EncKeyMaterial | null> {
     this.docs[authLink] = await this.ceramic.createDocument(
       'account-link',
       { metadata: { owners: [authLink] } },
@@ -133,7 +116,11 @@ export class ThreeIDX {
     if (!authKeychainDocid) return null
     this.docs[CDefs.authKeychain] = await this.ceramic.loadDocument(authKeychainDocid)
     const linkDocid = this.docs[authLink].id
-    return this.docs[CDefs.authKeychain].content[linkDocid].data
+    const { authMap, pastSeeds } = this.docs[CDefs.authKeychain].content
+    return {
+      seed: authMap[linkDocid]?.data,
+      pastSeeds,
+    } as EncKeyMaterial
   }
 
   /**
@@ -141,9 +128,10 @@ export class ThreeIDX {
    */
   async addAuthEntries(authEntries: Array<NewAuthEntry>): Promise<void> {
     const mapEntries = await Promise.all(authEntries.map(this.createAuthMapEntry.bind(this)))
-    const content = Object.assign({}, this.docs[CDefs.authKeychain].content)
-    const newContent = mapEntries.reduce((acc, entry) => Object.assign(acc, entry), content)
-    await this.docs[CDefs.authKeychain].change({ content: newContent })
+    const content = this.docs[CDefs.authKeychain].content
+    const newAuthEntries = mapEntries.reduce((acc, entry) => Object.assign(acc, entry), {})
+    Object.assign(content.authMap, newAuthEntries)
+    await this.docs[CDefs.authKeychain].change({ content })
   }
 
   /**
@@ -151,8 +139,8 @@ export class ThreeIDX {
    */
   getAllAuthEntries(): Array<AuthEntry> {
     if (!this.docs[CDefs.authKeychain]) return []
-    const content = this.docs[CDefs.authKeychain].content
-    return Object.keys(content).map((authLink: string): AuthEntry => content[authLink] as AuthEntry)
+    const authMap = this.docs[CDefs.authKeychain].content.authMap
+    return Object.keys(authMap).map((authLink: string): AuthEntry => authMap[authLink] as AuthEntry)
   }
 
   async pinAllDocs(): Promise<void> {
@@ -163,16 +151,48 @@ export class ThreeIDX {
     )
   }
 
+  async createKeychainDoc(authMap: AuthEntryMap, pastSeeds: Array<JWE> = []): Promise<void> {
+    this.docs[CDefs.authKeychain] = await this.ceramic.createDocument('tile', {
+      metadata: { owners: [this.id] },
+      content: { authMap, pastSeeds },
+    })
+  }
+
   /**
    * Preform a key rotation.
-   * Will update the keys in the 3id document, and create a new auth keychain
+   * Will update the keys in the 3id document, and create a new 3ID keychain
    * with the given authEntries.
    */
-  async rotateKeys(docUpdate: Record<string, any>, updatedAuthEntries: Array<AuthEntry>): Promise<void> {
-    this.docs.threeId.change({
-      metadata,
-      content: Object.assign(this.docs.threeId.content, content)
-    })
-    // TODO - new keychain
+  async rotateKeys(
+    threeIdState: ThreeIdState,
+    pastSeeds: Array<JWE>,
+    updatedAuthEntries: Array<AuthEntry>
+  ): Promise<void> {
+    // Rotate keys in 3ID document
+    const promises = [
+      this.docs.threeId.change({
+        metadata: threeIdState.metadata,
+        content: { ...this.docs.threeId.content, publicKeys: threeIdState.content.publicKeys },
+      }),
+    ]
+    // update the authMap
+    const oldAuthMap = this.docs[CDefs.authKeychain].content.authMap
+    const authMap = Object.keys(oldAuthMap).reduce((authMap: AuthEntryMap, link: string) => {
+      const entry = updatedAuthEntries.find((entry) => entry.pub === oldAuthMap[link].pub)
+      if (entry) authMap[link] = entry
+      return authMap
+    }, {})
+    // Create a new 3ID keychain document
+    await this.createKeychainDoc(authMap, pastSeeds)
+    promises.push(this.pinAllDocs())
+    // Update IDX to point to new keychain
+    promises.push(
+      this.docs.idx.change({
+        content: Object.assign(this.docs.idx.content, {
+          [CDefs.authKeychain]: this.docs[CDefs.authKeychain].id,
+        }),
+      })
+    )
+    await Promise.all(promises)
   }
 }

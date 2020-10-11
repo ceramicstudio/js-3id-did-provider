@@ -16,7 +16,6 @@ interface IDWConfig {
 }
 
 export default class IdentityWallet {
-
   /**
    * Use IdentityWallet.create() to create an IdentityWallet instance
    */

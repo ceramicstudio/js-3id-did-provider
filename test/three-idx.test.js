@@ -63,7 +63,7 @@ const mockedPermissions = {
 }
 
 describe('ThreeIDX', () => {
-  jest.setTimeout(15000)
+  jest.setTimeout(25000)
   let tmpFolder
   let ipfs, ceramic
   let keyring, threeIdx
@@ -92,23 +92,15 @@ describe('ThreeIDX', () => {
     expect(threeIdx.docs.threeId.state).toMatchSnapshot()
   })
 
-  it('parses key name correctly', async () => {
-    await setup3id(threeIdx, keyring)
-    const badKid = 'did:3:bayfiuherg98h349h#signing'
-    expect(() => threeIdx.parseKeyName(badKid)).toThrow('Invalid DID')
-    const goodKid = threeIdx.id + '#signing'
-    expect(threeIdx.parseKeyName(goodKid)).toEqual('signing')
-  })
-
-  it('encodes kid with version', async () => {
+  it('gets correct 3id version', async () => {
     await setup3id(threeIdx, keyring)
     // with no anchor
-    expect(await threeIdx.encodeKidWithVersion()).toEqual(threeIdx.id + '?version-id=0#signing')
-    expect(await threeIdx.encodeKidWithVersion('management')).toEqual(`${threeIdx.managementDID}#${threeIdx.managementDID.split(':')[2]}`)
-    // TODO waits for indefinitely since we're not requesting it
-    // await new Promise(resolve => threeIdx.docs.threeId.on('change', resolve))
-    // const latestVer = (await ceramic.listVersions(threeIdx.docs.threeId.id)).pop()
-    // expect(await threeIdx.encodeKidWithVersion()).toEqual(threeIdx.id + '?version-id=' + latestVer + '#signing')
+    expect(await threeIdx.get3idVersion()).toEqual('0')
+    // with anchor, createIDX to update 3id doc
+    await threeIdx.createIDX()
+    await new Promise(resolve => threeIdx.docs.threeId.on('change', resolve))
+    const latestVer = (await ceramic.listVersions(threeIdx.docs.threeId.id)).pop()
+    expect(await threeIdx.get3idVersion()).toEqual(latestVer)
   })
 
   it('creates authMapEntry', async () => {
@@ -132,11 +124,14 @@ describe('ThreeIDX', () => {
     await threeIdx.createIDX(newAuthEntry)
 
     expect(threeIdx.docs['auth-keychain'].content).toEqual({
-      [threeIdx.docs[accountId].id]: {
-        pub: newAuthEntry.pub,
-        data: newAuthEntry.data,
-        id: newAuthEntry.id,
-      }
+      authMap: {
+        [threeIdx.docs[accountId].id]: {
+          pub: newAuthEntry.pub,
+          data: newAuthEntry.data,
+          id: newAuthEntry.id,
+        }
+      },
+      pastSeeds: []
     })
     expect(threeIdx.docs.idx.content).toEqual({ 'auth-keychain': threeIdx.docs['auth-keychain'].id })
     expect(threeIdx.docs.idx.metadata.schema).toBe(schemas.IdentityIndex)
@@ -176,21 +171,27 @@ describe('ThreeIDX', () => {
     const { newAuthEntry, accountId } = await genAuthEntryCreate(threeIdx.id)
     await threeIdx.createIDX(newAuthEntry)
 
-    expect(await threeIdx.loadIDX(accountId)).toEqual(newAuthEntry.data)
+    expect(await threeIdx.loadIDX(accountId)).toEqual({
+      seed: newAuthEntry.data,
+      pastSeeds: []
+    })
   })
 
   it('addAuthEntries', async () => {
     await setup3id(threeIdx, keyring)
-    const { newAuthEntry: nae1, accountId: ai1 } = await genAuthEntryCreate(threeIdx.id)
-    await threeIdx.createIDX(nae1)
-
+    const resolved = await Promise.all([
+      genAuthEntryCreate(threeIdx.id),
+      genAuthEntryCreate(threeIdx.id),
+      genAuthEntryCreate(threeIdx.id)
+    ])
+    const { newAuthEntry: nae1, accountId: ai1 } = resolved[0]
+    const { newAuthEntry: nae2, accountId: ai2 } = resolved[1]
+    const { newAuthEntry: nae3, accountId: ai3 } = resolved[2]
     const authEntry1 = { pub: nae1.pub, data: nae1.data, id: nae1.id }
-    expect(threeIdx.getAllAuthEntries()).toEqual([authEntry1])
-
-    const { newAuthEntry: nae2, accountId: ai2 } = await genAuthEntryCreate(threeIdx.id)
-    const { newAuthEntry: nae3, accountId: ai3 } = await genAuthEntryCreate(threeIdx.id)
     const authEntry2 = { pub: nae2.pub, data: nae2.data, id: nae2.id }
     const authEntry3 = { pub: nae3.pub, data: nae3.data, id: nae3.id }
+    await threeIdx.createIDX(nae1)
+    expect(threeIdx.getAllAuthEntries()).toEqual([authEntry1])
     await threeIdx.addAuthEntries([nae2, nae3])
 
     expect(threeIdx.getAllAuthEntries()).toEqual([authEntry1, authEntry2, authEntry3])
@@ -199,5 +200,36 @@ describe('ThreeIDX', () => {
       threeIdx.docs[ai2].id,
       threeIdx.docs[ai3].id,
     ].map(docid => docid.replace('ceramic://', '/ceramic/'))))
+  })
+
+  it('rotateKeys', async () => {
+    await setup3id(threeIdx, keyring)
+    const resolved = await Promise.all([
+      genAuthEntryCreate(threeIdx.id),
+      genAuthEntryCreate(threeIdx.id),
+      genAuthEntryCreate(threeIdx.id)
+    ])
+    const { newAuthEntry: nae1, accountId: ai1 } = resolved[0]
+    const { newAuthEntry: nae2, accountId: ai2 } = resolved[1]
+    const { newAuthEntry: nae3, accountId: ai3 } = resolved[2]
+    await threeIdx.createIDX(nae1)
+    await threeIdx.addAuthEntries([nae2, nae3])
+
+    // Rotate keys correctly
+    await keyring.generateNewKeys(await threeIdx.get3idVersion())
+    const new3idState = keyring.get3idState()
+    const updatedEntry1 = { pub: nae1.pub, data: 'data1', id: 'id1' }
+    const updatedEntry2 = { pub: nae2.pub, data: 'data2', id: 'id2' }
+    await threeIdx.rotateKeys(new3idState, keyring.pastSeeds, [updatedEntry1, updatedEntry2])
+    expect(threeIdx.getAllAuthEntries()).toEqual(expect.arrayContaining([updatedEntry1, updatedEntry2]))
+    const state = threeIdx.docs.threeId.state
+    expect(state.content).toEqual(expect.objectContaining(new3idState.content))
+    expect(state.metadata.owners).toEqual(new3idState.metadata.owners)
+
+    // load 3id with rotated keys
+    expect(await threeIdx.loadIDX(ai1)).toEqual({
+      seed: updatedEntry1.data,
+      pastSeeds: keyring.pastSeeds
+    })
   })
 })

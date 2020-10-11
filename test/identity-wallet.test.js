@@ -32,7 +32,7 @@ const genIpfsConf = (folder) => {
 }
 
 describe('IdentityWallet', () => {
-  jest.setTimeout(15000)
+  jest.setTimeout(45000)
   let tmpFolder
   let ipfs, ceramic
 
@@ -118,6 +118,33 @@ describe('IdentityWallet', () => {
       const idw2 = await IdentityWallet.create(config2)
       expect(await idw2.keychain.list()).toEqual(['auth2'])
       expect(idw1.id).toEqual(idw2.id)
+    })
+
+    it('Removes authSecret from keychain and creates instance', async () => {
+      const config1 = {
+        getPermission: getPermissionMock,
+        authSecret: randomAuthSecret(),
+        authId: 'auth1',
+        ceramic
+      }
+      const idw1 = await IdentityWallet.create(config1)
+      expect(await idw1.keychain.list()).toEqual(['auth1'])
+      const config2 = {
+        getPermission: getPermissionMock,
+        authId: 'auth2',
+        authSecret: randomAuthSecret(),
+        ceramic
+      }
+      await idw1.keychain.add(config2.authId, config2.authSecret)
+      await idw1.keychain.commit()
+      expect(await idw1.keychain.list()).toEqual(['auth1', 'auth2'])
+
+      await idw1.keychain.remove('auth1')
+      await idw1.keychain.commit()
+      expect(await idw1.keychain.list()).toEqual(['auth2'])
+      const idw2 = await IdentityWallet.create(config2)
+      expect(idw1.id).toEqual(idw2.id)
+      await expect(IdentityWallet.create(config1)).rejects.toThrow('Unable to find auth data')
     })
   })
 })

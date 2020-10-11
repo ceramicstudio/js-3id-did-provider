@@ -24,6 +24,18 @@ export function encodeKey(key: Uint8Array, keyType: string): string {
   return `z${u8a.toString(bytes, 'base58btc')}`
 }
 
+export function decodeKey(key: string): Uint8Array {
+  // remove 'z' and decode bytes
+  const bytes = u8a.fromString(key.slice(1), 'base58btc')
+  const supportedKey =
+    bytes[1] === 0x01 &&
+    (multicodecPubkeyTable['secp256k1'] === bytes[0] ||
+      multicodecPubkeyTable['x25519'] === bytes[0] ||
+      multicodecPubkeyTable['ed25519'] === bytes[0])
+  if (!supportedKey) throw new Error(`Key type ${bytes[0]} not supported`)
+  return bytes.slice(2)
+}
+
 export const fakeEthProvider = (wallet: Wallet): any => ({
   send: (
     request: { method: string; params: Array<any> },

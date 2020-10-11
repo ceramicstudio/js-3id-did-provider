@@ -1,16 +1,17 @@
 import type { ThreeIDX, AuthEntry, NewAuthEntry, EncData } from './three-idx'
 import type { DidProvider } from './did-provider'
-import Keyring from './keyring'
-import { asymDecryptJWE, asymEncryptJWE } from './crypto'
-import { encodeKey, fakeEthProvider, u8aToHex } from './utils'
+import Keyring, { LATEST } from './keyring'
+import { asymDecryptJWE, asymEncryptJWE, parseJWEKids } from './crypto'
+import { encodeKey, decodeKey, fakeEthProvider } from './utils'
 
 import { createLink } from '3id-blockchain-utils'
 import { AccountID } from 'caip'
 
-interface KeychainStatus {
-  clean: boolean
-  adding: Array<string>
-  removing: Array<string>
+async function decryptAuthId(encrypted: EncData, keyring: Keyring): Promise<string | null> {
+  if (!encrypted.jwe) throw new Error('Invalid encrypted block')
+  const decrypter = keyring.getAsymDecrypter(parseJWEKids(encrypted.jwe))
+  const decrypted = await asymDecryptJWE(encrypted.jwe, { decrypter })
+  return decrypted.id as string
 }
 
 export async function newAuthEntry(
@@ -20,40 +21,73 @@ export async function newAuthEntry(
   authSecret: Uint8Array
 ): Promise<NewAuthEntry> {
   const mainPub = keyring.getEncryptionPublicKey()
+  const mainKid = `${did}#${keyring.getKeyFragment(LATEST, true)}`
   const { publicKey } = Keyring.authSecretToKeyPair(authSecret)
   const wallet = Keyring.authSecretToWallet(authSecret)
   const accountId = new AccountID({ address: wallet.address, chainId: 'eip155:1' })
   return {
     pub: encodeKey(publicKey, 'x25519'),
-    data: { jwe: await asymEncryptJWE({ seed: keyring.serialize()['latest'] }, publicKey) },
-    id: { jwe: await asymEncryptJWE({ id: authId }, mainPub) },
+    data: { jwe: await asymEncryptJWE({ seed: keyring.seed }, { publicKey }) },
+    id: { jwe: await asymEncryptJWE({ id: authId }, { publicKey: mainPub, kid: mainKid }) },
     linkProof: await createLink(did, accountId, fakeEthProvider(wallet)),
   }
 }
 
-//function 
+export async function updateAuthEntry(
+  keyring: Keyring,
+  authEntry: AuthEntry,
+  removedAuthIds: Array<string>,
+  did: string
+): Promise<AuthEntry | null> {
+  const mainPub = keyring.getEncryptionPublicKey()
+  const mainKid = `${did}#${keyring.getKeyFragment(LATEST, true)}`
+  const publicKey = decodeKey(authEntry.pub)
+  const authId = await decryptAuthId(authEntry.id, keyring)
+  // Return null if auth entry should be removed
+  if (removedAuthIds.find((id) => id === authId)) return null
+  return Object.assign(authEntry, {
+    data: { jwe: await asymEncryptJWE({ seed: keyring.seed }, { publicKey }) },
+    id: { jwe: await asymEncryptJWE({ id: authId }, { publicKey: mainPub, kid: mainKid }) },
+  })
+}
 
-//export async function updateAuthEntry(
-  //keyring: Keyring,
-//)
+async function rotateKeys(
+  threeIdx: ThreeIDX,
+  keyring: Keyring,
+  removedAuthIds: Array<string>
+): Promise<void> {
+  const version = await threeIdx.get3idVersion()
+  await keyring.generateNewKeys(version)
+  const update3idState = keyring.get3idState()
+  const pastSeeds = keyring.pastSeeds
+  const updatedAuthEntries = (
+    await Promise.all(
+      threeIdx
+        .getAllAuthEntries()
+        .map((entry) => updateAuthEntry(keyring, entry, removedAuthIds, threeIdx.id))
+    )
+  ).filter((entry) => Boolean(entry)) as Array<AuthEntry> // filter removes null entires
+  await threeIdx.rotateKeys(update3idState, pastSeeds, updatedAuthEntries)
+}
 
 interface PendingAdd {
   authId: string
   entry: NewAuthEntry
 }
 
+interface KeychainStatus {
+  clean: boolean
+  adding: Array<string>
+  removing: Array<string>
+}
+
 export class Keychain {
   private _pendingAdds: Array<PendingAdd> = []
-  private _pendingRms: Array<authId> = []
+  private _pendingRms: Array<string> = []
   /**
    * The Keychain enables adding and removing of authentication methods.
    */
   constructor(public _keyring: Keyring, protected _threeIdx: ThreeIDX) {}
-
-  async _keyringDecrypt(encrypted: EncData): Promise<string | null> {
-    if (!encrypted.jwe) throw new Error('Invalid encrypted block')
-    return (await asymDecryptJWE(encrypted.jwe, null, this._keyring.getAsymDecrypter())).id as string
-  }
 
   /**
    * List all current authentication methods.
@@ -64,7 +98,7 @@ export class Keychain {
     return Promise.all(
       this._threeIdx.getAllAuthEntries().map(
         async ({ id }: AuthEntry): Promise<string> => {
-          return (await this._keyringDecrypt(id)) as string
+          return (await decryptAuthId(id, this._keyring)) as string
         }
       )
     )
@@ -102,9 +136,9 @@ export class Keychain {
    */
   status(): KeychainStatus {
     return {
-      clean: !this._pendingAdds.length,
+      clean: !(this._pendingAdds.length + this._pendingRms.length),
       adding: this._pendingAdds.map((e) => e.authId),
-      removing: [],
+      removing: this._pendingRms,
     }
   }
 
@@ -112,14 +146,16 @@ export class Keychain {
    * Commit the staged changes to the keychain.
    */
   async commit(): Promise<void> {
-    if (!this._pendingAdds.length || !this._pendingRms) throw new Error('Nothing to commit')
+    if (!this._pendingAdds.length && !this._pendingRms.length) throw new Error('Nothing to commit')
     if (this._threeIdx.getAllAuthEntries().length === 0) {
-      if (!this._pendingAdds.length) throw new Error('Can not remove non existant auth method')
+      if (this._pendingRms.length) throw new Error('Can not remove non-existent auth method')
+      if (!this._pendingAdds.length) throw new Error('Can not add non-existent auth method')
       // Create IDX structure if not present
       await this._threeIdx.createIDX(this._pendingAdds.pop()?.entry)
     }
     if (this._pendingRms.length) {
-      // TODO - rotate key in keyring
+      await rotateKeys(this._threeIdx, this._keyring, this._pendingRms)
+      this._pendingRms = []
     }
     if (this._pendingAdds.length) {
       const entries = this._pendingAdds.map((e) => e.entry)
@@ -138,10 +174,16 @@ export class Keychain {
     const accountId = new AccountID({ address: wallet.address.toLowerCase(), chainId: 'eip155:1' })
     const authData = await threeIdx.loadIDX(accountId.toString())
     if (authData) {
-      if (!authData.jwe) throw new Error('Unable to find auth data')
-      const seed = new Uint8Array((await asymDecryptJWE(authData.jwe, secretKey)).seed)
-      const keyring = new Keyring(seed)
-      return new Keychain(keyring, threeIdx)
+      if (!authData.seed?.jwe) throw new Error('Unable to find auth data')
+      try {
+        const seed = new Uint8Array((await asymDecryptJWE(authData.seed.jwe, { secretKey })).seed)
+        const keyring = new Keyring(seed)
+        await keyring.loadPastSeeds(authData.pastSeeds)
+        return new Keychain(keyring, threeIdx)
+      } catch (e) {
+        if (e.message === 'Failed to decrypt') throw new Error('Auth not allowed')
+        throw e
+      }
     }
     return Keychain.create(threeIdx, makeTmpProvider)
   }
@@ -154,7 +196,7 @@ export class Keychain {
     const keyring = new Keyring(seed)
     const docParams = keyring.get3idState(true)
     // Temporarily set DID provider to create 3ID document
-    await threeIdx.setDIDProvider(makeTmpProvider(keyring, docParams.metadata.owners[0] as string))
+    await threeIdx.setDIDProvider(makeTmpProvider(keyring, docParams.metadata.owners[0]))
     await threeIdx.create3idDoc(docParams)
     return new Keychain(keyring, threeIdx)
   }
