@@ -33,8 +33,20 @@ describe('Keychain', () => {
       addAuthEntries: jest.fn(async entries => authEntries = authEntries.concat(entries)),
       getAllAuthEntries: jest.fn(() => authEntries),
       get3idVersion: jest.fn(async () => '0'),
-      rotateKeys: jest.fn(() => {}),
+      rotateKeys: jest.fn(),
+      setV03ID: jest.fn()
     }
+  })
+
+  it('Create with v03ID', async () => {
+    const v03ID = 'did:3:abc234'
+    const keychain = await Keychain.create(threeIdx, () => {}, randomAuthSecret(), v03ID)
+    expect(threeIdx.setDIDProvider).toHaveBeenCalledTimes(1)
+    expect(threeIdx.create3idDoc).toHaveBeenCalledTimes(1)
+    expect(threeIdx.setV03ID).toHaveBeenCalledTimes(1)
+    expect(threeIdx.setV03ID).toHaveBeenCalledWith(v03ID)
+    expect(await keychain.list()).toEqual([])
+    expect(keychain._keyring.v03ID).toEqual(v03ID)
   })
 
   it('load, no IDX present', async () => {
@@ -42,7 +54,7 @@ describe('Keychain', () => {
     expect(threeIdx.loadIDX).toHaveBeenCalledTimes(1)
     expect(threeIdx.setDIDProvider).toHaveBeenCalledTimes(1)
     expect(threeIdx.create3idDoc).toHaveBeenCalledTimes(1)
-    //expect(threeIdx.createIDX).toHaveBeenCalledTimes(1)
+    expect(threeIdx.setV03ID).toHaveBeenCalledTimes(0)
     expect(await keychain.list()).toEqual([])
   })
 
@@ -59,6 +71,24 @@ describe('Keychain', () => {
     const keychain = await Keychain.load(threeIdx, authSecret, () => {})
     expect(threeIdx.loadIDX).toHaveBeenCalledTimes(1)
     expect(await keychain.list()).toEqual(['authid'])
+  })
+
+  it('load, IDX present, v03ID', async () => {
+    const v03ID = 'did:3:abc234'
+    const authSecret = randomAuthSecret()
+    const keychain = await Keychain.create(threeIdx, () => {}, randomAuthSecret(), v03ID)
+    expect(threeIdx.setV03ID).toHaveBeenCalledTimes(1)
+    await keychain.add('auth1', authSecret)
+    await keychain.commit()
+
+    threeIdx.loadIDX = jest.fn(async () => ({
+      seed: threeIdx.getAllAuthEntries()[0].data,
+      pastSeeds: keychain._keyring.pastSeeds
+    }))
+    const keychain1 = await Keychain.load(threeIdx, authSecret, () => {})
+    expect(threeIdx.setV03ID).toHaveBeenCalledTimes(2)
+    expect(threeIdx.setV03ID).toHaveBeenNthCalledWith(2, v03ID)
+    expect(keychain1._keyring.v03ID).toEqual(v03ID)
   })
 
   it('commit adds, no IDX created yet', async () => {

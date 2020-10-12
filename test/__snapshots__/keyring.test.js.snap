@@ -4,14 +4,14 @@ exports[`Keyring Derives correct keys from seed 1`] = `
 Object {
   "content": Object {
     "publicKeys": Object {
-      "PpEHx9GhyFT5Env": "zQ3shnyMbHDVqqJnm6EiPJ47Vc4ivUFgcaPpEHx9GhyFT5Env",
-      "suxjL1MxhcRFYkG": "z6DtSycrUdhF2Cv9vQP9GoTVsbjUsSuj5suxjL1MxhcRFYkG",
+      "HqWJATWq82EABVs": "zQ3shRHw1ZYQRjdojgJftsbPuAYaJp1k1HHqWJATWq82EABVs",
+      "YD3eWkMRGz8SoYg": "z6DtXGgN5bz2g8ypPnWTEEqvj2dBQmRoJYD3eWkMRGz8SoYg",
     },
   },
   "metadata": Object {
     "isUnique": false,
     "owners": Array [
-      "did:key:zQ3shjdQdzyD4TLGhSrGZenUjS3TnhwqWowkqKqi2J8sMgGy6",
+      "did:key:zQ3sha3tk9URYc9Pu3Hb6dHyhWXjVKCZbfGosg4GMQdQE72DD",
     ],
     "tags": Array [
       "3id",
@@ -24,13 +24,13 @@ exports[`Keyring Derives correct keys from seed 2`] = `
 Object {
   "content": Object {
     "publicKeys": Object {
-      "PpEHx9GhyFT5Env": "zQ3shnyMbHDVqqJnm6EiPJ47Vc4ivUFgcaPpEHx9GhyFT5Env",
-      "suxjL1MxhcRFYkG": "z6DtSycrUdhF2Cv9vQP9GoTVsbjUsSuj5suxjL1MxhcRFYkG",
+      "HqWJATWq82EABVs": "zQ3shRHw1ZYQRjdojgJftsbPuAYaJp1k1HHqWJATWq82EABVs",
+      "YD3eWkMRGz8SoYg": "z6DtXGgN5bz2g8ypPnWTEEqvj2dBQmRoJYD3eWkMRGz8SoYg",
     },
   },
   "metadata": Object {
     "owners": Array [
-      "did:key:zQ3shjdQdzyD4TLGhSrGZenUjS3TnhwqWowkqKqi2J8sMgGy6",
+      "did:key:zQ3sha3tk9URYc9Pu3Hb6dHyhWXjVKCZbfGosg4GMQdQE72DD",
     ],
   },
 }
@@ -38,38 +38,38 @@ Object {
 
 exports[`Keyring Derives correct keys from seed 3`] = `
 Uint8Array [
-  77,
-  18,
-  225,
-  143,
-  155,
-  176,
+  140,
+  224,
+  120,
+  198,
   47,
-  185,
-  247,
-  228,
-  117,
-  64,
-  200,
-  168,
-  40,
+  177,
+  130,
+  80,
+  120,
+  20,
+  9,
+  162,
+  176,
+  48,
+  126,
+  227,
+  114,
+  6,
+  253,
   10,
-  160,
+  59,
+  176,
+  221,
+  134,
+  48,
   46,
-  113,
-  26,
-  139,
+  65,
+  111,
+  227,
+  188,
+  5,
   93,
-  200,
-  71,
-  107,
-  247,
-  97,
-  122,
-  195,
-  166,
-  57,
-  57,
 ]
 `;
 
@@ -108,4 +108,30 @@ Uint8Array [
   225,
   59,
 ]
+`;
+
+exports[`Keyring Generates correct state if v03ID is set 1`] = `
+Object {
+  "content": null,
+  "metadata": Object {
+    "isUnique": false,
+    "owners": Array [
+      "did:key:zQ3shnyMbHDVqqJnm6EiPJ47Vc4ivUFgcaPpEHx9GhyFT5Env",
+    ],
+    "tags": Array [
+      "3id",
+    ],
+  },
+}
+`;
+
+exports[`Keyring Generates correct state if v03ID is set 2`] = `
+Object {
+  "content": null,
+  "metadata": Object {
+    "owners": Array [
+      "did:key:zQ3shnyMbHDVqqJnm6EiPJ47Vc4ivUFgcaPpEHx9GhyFT5Env",
+    ],
+  },
+}
 `;

@@ -21,7 +21,7 @@ interface ThreeIdMetadata extends Record<string, any> {
 
 export interface ThreeIdState {
   metadata: ThreeIdMetadata
-  content: Record<string, any>
+  content: Record<string, any> | null
 }
 
 export interface KeySet {
@@ -34,11 +34,13 @@ interface FullKeySet {
   seed: Uint8Array
   publicKeys: KeySet
   secretKeys: KeySet
+  v03ID?: string
 }
 
-function deriveKeySet(seed: Uint8Array): FullKeySet {
+function deriveKeySet(seed: Uint8Array, v03ID?: string): FullKeySet {
   // TODO - dont' use ROOT_STORE_PATH unless when needed. Very expensive.
-  const hdNode = HDNode.fromSeed(seed).derivePath(BASE_PATH).derivePath(ROOT_STORE_PATH)
+  let hdNode = HDNode.fromSeed(seed).derivePath(BASE_PATH)
+  if (v03ID) hdNode = hdNode.derivePath(ROOT_STORE_PATH)
   const signing = hdNode.derivePath('0')
   const management = hdNode.derivePath('1')
   const encryption = generateKeyPairFromSeed(hexToU8A(hdNode.derivePath('2').privateKey.slice(2)))
@@ -54,6 +56,7 @@ function deriveKeySet(seed: Uint8Array): FullKeySet {
       management: hexToU8A(management.privateKey.slice(2)),
       encryption: encryption.secretKey,
     },
+    v03ID,
   }
 }
 
@@ -64,16 +67,23 @@ export default class Keyring {
   protected _versionMap: Record<string, string> = {}
   // encrypted old seeds
   protected _pastSeeds: Array<JWE> = []
+  // v03ID if legacy 3ID
+  protected _v03ID?: string
 
-  constructor(seed?: Uint8Array) {
+  constructor(seed?: Uint8Array, v03ID?: string) {
     if (!seed) {
       seed = randomBytes(32)
     }
-    this._keySets[LATEST] = deriveKeySet(seed)
+    if (v03ID) this._v03ID = v03ID
+    this._keySets[LATEST] = deriveKeySet(seed, v03ID)
     let encKid = encodeKey(this._keySets[LATEST].publicKeys.encryption, 'x25519').slice(-15)
     this._versionMap[encKid] = LATEST
     encKid = encodeKey(this._keySets[LATEST].publicKeys.management, 'secp256k1')
     this._versionMap[encKid] = LATEST
+  }
+
+  get v03ID(): string | undefined {
+    return this._v03ID
   }
 
   get seed(): Uint8Array {
@@ -92,8 +102,12 @@ export default class Keyring {
     let jwe = pastSeeds.pop()
     while (jwe) {
       const decrypted = await asymDecryptJWE(jwe, { decrypter: this.getAsymDecrypter([], version) })
+      if (decrypted.v03ID) {
+        this._v03ID = decrypted.v03ID as string
+        delete decrypted.v03ID
+      }
       version = Object.keys(decrypted)[0]
-      this._keySets[version] = deriveKeySet(new Uint8Array(decrypted[version]))
+      this._keySets[version] = deriveKeySet(new Uint8Array(decrypted[version]), this._v03ID)
       this._updateVersionMap(version, this._keySets[version])
       jwe = pastSeeds.pop()
     }
@@ -117,11 +131,10 @@ export default class Keyring {
     // Add encryption kid and mgmt pub to map
     this._updateVersionMap(LATEST, this._keySets[LATEST])
     // Encrypt the previous seed to the new seed
+    const cleartext: Record<string, any> = { [prevVersion]: this._keySets[prevVersion].seed }
+    if (this._keySets[prevVersion].v03ID) cleartext.v03ID = this._keySets[prevVersion].v03ID
     this._pastSeeds.push(
-      await asymEncryptJWE(
-        { [prevVersion]: this._keySets[prevVersion].seed },
-        { publicKey: this.getEncryptionPublicKey() }
-      )
+      await asymEncryptJWE(cleartext, { publicKey: this.getEncryptionPublicKey() })
     )
   }
 
@@ -178,6 +191,10 @@ export default class Keyring {
     if (genesis) {
       state.metadata.tags = ['3id']
       state.metadata.isUnique = false
+    }
+    if (this._keySets[LATEST].v03ID) {
+      state.content = null
+      state.metadata.owners = [`did:key:${signing}`]
     }
     return state
   }

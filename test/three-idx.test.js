@@ -92,6 +92,15 @@ describe('ThreeIDX', () => {
     expect(threeIdx.docs.threeId.state).toMatchSnapshot()
   })
 
+  it('handles v0 3ID correctly', async () => {
+    const v03ID = 'did:3:abc234'
+    await setup3id(threeIdx, keyring)
+    const v13ID = threeIdx.id
+    threeIdx.setV03ID(v03ID)
+    expect(threeIdx.id).not.toEqual(v13ID)
+    expect(threeIdx.id).toEqual(v03ID)
+  })
+
   it('gets correct 3id version', async () => {
     await setup3id(threeIdx, keyring)
     // with no anchor

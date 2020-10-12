@@ -88,6 +88,10 @@ describe('IdentityWallet', () => {
       expect(await idw2.keychain.list()).toEqual(['testAuth'])
       expect(idw1.id).toEqual(idw2.id)
     })
+
+    it.skip('Create instance with seed & v03ID', async () => {
+      // TODO - implment test when 3id-did-resolver has backwards compatibility
+    })
   })
 
   describe('.keychain', () => {
@@ -146,11 +150,14 @@ describe('IdentityWallet', () => {
       expect(idw1.id).toEqual(idw2.id)
       await expect(IdentityWallet.create(config1)).rejects.toThrow('Unable to find auth data')
     })
+
+    it.skip('Does keyrotation when v03ID is being used', async () => {
+      // TODO - implment test when 3id-did-resolver has backwards compatibility
+    })
   })
 })
 
 describe('IdentityWallet with disabled IDX', () => {
-  jest.setTimeout(15000)
   let tmpFolder
   let ipfs, ceramic
 
@@ -176,7 +183,7 @@ describe('IdentityWallet with disabled IDX', () => {
       }
       const idw = await IdentityWallet.create(config)
       expect(await ceramic.context.resolver.resolve(idw.id)).toBeDefined()
-      expect(idw.keychain.list()).toEqual([])
+      expect(await idw.keychain.list()).toEqual([])
       expect(idw._threeIdx.docs.idx).toBeUndefined()
     })
 

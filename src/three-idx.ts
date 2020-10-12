@@ -36,9 +36,14 @@ export interface NewAuthEntry extends AuthEntry {
   linkProof: LinkProof
 }
 
+interface ThreeId extends Doctype {
+  content: Record<string, any>
+}
+
 export class ThreeIDX {
   public docs: Record<string, Doctype>
   public ceramic: CeramicApi
+  protected _v03ID?: string
 
   constructor(ceramic?: CeramicApi) {
     this.ceramic = ceramic || new CeramicClient()
@@ -49,8 +54,12 @@ export class ThreeIDX {
     await this.ceramic.setDIDProvider(provider)
   }
 
+  setV03ID(did: string): void {
+    this._v03ID = did
+  }
+
   get id(): string {
-    return `did:3:${this.docs.threeId.id.split('//')[1]}`
+    return this._v03ID || `did:3:${this.docs.threeId.id.split('//')[1]}`
   }
 
   async create3idDoc(docParams: Record<string, any>): Promise<void> {
@@ -168,6 +177,7 @@ export class ThreeIDX {
     pastSeeds: Array<JWE>,
     updatedAuthEntries: Array<AuthEntry>
   ): Promise<void> {
+    if (!threeIdState.content) throw new Error('Content has to be defined')
     // Rotate keys in 3ID document
     const promises = [
       this.docs.threeId.change({

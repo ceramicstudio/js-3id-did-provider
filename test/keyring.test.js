@@ -20,6 +20,15 @@ describe('Keyring', () => {
     expect(keyring.get3idState()).toMatchSnapshot()
     expect(keyring.getEncryptionPublicKey()).toMatchSnapshot()
     expect(keyring.seed).toMatchSnapshot()
+    expect(keyring.v03ID).not.toBeDefined()
+  })
+
+  it('Generates correct state if v03ID is set', async () => {
+    const v03ID = 'did:3:abc3234'
+    const keyring = new Keyring(seed, v03ID)
+    expect(keyring.get3idState(true)).toMatchSnapshot()
+    expect(keyring.get3idState()).toMatchSnapshot()
+    expect(keyring.v03ID).toEqual(v03ID)
   })
 
   it('generate and load keys', async () => {
@@ -67,6 +76,22 @@ describe('Keyring', () => {
       keyring1.getMgmtSigner(mgmt1)('asdf'),
       keyring1.getMgmtSigner(mgmt2)('asdf')
     ])).toEqual(mgmtSigs)
+  })
+
+  it('loads legacy keys correctly', async () => {
+    const v03ID = 'did:3:abc3234'
+    const seed = randomBytes(32)
+    const keyring0 = new Keyring(seed, v03ID)
+    const v0 = 'versionCID0'
+    await keyring0.generateNewKeys(v0)
+
+    const pastSeeds = keyring0.pastSeeds
+    // create new keyring with latest seed
+    const keyring1 = new Keyring(keyring0.seed)
+    expect(keyring1.v03ID).not.toBeDefined()
+    await keyring1.loadPastSeeds(pastSeeds)
+    expect(keyring1.v03ID).toEqual(v03ID)
+    expect(keyring1._keySets).toEqual(keyring0._keySets)
   })
 
   it('generateNewKeys throws if version already exist', async () => {

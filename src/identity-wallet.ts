@@ -11,6 +11,7 @@ interface IDWConfig {
   seed?: string
   authSecret?: Uint8Array
   authId?: string
+  v03ID?: string
   ceramic: CeramicApi
   disableIDX?: boolean
 }
@@ -54,6 +55,7 @@ export default class IdentityWallet {
    * @param     {Uint8Array}    config.authSecret       The authSecret to use, 32 bytes
    * @param     {String}        config.authId           The authId is used to identify the authSecret
    * @param     {Boolean}       config.disableIDX       Disable creation of the IDX document
+   * @param     {String}        config.v03ID            A v0 3ID, has to be passed if a migration is being preformed
    * @return    {IdentityWallet}                        An IdentityWallet instance
    */
   static async create(config: IDWConfig): Promise<IdentityWallet> {
