@@ -48,13 +48,11 @@ export async function asymDecryptJWE(
   return decodeCleartext(await decryptJWE(jwe, decrypter))
 }
 
-interface Recipient {
-  header: Record<string, string>
-}
-
 export function parseJWEKids(jwe: JWE): Array<string> {
-  return (jwe.recipients || []).reduce((kids: Array<string>, recipient: Recipient) => {
-    if (recipient.header?.kid) kids.push(recipient.header.kid.split('#')[1])
-    return kids
-  }, [])
+  return (
+    jwe.recipients?.reduce((kids: Array<string>, recipient): Array<string> => {
+      if (recipient.header?.kid) kids.push(recipient.header.kid.split('#')[1])
+      return kids
+    }, []) || []
+  )
 }
