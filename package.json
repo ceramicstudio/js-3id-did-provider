@@ -1,6 +1,6 @@
 {
   "name": "identity-wallet",
-  "version": "2.0.0-alpha.13",
+  "version": "2.0.0-alpha.14",
   "description": "Create and manage identities",
   "main": "lib/identity-wallet.js",
   "types": "lib/identity-wallet.d.ts",
@@ -43,7 +43,7 @@
   "dependencies": {
     "3id-blockchain-utils": "^1.0.0",
     "@babel/runtime": "^7.4.5",
-    "@ceramicnetwork/ceramic-http-client": "^0.6.4",
+    "@ceramicnetwork/ceramic-http-client": "^0.6.5",
     "@ceramicstudio/idx-constants": "^0.2.1",
     "@ethersproject/hdnode": "^5.0.5",
     "@ethersproject/wallet": "^5.0.5",
@@ -66,8 +66,8 @@
     "@babel/plugin-transform-runtime": "^7.10.5",
     "@babel/preset-env": "^7.10.4",
     "@babel/preset-typescript": "^7.10.4",
-    "@ceramicnetwork/ceramic-common": "^0.10.0",
-    "@ceramicnetwork/ceramic-core": "^0.10.0",
+    "@ceramicnetwork/ceramic-common": "^0.10.1",
+    "@ceramicnetwork/ceramic-core": "^0.10.1",
     "@ceramicstudio/idx-tools": "^0.2.2",
     "@types/elliptic": "^6.4.12",
     "@types/jest": "^26.0.7",
