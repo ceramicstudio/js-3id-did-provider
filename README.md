@@ -84,7 +84,6 @@ const did = new DID({ provider })
         * [.permissions](#IdentityWallet+permissions)
         * [.id](#IdentityWallet+id)
         * [.getDidProvider()](#IdentityWallet+getDidProvider) ⇒ <code>DidProvider</code>
-        * [.get3idProvider()](#IdentityWallet+get3idProvider) ⇒ <code>ThreeIdProvider</code>
     * _static_
         * [.create(config)](#IdentityWallet.create) ⇒ [<code>IdentityWallet</code>](#IdentityWallet)
 
@@ -130,13 +129,6 @@ Get the DIDProvider
 
 **Kind**: instance method of [<code>IdentityWallet</code>](#IdentityWallet)  
 **Returns**: <code>DidProvider</code> - The DIDProvider for this IdentityWallet instance  
-<a name="IdentityWallet+get3idProvider"></a>
-
-#### identityWallet.get3idProvider() ⇒ <code>ThreeIdProvider</code>
-Get the 3IDProvider
-
-**Kind**: instance method of [<code>IdentityWallet</code>](#IdentityWallet)  
-**Returns**: <code>ThreeIdProvider</code> - The 3IDProvider for this IdentityWallet instance  
 <a name="IdentityWallet.create"></a>
 
 #### IdentityWallet.create(config) ⇒ [<code>IdentityWallet</code>](#IdentityWallet)
@@ -149,10 +141,11 @@ Creates an instance of IdentityWallet
 | --- | --- | --- |
 | config | <code>Object</code> | The configuration to be used |
 | config.getPermission | <code>function</code> | The function that is called to ask the user for permission |
-| config.seed | <code>String</code> | The seed of the identity, 32 bytes hex string |
+| config.seed | <code>Uint8Array</code> | The seed of the identity, 32 bytes |
 | config.authSecret | <code>Uint8Array</code> | The authSecret to use, 32 bytes |
 | config.authId | <code>String</code> | The authId is used to identify the authSecret |
-| config.externalAuth | <code>String</code> | External auth function, directly returns key material, used to migrate legacy 3box accounts |
+| config.disableIDX | <code>Boolean</code> | Disable creation of the IDX document |
+| config.v03ID | <code>String</code> | A v0 3ID, has to be passed if a migration is being preformed |
 
 <a name="Keychain"></a>
 
