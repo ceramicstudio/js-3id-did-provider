@@ -1,17 +1,14 @@
 import { CeramicApi, Doctype } from '@ceramicnetwork/ceramic-common'
 import CeramicClient from '@ceramicnetwork/ceramic-http-client'
-import { schemas } from '@ceramicstudio/idx-constants'
+import { schemas, definitions } from '@ceramicstudio/idx-constants'
 import { LinkProof } from '3id-blockchain-utils'
 
 import type { DidProvider } from './did-provider'
 import type { ThreeIdState } from './keyring'
 import type { JWE } from 'did-jwt'
 
-// map of collection definitions
-const CDefs = {
-  // TODO user actual collection definition docs
-  authKeychain: 'auth-keychain',
-}
+const KEYCHAIN_DEF = definitions.threeIdKeychain.replace('ceramic://', '')
+const { IdentityIndex, ThreeIdKeychain } = schemas
 
 export interface EncData {
   jwe?: JWE
@@ -97,8 +94,8 @@ export class ThreeIDX {
     const entry = authEntry ? await this.createAuthMapEntry(authEntry) : {}
     await this.createKeychainDoc(entry)
     this.docs.idx = await this.ceramic.createDocument('tile', {
-      metadata: { owners: [this.id], schema: schemas.IdentityIndex },
-      content: { [CDefs.authKeychain]: this.docs[CDefs.authKeychain].id },
+      metadata: { owners: [this.id], schema: IdentityIndex },
+      content: { [KEYCHAIN_DEF]: this.docs[KEYCHAIN_DEF].id },
     })
     await this.docs.threeId.change({
       content: Object.assign(this.docs.threeId.content, { idx: this.docs.idx.id }),
@@ -121,11 +118,11 @@ export class ThreeIDX {
     const idxDocid = this.docs.threeId.content.idx
     if (!idxDocid) return null
     this.docs.idx = await this.ceramic.loadDocument(idxDocid)
-    const authKeychainDocid = this.docs.idx.content[CDefs.authKeychain]
+    const authKeychainDocid = this.docs.idx.content[KEYCHAIN_DEF]
     if (!authKeychainDocid) return null
-    this.docs[CDefs.authKeychain] = await this.ceramic.loadDocument(authKeychainDocid)
+    this.docs[KEYCHAIN_DEF] = await this.ceramic.loadDocument(authKeychainDocid)
     const linkDocid = this.docs[authLink].id
-    const { authMap, pastSeeds } = this.docs[CDefs.authKeychain].content
+    const { authMap, pastSeeds } = this.docs[KEYCHAIN_DEF].content
     return {
       seed: authMap[linkDocid]?.data,
       pastSeeds,
@@ -137,18 +134,18 @@ export class ThreeIDX {
    */
   async addAuthEntries(authEntries: Array<NewAuthEntry>): Promise<void> {
     const mapEntries = await Promise.all(authEntries.map(this.createAuthMapEntry.bind(this)))
-    const content = this.docs[CDefs.authKeychain].content
+    const content = this.docs[KEYCHAIN_DEF].content
     const newAuthEntries = mapEntries.reduce((acc, entry) => Object.assign(acc, entry), {})
     Object.assign(content.authMap, newAuthEntries)
-    await this.docs[CDefs.authKeychain].change({ content })
+    await this.docs[KEYCHAIN_DEF].change({ content })
   }
 
   /**
    * Returns all public keys that is in the auth keychain.
    */
   getAllAuthEntries(): Array<AuthEntry> {
-    if (!this.docs[CDefs.authKeychain]) return []
-    const authMap = this.docs[CDefs.authKeychain].content.authMap
+    if (!this.docs[KEYCHAIN_DEF]) return []
+    const authMap = this.docs[KEYCHAIN_DEF].content.authMap
     return Object.keys(authMap).map((authLink: string): AuthEntry => authMap[authLink] as AuthEntry)
   }
 
@@ -161,8 +158,8 @@ export class ThreeIDX {
   }
 
   async createKeychainDoc(authMap: AuthEntryMap, pastSeeds: Array<JWE> = []): Promise<void> {
-    this.docs[CDefs.authKeychain] = await this.ceramic.createDocument('tile', {
-      metadata: { owners: [this.id] },
+    this.docs[KEYCHAIN_DEF] = await this.ceramic.createDocument('tile', {
+      metadata: { owners: [this.id], schema: ThreeIdKeychain },
       content: { authMap, pastSeeds },
     })
   }
@@ -186,7 +183,7 @@ export class ThreeIDX {
       }),
     ]
     // update the authMap
-    const oldAuthMap = this.docs[CDefs.authKeychain].content.authMap
+    const oldAuthMap = this.docs[KEYCHAIN_DEF].content.authMap
     const authMap = Object.keys(oldAuthMap).reduce((authMap: AuthEntryMap, link: string) => {
       const entry = updatedAuthEntries.find((entry) => entry.pub === oldAuthMap[link].pub)
       if (entry) authMap[link] = entry
@@ -199,7 +196,7 @@ export class ThreeIDX {
     promises.push(
       this.docs.idx.change({
         content: Object.assign(this.docs.idx.content, {
-          [CDefs.authKeychain]: this.docs[CDefs.authKeychain].id,
+          [KEYCHAIN_DEF]: this.docs[KEYCHAIN_DEF].id,
         }),
       })
     )

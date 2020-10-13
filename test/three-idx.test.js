@@ -4,7 +4,7 @@ import Ipfs from 'ipfs'
 import all from 'it-all'
 import { AccountID } from 'caip'
 import { createLink } from '3id-blockchain-utils'
-import { schemas } from '@ceramicstudio/idx-constants'
+import { schemas, definitions } from '@ceramicstudio/idx-constants'
 import { publishIDXConfig } from '@ceramicstudio/idx-tools'
 
 import { ThreeIDX } from '../src/three-idx'
@@ -19,6 +19,7 @@ import legacy from 'multiformats/cjs/src/legacy.js'
 import * as u8a from 'uint8arrays'
 
 const seed = u8a.fromString('8e641c0dc77f6916cc7f743dad774cdf9f6f7bcb880b11395149dd878377cd398650bbfd4607962b49953c87da4d7f3ff247ed734b06f96bdd69479377bc612b', 'base16')
+const KEYCHAIN_DEF = definitions.threeIdKeychain.replace('ceramic://', '')
 
 const genIpfsConf = (folder) => {
   basicsImport.multicodec.add(dagJose)
@@ -35,13 +36,21 @@ const genIpfsConf = (folder) => {
 
 const randomSecret = () => '0x' + Buffer.from(randomBytes(32)).toString('hex')
 
+const fakeJWE = () => ({
+  jwe: {
+    protected: 'prot',
+    tag: 'tag',
+    ciphertext: randomSecret(),
+    iv: 'iv',
+  }
+})
 const genAuthEntryCreate = async (did) => {
   const wallet = Keyring.authSecretToWallet(randomSecret())
   const accountId = new AccountID({ address: wallet.address, chainId: 'eip155:1' })
   const newAuthEntry = {
     pub: 'publickey' + randomSecret(),
-    data: 'authdata' + randomSecret(),
-    id: 'authid' + randomSecret(),
+    data: fakeJWE(),
+    id: fakeJWE(),
     linkProof: await createLink(did || 'did:3:asdf', accountId, fakeEthProvider(wallet))
   }
   return { newAuthEntry, accountId: accountId.toString() }
@@ -132,7 +141,7 @@ describe('ThreeIDX', () => {
     const { newAuthEntry, accountId } = await genAuthEntryCreate()
     await threeIdx.createIDX(newAuthEntry)
 
-    expect(threeIdx.docs['auth-keychain'].content).toEqual({
+    expect(threeIdx.docs[KEYCHAIN_DEF].content).toEqual({
       authMap: {
         [threeIdx.docs[accountId].id]: {
           pub: newAuthEntry.pub,
@@ -142,14 +151,15 @@ describe('ThreeIDX', () => {
       },
       pastSeeds: []
     })
-    expect(threeIdx.docs.idx.content).toEqual({ 'auth-keychain': threeIdx.docs['auth-keychain'].id })
+    expect(threeIdx.docs.idx.content).toEqual({ [KEYCHAIN_DEF]: threeIdx.docs[KEYCHAIN_DEF].id })
     expect(threeIdx.docs.idx.metadata.schema).toBe(schemas.IdentityIndex)
+    expect(threeIdx.docs[KEYCHAIN_DEF].metadata.schema).toBe(schemas.ThreeIdKeychain)
     expect(threeIdx.docs.threeId.content).toEqual(expect.objectContaining({ 'idx': threeIdx.docs.idx.id }))
     // should be pinned
     expect(await all(await ceramic.pin.ls())).toEqual(expect.arrayContaining([
       threeIdx.docs.threeId.id,
       threeIdx.docs.idx.id,
-      threeIdx.docs['auth-keychain'].id,
+      threeIdx.docs[KEYCHAIN_DEF].id,
       threeIdx.docs[accountId].id,
     ].map(docid => docid.replace('ceramic://', '/ceramic/'))))
   })
@@ -158,8 +168,9 @@ describe('ThreeIDX', () => {
     await setup3id(threeIdx, keyring)
     await threeIdx.createIDX()
 
-    expect(threeIdx.docs.idx.content).toEqual({ 'auth-keychain': threeIdx.docs['auth-keychain'].id })
+    expect(threeIdx.docs.idx.content).toEqual({ [KEYCHAIN_DEF]: threeIdx.docs[KEYCHAIN_DEF].id })
     expect(threeIdx.docs.idx.metadata.schema).toBe(schemas.IdentityIndex)
+    expect(threeIdx.docs[KEYCHAIN_DEF].metadata.schema).toBe(schemas.ThreeIdKeychain)
     expect(threeIdx.docs.threeId.content).toEqual(expect.objectContaining({ 'idx': threeIdx.docs.idx.id }))
     // should be pinned
     expect(await all(await ceramic.pin.ls())).toEqual(expect.arrayContaining([
@@ -227,8 +238,8 @@ describe('ThreeIDX', () => {
     // Rotate keys correctly
     await keyring.generateNewKeys(await threeIdx.get3idVersion())
     const new3idState = keyring.get3idState()
-    const updatedEntry1 = { pub: nae1.pub, data: 'data1', id: 'id1' }
-    const updatedEntry2 = { pub: nae2.pub, data: 'data2', id: 'id2' }
+    const updatedEntry1 = { pub: nae1.pub, data: fakeJWE(), id: fakeJWE() }
+    const updatedEntry2 = { pub: nae2.pub, data: fakeJWE(), id: fakeJWE() }
     await threeIdx.rotateKeys(new3idState, keyring.pastSeeds, [updatedEntry1, updatedEntry2])
     expect(threeIdx.getAllAuthEntries()).toEqual(expect.arrayContaining([updatedEntry1, updatedEntry2]))
     const state = threeIdx.docs.threeId.state
