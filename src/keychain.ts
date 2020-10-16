@@ -7,7 +7,7 @@ import { encodeKey, decodeKey, fakeEthProvider } from './utils'
 import { createLink } from '3id-blockchain-utils'
 import { AccountID } from 'caip'
 
-async function decryptAuthId(encrypted: EncData, keyring: Keyring): Promise<string | null> {
+async function decryptAuthId(encrypted: EncData, keyring: Keyring): Promise<string> {
   if (!encrypted.jwe) throw new Error('Invalid encrypted block')
   const decrypter = keyring.getAsymDecrypter(parseJWEKids(encrypted.jwe))
   const decrypted = await asymDecryptJWE(encrypted.jwe, { decrypter })
@@ -28,11 +28,16 @@ export async function newAuthEntry(
   const cleartext: Record<string, any> = { seed: keyring.seed }
   // If we have a legacy seed v03ID will be defined
   if (keyring.v03ID) cleartext.v03ID = keyring.v03ID
+  const resolvedPromises = await Promise.all([
+    asymEncryptJWE(cleartext, { publicKey }),
+    asymEncryptJWE({ id: authId }, { publicKey: mainPub, kid: mainKid }),
+    createLink(did, accountId, fakeEthProvider(wallet)),
+  ])
   return {
     pub: encodeKey(publicKey, 'x25519'),
-    data: { jwe: await asymEncryptJWE(cleartext, { publicKey }) },
-    id: { jwe: await asymEncryptJWE({ id: authId }, { publicKey: mainPub, kid: mainKid }) },
-    linkProof: await createLink(did, accountId, fakeEthProvider(wallet)),
+    data: { jwe: resolvedPromises[0] },
+    id: { jwe: resolvedPromises[1] },
+    linkProof: resolvedPromises[2],
   }
 }
 
@@ -48,9 +53,13 @@ export async function updateAuthEntry(
   const authId = await decryptAuthId(authEntry.id, keyring)
   // Return null if auth entry should be removed
   if (removedAuthIds.find((id) => id === authId)) return null
+  const jwes = await Promise.all([
+    asymEncryptJWE({ seed: keyring.seed }, { publicKey }),
+    asymEncryptJWE({ id: authId }, { publicKey: mainPub, kid: mainKid }),
+  ])
   return Object.assign(authEntry, {
-    data: { jwe: await asymEncryptJWE({ seed: keyring.seed }, { publicKey }) },
-    id: { jwe: await asymEncryptJWE({ id: authId }, { publicKey: mainPub, kid: mainKid }) },
+    data: { jwe: jwes[0] },
+    id: { jwe: jwes[1] },
   })
 }
 
@@ -69,7 +78,7 @@ async function rotateKeys(
         .getAllAuthEntries()
         .map((entry) => updateAuthEntry(keyring, entry, removedAuthIds, threeIdx.id))
     )
-  ).filter((entry) => Boolean(entry)) as Array<AuthEntry> // filter removes null entires
+  ).filter(Boolean) as Array<AuthEntry> // filter removes null entires
   await threeIdx.rotateKeys(update3idState, pastSeeds, updatedAuthEntries)
 }
 
@@ -101,7 +110,7 @@ export class Keychain {
     return Promise.all(
       this._threeIdx.getAllAuthEntries().map(
         async ({ id }: AuthEntry): Promise<string> => {
-          return (await decryptAuthId(id, this._keyring)) as string
+          return decryptAuthId(id, this._keyring)
         }
       )
     )

@@ -139,8 +139,8 @@ export default class Keyring {
   }
 
   getAsymDecrypter(fragments: Array<string> = [], version?: string): Decrypter {
-    const fragmentWithKey = fragments.find((fragment: string) => this._versionMap[fragment])
     if (!version) {
+      const fragmentWithKey = fragments.find((fragment: string) => this._versionMap[fragment])
       version = fragmentWithKey ? this._versionMap[fragmentWithKey] : LATEST
     }
     const key = this._keySets[version].secretKeys.encryption

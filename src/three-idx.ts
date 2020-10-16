@@ -146,7 +146,7 @@ export class ThreeIDX {
   getAllAuthEntries(): Array<AuthEntry> {
     if (!this.docs[KEYCHAIN_DEF]) return []
     const authMap = this.docs[KEYCHAIN_DEF].content.authMap
-    return Object.keys(authMap).map((authLink: string): AuthEntry => authMap[authLink] as AuthEntry)
+    return Object.values(authMap)
   }
 
   async pinAllDocs(): Promise<void> {
