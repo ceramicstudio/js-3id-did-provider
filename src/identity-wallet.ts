@@ -113,4 +113,11 @@ export default class IdentityWallet {
       forcedOrigin,
     })
   }
+
+  /**
+   * Reset the IDX doc structure to a default (mostly empty) state.
+   */
+  async resetIDX(): Promise<void> {
+    await this._threeIdx.resetIDX()
+  }
 }

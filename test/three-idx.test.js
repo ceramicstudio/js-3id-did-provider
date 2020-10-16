@@ -197,6 +197,20 @@ describe('ThreeIDX', () => {
     })
   })
 
+  it('resetIDX throws an error if there is no IDX doc', async () => {
+    await expect(threeIdx.resetIDX()).rejects.toThrow('No IDX doc')
+  })
+
+  it('resetIDX resets the IDX doc', async () => {
+    await setup3id(threeIdx, keyring)
+    await threeIdx.createIDX()
+    await threeIdx.resetIDX()
+
+    expect(threeIdx.docs.idx.content).toEqual({ [KEYCHAIN_DEF]: threeIdx.docs[KEYCHAIN_DEF].id })
+    expect(threeIdx.docs.idx.metadata.schema).toBe(schemas.IdentityIndex)
+    expect(threeIdx.docs[KEYCHAIN_DEF].metadata.schema).toBe(schemas.ThreeIdKeychain)
+  })
+
   it('addAuthEntries', async () => {
     await setup3id(threeIdx, keyring)
     const resolved = await Promise.all([
