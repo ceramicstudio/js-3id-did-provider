@@ -155,6 +155,14 @@ describe('IdentityWallet', () => {
       // TODO - implment test when 3id-did-resolver has backwards compatibility
     })
   })
+
+  it('.resetIDX calls the method on threeIdx', async () => {
+    const reset = jest.fn()
+    const idw = await IdentityWallet.create({ getPermission: getPermissionMock, seed, ceramic })
+    idw._threeIdx.resetIDX = reset
+    await idw.resetIDX()
+    expect(reset).toHaveBeenCalled()
+  })
 })
 
 describe('IdentityWallet with disabled IDX', () => {

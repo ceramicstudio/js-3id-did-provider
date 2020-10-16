@@ -84,6 +84,7 @@ const did = new DID({ provider })
         * [.permissions](#IdentityWallet+permissions)
         * [.id](#IdentityWallet+id)
         * [.getDidProvider()](#IdentityWallet+getDidProvider) ⇒ <code>DidProvider</code>
+        * [.resetIDX()](#IdentityWallet+resetIDX)
     * _static_
         * [.create(config)](#IdentityWallet.create) ⇒ [<code>IdentityWallet</code>](#IdentityWallet)
 
@@ -129,6 +130,12 @@ Get the DIDProvider
 
 **Kind**: instance method of [<code>IdentityWallet</code>](#IdentityWallet)  
 **Returns**: <code>DidProvider</code> - The DIDProvider for this IdentityWallet instance  
+<a name="IdentityWallet+resetIDX"></a>
+
+#### identityWallet.resetIDX()
+Reset the IDX doc structure to a default (mostly empty) state.
+
+**Kind**: instance method of [<code>IdentityWallet</code>](#IdentityWallet)  
 <a name="IdentityWallet.create"></a>
 
 #### IdentityWallet.create(config) ⇒ [<code>IdentityWallet</code>](#IdentityWallet)
