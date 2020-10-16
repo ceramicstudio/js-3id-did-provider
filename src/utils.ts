@@ -1,29 +1,9 @@
-import { hash } from '@stablelib/sha256'
-import Multihash from 'multihashes'
 import { Wallet } from '@ethersproject/wallet'
 import stringify from 'fast-json-stable-stringify'
 import * as u8a from 'uint8arrays'
 
-const ENC_BLOCK_SIZE = 24
 const B16 = 'base16'
 const B64 = 'base64pad'
-
-export interface PublicKeys {
-  signingKey: string
-  managementKey: string | null
-  asymEncryptionKey: string
-}
-
-export const pad = (val: string, blockSize = ENC_BLOCK_SIZE): string => {
-  const blockDiff = (blockSize - (val.length % blockSize)) % blockSize
-  return `${val}${'\0'.repeat(blockDiff)}`
-}
-
-export const unpad = (padded: string): string => padded.replace(/\0+$/, '')
-
-export const sha256Multihash = (s: string): string => {
-  return u8a.toString(Multihash.encode(hash(u8a.fromString(s)), 'sha2-256'), 'base16')
-}
 
 const multicodecPubkeyTable: Record<string, number> = {
   secp256k1: 0xe7,
@@ -42,6 +22,18 @@ export function encodeKey(key: Uint8Array, keyType: string): string {
   bytes[1] = 0x01
   bytes.set(key, 2)
   return `z${u8a.toString(bytes, 'base58btc')}`
+}
+
+export function decodeKey(key: string): Uint8Array {
+  // remove 'z' and decode bytes
+  const bytes = u8a.fromString(key.slice(1), 'base58btc')
+  const supportedKey =
+    bytes[1] === 0x01 &&
+    (multicodecPubkeyTable['secp256k1'] === bytes[0] ||
+      multicodecPubkeyTable['x25519'] === bytes[0] ||
+      multicodecPubkeyTable['ed25519'] === bytes[0])
+  if (!supportedKey) throw new Error(`Key type ${bytes[0]} not supported`)
+  return bytes.slice(2)
 }
 
 export const fakeEthProvider = (wallet: Wallet): any => ({

@@ -67,10 +67,16 @@ describe('DidProvider', () => {
     const config = {
       permissions: { has: jest.fn(() => true) },
       threeIdx: {
-        parseKeyName: (did) => did.split('#')[1] || 'signing',
-        encodeKidWithVersion: async (keyName) => Promise.resolve('did:3:asdf?version=0#' + keyName),
+        id: 'did:3:asdf',
+        get3idVersion: jest.fn(async () => '0'),
+        //parseKeyName: (did) => did.split('#')[1] || 'signing',
+        //encodeKidWithVersion: async (keyName) => Promise.resolve('did:3:asdf?version=0#' + keyName),
       },
-      keyring: { getSigner: () => () => Promise.resolve('signed') },
+      keyring: {
+        getSigner: () => () => Promise.resolve('signed'),
+        getMgmtSigner: () => () => Promise.resolve('signed'),
+        getKeyFragment: jest.fn(() => 'ab832')
+      },
     }
     const payload = { foo: 'bar' }
     const protected = { bar: 'baz' }
@@ -79,20 +85,20 @@ describe('DidProvider', () => {
       new DidProvider(config),
       null,
       { method: 'did_createJWS', params: { payload, protected, did } },
-      { result: { jws: 'eyJiYXIiOiJiYXoiLCJraWQiOiJkaWQ6Mzphc2RmP3ZlcnNpb249MCNzaWduaW5nIiwiYWxnIjoiRVMyNTZLIn0.eyJmb28iOiJiYXIifQ.signed' } }
+      { result: { jws: 'eyJiYXIiOiJiYXoiLCJraWQiOiJkaWQ6Mzphc2RmP3ZlcnNpb24taWQ9MCNhYjgzMiIsImFsZyI6IkVTMjU2SyJ9.eyJmb28iOiJiYXIifQ.signed' } }
     )
-    did = 'did:3:asdf#management'
+    did = 'did:key:fewfq'
     await expectRPC(
       new DidProvider(config),
       null,
       { method: 'did_createJWS', params: { payload, protected, did } },
-      { result: { jws: 'eyJiYXIiOiJiYXoiLCJraWQiOiJkaWQ6Mzphc2RmP3ZlcnNpb249MCNtYW5hZ2VtZW50IiwiYWxnIjoiRVMyNTZLIn0.eyJmb28iOiJiYXIifQ.signed' } }
+      { result: { jws: 'eyJiYXIiOiJiYXoiLCJraWQiOiJkaWQ6a2V5OmZld2ZxI2Zld2ZxIiwiYWxnIjoiRVMyNTZLIn0.eyJmb28iOiJiYXIifQ.signed' } }
     )
   })
 
   test('`did_decryptJWE` correctly decrypts a JWE', async () => {
     const keyring = new Keyring('0xf0e4c2f76c58916ec258f246851bea091d14d4247a2fc3e18694461b1816e13b')
-    const encrypter = x25519Encrypter(u8a.fromString(keyring.getPublicKeys().asymEncryptionKey, 'base64pad'))
+    const encrypter = x25519Encrypter(keyring.getEncryptionPublicKey())
     const cleartext = prepareCleartext({ asdf: 234 })
     const jwe = await createJWE(cleartext, [encrypter])
     const config = {
@@ -109,7 +115,7 @@ describe('DidProvider', () => {
 
   test('`did_decryptJWE` correctly respects permissions', async () => {
     const keyring = new Keyring('0xf0e4c2f76c58916ec258f246851bea091d14d4247a2fc3e18694461b1816e13b')
-    const encrypter = x25519Encrypter(u8a.fromString(keyring.getPublicKeys().asymEncryptionKey, 'base64pad'))
+    const encrypter = x25519Encrypter(keyring.getEncryptionPublicKey())
     const cleartext1 = prepareCleartext({ paths: ['a'] })
     const cleartext2 = prepareCleartext({ paths: ['b'] })
     const jwe1 = await createJWE(cleartext1, [encrypter])

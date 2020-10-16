@@ -13,6 +13,7 @@ import {
 import Keyring from './keyring'
 import { ThreeIDX } from './three-idx'
 import Permissions from './permissions'
+import { parseJWEKids } from './crypto'
 import { toStableObject, encodeBase64 } from './utils'
 
 type Origin = string | null | undefined
@@ -52,16 +53,27 @@ export const didMethods: HandlerMethods<Context> = {
     if (!permissions.has(origin)) throw new RPCError(4100, 'Unauthorized')
     // TODO - if the requesting DID is our management key
     // (did:key) we should request explicit permission.
-    const keyName = threeIdx.parseKeyName(params.did)
-    const kid = await threeIdx.encodeKidWithVersion(keyName)
-    const signer = keyring.getSigner(keyName)
+    let [did, keyFragment] = params.did.split('#') // eslint-disable-line prefer-const
+    let kid, signer
+    if (did.startsWith('did:key:')) {
+      const pubkey = did.split(':')[2]
+      kid = `${did}#${pubkey}`
+      signer = keyring.getMgmtSigner(pubkey)
+    } else {
+      if (did !== threeIdx.id) throw new Error(`Unknown DID: ${did}`)
+      const version = await threeIdx.get3idVersion()
+      if (!keyFragment) keyFragment = keyring.getKeyFragment(version)
+      kid = `${did}?version-id=${version}#${keyFragment}`
+      signer = keyring.getSigner(version)
+    }
     const header = toStableObject(Object.assign(params.protected || {}, { kid }))
     const jws = await createJWS(toStableObject(params.payload), signer, header)
     return { jws }
   },
   did_decryptJWE: async ({ permissions, keyring, origin }, params: DecryptJWEParams) => {
     if (!permissions.has(origin)) throw new RPCError(4100, 'Unauthorized')
-    const decrypter = keyring.getAsymDecrypter()
+    const parsedKids = parseJWEKids(params.jwe)
+    const decrypter = keyring.getAsymDecrypter(parsedKids)
     const bytes = await decryptJWE(params.jwe, decrypter)
     let obj
     try {

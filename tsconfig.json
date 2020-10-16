@@ -8,6 +8,8 @@
     "declaration": true,
     "noImplicitAny": true,
     "removeComments": true,
+    "resolveJsonModule": true,
+    "skipLibCheck": true,
     "esModuleInterop": true,
     "sourceMap": true,
     "outDir": "lib",
