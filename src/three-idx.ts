@@ -56,7 +56,7 @@ export class ThreeIDX {
   }
 
   get id(): string {
-    return this._v03ID || `did:3:${this.docs.threeId.id.split('//')[1]}`
+    return this._v03ID || `did:3:${this.docs.threeId.id.toString()}`
   }
 
   async create3idDoc(docParams: Record<string, any>): Promise<void> {
@@ -84,7 +84,7 @@ export class ThreeIDX {
     await this.ceramic.pin.add(this.docs[authLink].id)
     const tmpEntry = Object.assign({}, authEntry)
     delete tmpEntry.linkProof
-    return { [this.docs[authLink].id]: tmpEntry }
+    return { [this.docs[authLink].id.toString()]: tmpEntry }
   }
 
   /**
@@ -95,10 +95,10 @@ export class ThreeIDX {
     await this.createKeychainDoc(entry)
     this.docs.idx = await this.ceramic.createDocument('tile', {
       metadata: { owners: [this.id], schema: IdentityIndex },
-      content: { [KEYCHAIN_DEF]: this.docs[KEYCHAIN_DEF].id },
+      content: { [KEYCHAIN_DEF]: this.docs[KEYCHAIN_DEF].id.toString() },
     })
     await this.docs.threeId.change({
-      content: Object.assign(this.docs.threeId.content, { idx: this.docs.idx.id }),
+      content: Object.assign(this.docs.threeId.content, { idx: this.docs.idx.id.toString() }),
     })
     await this.pinAllDocs()
   }
@@ -114,14 +114,14 @@ export class ThreeIDX {
     )
     const did = this.docs[authLink].content
     if (!did) return null
-    this.docs.threeId = await this.ceramic.loadDocument(`ceramic://${did.split(':')[2] as string}`)
+    this.docs.threeId = await this.ceramic.loadDocument(`${did.split(':')[2] as string}`)
     const idxDocid = this.docs.threeId.content.idx
     if (!idxDocid) return null
     this.docs.idx = await this.ceramic.loadDocument(idxDocid)
     const authKeychainDocid = this.docs.idx.content[KEYCHAIN_DEF]
     if (!authKeychainDocid) return null
     this.docs[KEYCHAIN_DEF] = await this.ceramic.loadDocument(authKeychainDocid)
-    const linkDocid = this.docs[authLink].id
+    const linkDocid = this.docs[authLink].id.toString()
     const { authMap, pastSeeds } = this.docs[KEYCHAIN_DEF].content
     return {
       seed: authMap[linkDocid]?.data,
@@ -138,7 +138,7 @@ export class ThreeIDX {
     }
     await this.docs.idx.change({
       metadata: { owners: [this.id], schema: IdentityIndex },
-      content: { [KEYCHAIN_DEF]: this.docs[KEYCHAIN_DEF].id },
+      content: { [KEYCHAIN_DEF]: this.docs[KEYCHAIN_DEF].id.toString() },
     })
   }
 
@@ -209,7 +209,7 @@ export class ThreeIDX {
     promises.push(
       this.docs.idx.change({
         content: Object.assign(this.docs.idx.content, {
-          [KEYCHAIN_DEF]: this.docs[KEYCHAIN_DEF].id,
+          [KEYCHAIN_DEF]: this.docs[KEYCHAIN_DEF].id.toString(),
         }),
       })
     )
