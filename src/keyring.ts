@@ -177,7 +177,7 @@ export default class Keyring {
   get3idState(genesis?: boolean): ThreeIdState {
     const keys = this._keySets[LATEST].publicKeys
     const signing = encodeKey(keys.signing, 'secp256k1')
-    const encryption = encodeKey(keys.encryption, 'secp256k1')
+    const encryption = encodeKey(keys.encryption, 'x25519')
     // use the last 12 chars as key id
     const state: ThreeIdState = {
       metadata: { owners: [`did:key:${encodeKey(keys.management, 'secp256k1')}`] },
