@@ -1,6 +1,6 @@
 {
   "name": "identity-wallet",
-  "version": "2.0.0-alpha.14",
+  "version": "2.0.0-alpha.15",
   "description": "Create and manage identities",
   "main": "lib/identity-wallet.js",
   "types": "lib/identity-wallet.d.ts",
