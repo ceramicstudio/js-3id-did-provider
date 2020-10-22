@@ -83,7 +83,7 @@ export const didMethods: HandlerMethods<Context> = {
       // TODO - We should explicitly ask for permission.
     }
     if (obj && !permissions.has(origin, obj.paths)) throw new RPCError(4100, 'Unauthorized')
-    return encodeBase64(bytes)
+    return { cleartext: encodeBase64(bytes) }
   },
 }
 

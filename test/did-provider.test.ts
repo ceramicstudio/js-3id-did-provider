@@ -109,7 +109,7 @@ describe('DidProvider', () => {
       new DidProvider(config),
       null,
       { method: 'did_decryptJWE', params: { jwe } },
-      { result: u8a.toString(cleartext, 'base64pad') }
+      { result: { cleartext: u8a.toString(cleartext, 'base64pad') } }
     )
   })
 
@@ -130,7 +130,7 @@ describe('DidProvider', () => {
       new DidProvider(config),
       null,
       { method: 'did_decryptJWE', params: { jwe: jwe1 } },
-      { result: u8a.toString(cleartext1, 'base64pad') }
+      { result: { cleartext: u8a.toString(cleartext1, 'base64pad') } }
     )
     await expectRPC(
       new DidProvider(config),
