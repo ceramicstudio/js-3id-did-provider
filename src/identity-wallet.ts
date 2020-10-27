@@ -8,7 +8,7 @@ import { Keychain } from './keychain'
 
 interface IDWConfig {
   getPermission: GetPermissionFn
-  seed?: string
+  seed?: string | Uint8Array
   authSecret?: Uint8Array
   authId?: string
   v03ID?: string
