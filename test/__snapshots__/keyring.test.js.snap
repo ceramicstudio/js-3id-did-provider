@@ -9,10 +9,10 @@ Object {
     },
   },
   "metadata": Object {
-    "isUnique": false,
-    "owners": Array [
+    "controllers": Array [
       "did:key:zQ3sha3tk9URYc9Pu3Hb6dHyhWXjVKCZbfGosg4GMQdQE72DD",
     ],
+    "isUnique": false,
     "tags": Array [
       "3id",
     ],
@@ -29,7 +29,7 @@ Object {
     },
   },
   "metadata": Object {
-    "owners": Array [
+    "controllers": Array [
       "did:key:zQ3sha3tk9URYc9Pu3Hb6dHyhWXjVKCZbfGosg4GMQdQE72DD",
     ],
   },
@@ -114,10 +114,10 @@ exports[`Keyring Generates correct state if v03ID is set 1`] = `
 Object {
   "content": null,
   "metadata": Object {
-    "isUnique": false,
-    "owners": Array [
+    "controllers": Array [
       "did:key:zQ3shnyMbHDVqqJnm6EiPJ47Vc4ivUFgcaPpEHx9GhyFT5Env",
     ],
+    "isUnique": false,
     "tags": Array [
       "3id",
     ],
@@ -129,7 +129,7 @@ exports[`Keyring Generates correct state if v03ID is set 2`] = `
 Object {
   "content": null,
   "metadata": Object {
-    "owners": Array [
+    "controllers": Array [
       "did:key:zQ3shnyMbHDVqqJnm6EiPJ47Vc4ivUFgcaPpEHx9GhyFT5Env",
     ],
   },

@@ -6,15 +6,15 @@ import { ThreeIDX } from './three-idx'
 import Permissions, { GetPermissionFn, SELF_ORIGIN } from './permissions'
 import { Keychain } from './keychain'
 
-interface IDWConfig {
+type AuthConfig = { authId: string; authSecret: Uint8Array; seed?: never }
+type SeedConfig = { authId?: never; authSecret?: never; seed: Uint8Array }
+
+type IDWConfig = {
   getPermission: GetPermissionFn
-  seed?: string
-  authSecret?: Uint8Array
-  authId?: string
   v03ID?: string
   ceramic: CeramicApi
   disableIDX?: boolean
-}
+} & (AuthConfig | SeedConfig)
 
 export default class IdentityWallet {
   /**
@@ -90,7 +90,7 @@ export default class IdentityWallet {
     await idw._threeIdx.setDIDProvider(idw.getDidProvider(SELF_ORIGIN))
     if (config.authId && !(await keychain?.list())?.length) {
       // Add the auth method to the keychain
-      await idw.keychain.add(config.authId, config.authSecret as Uint8Array)
+      await idw.keychain.add(config.authId, config.authSecret)
       await idw.keychain.commit()
     }
     if (idw._threeIdx.docs.idx == null && !config.disableIDX) {

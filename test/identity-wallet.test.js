@@ -28,6 +28,7 @@ const genIpfsConf = (folder) => {
       Addresses: { Swarm: [] },
       Bootstrap: []
     },
+    silent: true,
   }
 }
 
