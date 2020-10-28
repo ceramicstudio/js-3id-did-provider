@@ -2,6 +2,7 @@ import tmp from 'tmp-promise'
 import Ceramic from '@ceramicnetwork/ceramic-core'
 import Ipfs from 'ipfs'
 import all from 'it-all'
+import CID from 'cids'
 import { AccountID } from 'caip'
 import { createLink } from '3id-blockchain-utils'
 import { schemas, definitions } from '@ceramicstudio/idx-constants'
@@ -19,7 +20,7 @@ import legacy from 'multiformats/cjs/src/legacy.js'
 import * as u8a from 'uint8arrays'
 
 const seed = u8a.fromString('8e641c0dc77f6916cc7f743dad774cdf9f6f7bcb880b11395149dd878377cd398650bbfd4607962b49953c87da4d7f3ff247ed734b06f96bdd69479377bc612b', 'base16')
-const KEYCHAIN_DEF = definitions.threeIdKeychain.replace('ceramic://', '')
+const KEYCHAIN_DEF = definitions.threeIdKeychain
 
 const genIpfsConf = (folder) => {
   basicsImport.multicodec.add(dagJose)
@@ -31,6 +32,7 @@ const genIpfsConf = (folder) => {
       Addresses: { Swarm: [] },
       Bootstrap: []
     },
+    silent: true,
   }
 }
 
@@ -58,7 +60,7 @@ const genAuthEntryCreate = async (did) => {
 
 const setup3id = async (threeIdx, keyring) => {
   const genState = keyring.get3idState(true)
-  const forcedDID = genState.metadata.owners[0]
+  const forcedDID = genState.metadata.controllers[0]
   let didProvider = new DidProvider({ permissions: mockedPermissions, threeIdx, keyring, forcedDID })
   await threeIdx.setDIDProvider(didProvider)
   await threeIdx.create3idDoc(genState)
@@ -98,7 +100,8 @@ describe('ThreeIDX', () => {
   it('creates 3id doc', async () => {
     keyring = new Keyring(seed)
     await setup3id(threeIdx, keyring)
-    expect(threeIdx.docs.threeId.state).toMatchSnapshot()
+    const { log, ...state } = threeIdx.docs.threeId.state
+    expect({  ...state, log: log.map(cid => new CID(cid.bytes)) }).toMatchSnapshot()
   })
 
   it('handles v0 3ID correctly', async () => {
@@ -132,7 +135,7 @@ describe('ThreeIDX', () => {
         id: newAuthEntry.id,
       }
     })
-    expect(threeIdx.docs[accountId].owners).toEqual([accountId])
+    expect(threeIdx.docs[accountId].controllers).toEqual([accountId])
     expect(threeIdx.docs[accountId].content).toEqual('did:3:asdf')
   })
 
@@ -143,7 +146,7 @@ describe('ThreeIDX', () => {
 
     expect(threeIdx.docs[KEYCHAIN_DEF].content).toEqual({
       authMap: {
-        [threeIdx.docs[accountId].id]: {
+        [threeIdx.docs[accountId].id.toString()]: {
           pub: newAuthEntry.pub,
           data: newAuthEntry.data,
           id: newAuthEntry.id,
@@ -151,16 +154,16 @@ describe('ThreeIDX', () => {
       },
       pastSeeds: []
     })
-    expect(threeIdx.docs.idx.content).toEqual({ [KEYCHAIN_DEF]: threeIdx.docs[KEYCHAIN_DEF].id })
+    expect(threeIdx.docs.idx.content).toEqual({ [KEYCHAIN_DEF]: threeIdx.docs[KEYCHAIN_DEF].id.toUrl('base36') })
     expect(threeIdx.docs.idx.metadata.schema).toBe(schemas.IdentityIndex)
     expect(threeIdx.docs[KEYCHAIN_DEF].metadata.schema).toBe(schemas.ThreeIdKeychain)
-    expect(threeIdx.docs.threeId.content).toEqual(expect.objectContaining({ 'idx': threeIdx.docs.idx.id }))
+    expect(threeIdx.docs.threeId.content).toEqual(expect.objectContaining({ 'idx': threeIdx.docs.idx.id.toString() }))
     // should be pinned
     expect(await all(await ceramic.pin.ls())).toEqual(expect.arrayContaining([
-      threeIdx.docs.threeId.id,
-      threeIdx.docs.idx.id,
-      threeIdx.docs[KEYCHAIN_DEF].id,
-      threeIdx.docs[accountId].id,
+      threeIdx.docs.threeId.id.toString(),
+      threeIdx.docs.idx.id.toString(),
+      threeIdx.docs[KEYCHAIN_DEF].id.toString(),
+      threeIdx.docs[accountId].id.toString(),
     ].map(docid => docid.replace('ceramic://', '/ceramic/'))))
   })
 
@@ -168,14 +171,14 @@ describe('ThreeIDX', () => {
     await setup3id(threeIdx, keyring)
     await threeIdx.createIDX()
 
-    expect(threeIdx.docs.idx.content).toEqual({ [KEYCHAIN_DEF]: threeIdx.docs[KEYCHAIN_DEF].id })
+    expect(threeIdx.docs.idx.content).toEqual({ [KEYCHAIN_DEF]: threeIdx.docs[KEYCHAIN_DEF].id.toUrl('base36') })
     expect(threeIdx.docs.idx.metadata.schema).toBe(schemas.IdentityIndex)
     expect(threeIdx.docs[KEYCHAIN_DEF].metadata.schema).toBe(schemas.ThreeIdKeychain)
-    expect(threeIdx.docs.threeId.content).toEqual(expect.objectContaining({ 'idx': threeIdx.docs.idx.id }))
+    expect(threeIdx.docs.threeId.content).toEqual(expect.objectContaining({ 'idx': threeIdx.docs.idx.id.toString() }))
     // should be pinned
     expect(await all(await ceramic.pin.ls())).toEqual(expect.arrayContaining([
-      threeIdx.docs.threeId.id,
-      threeIdx.docs.idx.id,
+      threeIdx.docs.threeId.id.toString(),
+      threeIdx.docs.idx.id.toString(),
     ].map(docid => docid.replace('ceramic://', '/ceramic/'))))
   })
 
@@ -206,7 +209,7 @@ describe('ThreeIDX', () => {
     await threeIdx.createIDX()
     await threeIdx.resetIDX()
 
-    expect(threeIdx.docs.idx.content).toEqual({ [KEYCHAIN_DEF]: threeIdx.docs[KEYCHAIN_DEF].id })
+    expect(threeIdx.docs.idx.content).toEqual({ [KEYCHAIN_DEF]: threeIdx.docs[KEYCHAIN_DEF].id.toUrl('base36') })
     expect(threeIdx.docs.idx.metadata.schema).toBe(schemas.IdentityIndex)
     expect(threeIdx.docs[KEYCHAIN_DEF].metadata.schema).toBe(schemas.ThreeIdKeychain)
   })
@@ -230,10 +233,10 @@ describe('ThreeIDX', () => {
 
     expect(threeIdx.getAllAuthEntries()).toEqual([authEntry1, authEntry2, authEntry3])
     expect(await all(await ceramic.pin.ls())).toEqual(expect.arrayContaining([
-      threeIdx.docs[ai1].id,
-      threeIdx.docs[ai2].id,
-      threeIdx.docs[ai3].id,
-    ].map(docid => docid.replace('ceramic://', '/ceramic/'))))
+      threeIdx.docs[ai1].id.toString(),
+      threeIdx.docs[ai2].id.toString(),
+      threeIdx.docs[ai3].id.toString(),
+    ]))
   })
 
   it('rotateKeys', async () => {
@@ -258,7 +261,7 @@ describe('ThreeIDX', () => {
     expect(threeIdx.getAllAuthEntries()).toEqual(expect.arrayContaining([updatedEntry1, updatedEntry2]))
     const state = threeIdx.docs.threeId.state
     expect(state.content).toEqual(expect.objectContaining(new3idState.content))
-    expect(state.metadata.owners).toEqual(new3idState.metadata.owners)
+    expect(state.metadata.controllers).toEqual(new3idState.metadata.controllers)
 
     // load 3id with rotated keys
     expect(await threeIdx.loadIDX(ai1)).toEqual({

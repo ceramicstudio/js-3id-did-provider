@@ -36,7 +36,7 @@ describe('Keyring', () => {
     const keyring = new Keyring(seed)
     expect(keyring.seed).toEqual(seed)
     const signed0 = await keyring.getSigner()('asdf')
-    const mgmt0 = keyring.get3idState().metadata.owners[0].split(':')[2]
+    const mgmt0 = keyring.get3idState().metadata.controllers[0].split(':')[2]
 
     const v0 = 'versionCID0'
     await keyring.generateNewKeys(v0)
@@ -44,7 +44,7 @@ describe('Keyring', () => {
     expect(await keyring.getSigner(v0)('asdf')).toEqual(signed0)
     const signed1 = await keyring.getSigner()('asdf')
     expect(signed1).not.toEqual(signed0)
-    const mgmt1 = keyring.get3idState().metadata.owners[0].split(':')[2]
+    const mgmt1 = keyring.get3idState().metadata.controllers[0].split(':')[2]
 
     const v1 = 'versionCID1'
     await keyring.generateNewKeys(v1)
@@ -55,7 +55,7 @@ describe('Keyring', () => {
     expect(signed2).not.toEqual(signed0)
     expect(signed2).not.toEqual(signed1)
     const docState2 = keyring.get3idState()
-    const mgmt2 = keyring.get3idState().metadata.owners[0].split(':')[2]
+    const mgmt2 = keyring.get3idState().metadata.controllers[0].split(':')[2]
 
     const mgmtSigs = await Promise.all([
       keyring.getMgmtSigner(mgmt0)('asdf'),

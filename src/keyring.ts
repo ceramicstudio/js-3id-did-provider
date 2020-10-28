@@ -16,7 +16,7 @@ const AUTH_PATH_WALLET = '0'
 const AUTH_PATH_ASYM_ENCRYPTION = '2'
 
 interface ThreeIdMetadata extends Record<string, any> {
-  owners: Array<string>
+  controllers: Array<string>
 }
 
 export interface ThreeIdState {
@@ -180,7 +180,7 @@ export default class Keyring {
     const encryption = encodeKey(keys.encryption, 'x25519')
     // use the last 12 chars as key id
     const state: ThreeIdState = {
-      metadata: { owners: [`did:key:${encodeKey(keys.management, 'secp256k1')}`] },
+      metadata: { controllers: [`did:key:${encodeKey(keys.management, 'secp256k1')}`] },
       content: {
         publicKeys: {
           [signing.slice(-15)]: signing,
@@ -194,7 +194,7 @@ export default class Keyring {
     }
     if (this._keySets[LATEST].v03ID) {
       state.content = null
-      state.metadata.owners = [`did:key:${signing}`]
+      state.metadata.controllers = [`did:key:${signing}`]
     }
     return state
   }

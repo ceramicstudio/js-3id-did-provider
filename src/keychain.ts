@@ -212,7 +212,7 @@ export class Keychain {
     const keyring = new Keyring(seed, v03ID)
     const docParams = keyring.get3idState(true)
     // Temporarily set DID provider to create 3ID document
-    await threeIdx.setDIDProvider(makeTmpProvider(keyring, docParams.metadata.owners[0]))
+    await threeIdx.setDIDProvider(makeTmpProvider(keyring, docParams.metadata.controllers[0]))
     await threeIdx.create3idDoc(docParams)
     if (v03ID) threeIdx.setV03ID(v03ID)
     return new Keychain(keyring, threeIdx)
