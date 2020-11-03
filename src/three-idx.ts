@@ -33,6 +33,10 @@ export interface NewAuthEntry extends AuthEntry {
   linkProof: LinkProof
 }
 
+export interface TempAuthEntry extends AuthEntry {
+  linkProof?: LinkProof
+}
+
 export class ThreeIDX {
   public docs: Record<string, Doctype>
   public ceramic: CeramicApi
@@ -78,7 +82,7 @@ export class ThreeIDX {
     }
     await this.docs[authLink].change({ content: authEntry.linkProof })
     await this.ceramic.pin.add(this.docs[authLink].id)
-    const tmpEntry = Object.assign({}, authEntry)
+    const tmpEntry: TempAuthEntry = Object.assign({}, authEntry)
     delete tmpEntry.linkProof
     return { [this.docs[authLink].id.baseID.toString()]: tmpEntry }
   }
