@@ -190,7 +190,7 @@ export default class Keyring {
     }
     if (genesis) {
       state.metadata.tags = ['3id']
-      state.metadata.isUnique = false
+      state.isUnique = false
     }
     if (this._keySets[LATEST].v03ID) {
       state.content = null
