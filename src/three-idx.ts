@@ -33,10 +33,6 @@ export interface NewAuthEntry extends AuthEntry {
   linkProof: LinkProof
 }
 
-interface ThreeId extends Doctype {
-  content: Record<string, any>
-}
-
 export class ThreeIDX {
   public docs: Record<string, Doctype>
   public ceramic: CeramicApi
@@ -99,7 +95,7 @@ export class ThreeIDX {
     })
     await this.docs.threeId.change({
       content: Object.assign(this.docs.threeId.content, {
-        idx: this.docs.idx.id.baseID.toString(),
+        idx: this.docs.idx.id.baseID.toUrl('base36'),
       }),
     })
     await this.pinAllDocs()
