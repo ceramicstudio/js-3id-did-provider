@@ -8,7 +8,7 @@ Object {
       "va4hhib8MaZU2bn": "z6LSmA6mRJBttYqSVLq7zr5NMZJmGu7Urva4hhib8MaZU2bn",
     },
   },
-  "isUnique": false,
+  "deterministic": true,
   "metadata": Object {
     "controllers": Array [
       "did:key:zQ3sha3tk9URYc9Pu3Hb6dHyhWXjVKCZbfGosg4GMQdQE72DD",
@@ -113,7 +113,7 @@ Uint8Array [
 exports[`Keyring Generates correct state if v03ID is set 1`] = `
 Object {
   "content": null,
-  "isUnique": false,
+  "deterministic": true,
   "metadata": Object {
     "controllers": Array [
       "did:key:zQ3shnyMbHDVqqJnm6EiPJ47Vc4ivUFgcaPpEHx9GhyFT5Env",
