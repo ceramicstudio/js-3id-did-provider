@@ -22,6 +22,7 @@ interface ThreeIdMetadata extends Record<string, any> {
 export interface ThreeIdState {
   metadata: ThreeIdMetadata
   content: Record<string, any> | null
+  deterministic?: boolean
 }
 
 export interface KeySet {
