@@ -22,6 +22,7 @@ interface ThreeIdMetadata extends Record<string, any> {
 export interface ThreeIdState {
   metadata: ThreeIdMetadata
   content: Record<string, any> | null
+  deterministic?: boolean
 }
 
 export interface KeySet {
@@ -189,7 +190,7 @@ export default class Keyring {
       },
     }
     if (genesis) {
-      state.metadata.tags = ['3id']
+      state.metadata.family = '3id'
       state.deterministic = true
     }
     if (this._keySets[LATEST].v03ID) {
