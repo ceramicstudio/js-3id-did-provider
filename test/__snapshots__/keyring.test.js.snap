@@ -13,9 +13,7 @@ Object {
     "controllers": Array [
       "did:key:zQ3sha3tk9URYc9Pu3Hb6dHyhWXjVKCZbfGosg4GMQdQE72DD",
     ],
-    "tags": Array [
-      "3id",
-    ],
+    "family": "3id",
   },
 }
 `;
@@ -118,9 +116,7 @@ Object {
     "controllers": Array [
       "did:key:zQ3shnyMbHDVqqJnm6EiPJ47Vc4ivUFgcaPpEHx9GhyFT5Env",
     ],
-    "tags": Array [
-      "3id",
-    ],
+    "family": "3id",
   },
 }
 `;

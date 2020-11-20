@@ -189,7 +189,7 @@ export default class Keyring {
       },
     }
     if (genesis) {
-      state.metadata.tags = ['3id']
+      state.metadata.family = '3id'
       state.deterministic = true
     }
     if (this._keySets[LATEST].v03ID) {
