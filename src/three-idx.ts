@@ -1,14 +1,15 @@
-import { CeramicApi, Doctype } from '@ceramicnetwork/ceramic-common'
-import CeramicClient from '@ceramicnetwork/ceramic-http-client'
-import { schemas, definitions } from '@ceramicstudio/idx-constants'
+import { CeramicApi, Doctype } from '@ceramicnetwork/common'
+import CeramicClient from '@ceramicnetwork/http-client'
+//import { schemas, definitions } from '@ceramicstudio/idx-constants'
 import { LinkProof } from '3id-blockchain-utils'
 
 import type { DidProvider } from './did-provider'
 import type { ThreeIdState } from './keyring'
 import type { JWE } from 'did-jwt'
 
-const KEYCHAIN_DEF = definitions.threeIdKeychain
-const { IdentityIndex, ThreeIdKeychain } = schemas
+//const KEYCHAIN_DEF = definitions.threeIdKeychain
+const KEYCHAIN_DEF = 'keychain'
+//const { IdentityIndex, ThreeIdKeychain } = schemas
 
 export interface EncData {
   jwe?: JWE
@@ -61,12 +62,13 @@ export class ThreeIDX {
 
   async create3idDoc(docParams: Record<string, any>): Promise<void> {
     this.docs.threeId = await this.ceramic.createDocument('tile', docParams, {
-      applyOnly: true,
+      anchor: false, publish: false,
     })
   }
 
   async get3idVersion(): Promise<string> {
-    return (await this.ceramic.listVersions(this.docs.threeId.id)).pop() || '0'
+    const docId = this.docs.threeId.versionId
+    return docId.version.equals(docId.cid) ? '0' : docId.version.toString()
   }
 
   async createAuthMapEntry(authEntry: NewAuthEntry): Promise<AuthEntryMap> {
@@ -75,9 +77,9 @@ export class ThreeIDX {
     // https://github.com/ceramicnetwork/js-ceramic/pull/287
     if (!this.docs[authLink]) {
       this.docs[authLink] = await this.ceramic.createDocument(
-        'account-link',
+        'caip10-link',
         { metadata: { controllers: [authLink] } },
-        { applyOnly: true }
+        { anchor: false, publish: false }
       )
     }
     await this.docs[authLink].change({ content: authEntry.linkProof })
@@ -94,7 +96,8 @@ export class ThreeIDX {
     const entry = authEntry ? await this.createAuthMapEntry(authEntry) : {}
     await this.createKeychainDoc(entry)
     this.docs.idx = await this.ceramic.createDocument('tile', {
-      metadata: { controllers: [this.id], schema: IdentityIndex },
+      //metadata: { controllers: [this.id], schema: IdentityIndex },
+      metadata: { controllers: [this.id] },
       content: { [KEYCHAIN_DEF]: this.docs[KEYCHAIN_DEF].id.toUrl('base36') },
     })
     await this.docs.threeId.change({
@@ -110,9 +113,9 @@ export class ThreeIDX {
    */
   async loadIDX(authLink: string): Promise<EncKeyMaterial | null> {
     this.docs[authLink] = await this.ceramic.createDocument(
-      'account-link',
+      'caip10-link',
       { metadata: { controllers: [authLink] } },
-      { applyOnly: true }
+      { anchor: false, publish: false }
     )
     const did = this.docs[authLink].content
     if (!did) return null
@@ -139,7 +142,8 @@ export class ThreeIDX {
       throw new Error('No IDX doc')
     }
     await this.docs.idx.change({
-      metadata: { controllers: [this.id], schema: IdentityIndex },
+      //metadata: { controllers: [this.id], schema: IdentityIndex },
+      metadata: { controllers: [this.id] },
       content: { [KEYCHAIN_DEF]: this.docs[KEYCHAIN_DEF].id.toUrl('base36') },
     })
   }
@@ -174,7 +178,8 @@ export class ThreeIDX {
 
   async createKeychainDoc(authMap: AuthEntryMap, pastSeeds: Array<JWE> = []): Promise<void> {
     this.docs[KEYCHAIN_DEF] = await this.ceramic.createDocument('tile', {
-      metadata: { controllers: [this.id], schema: ThreeIdKeychain },
+      //metadata: { controllers: [this.id], schema: ThreeIdKeychain },
+      metadata: { controllers: [this.id] },
       content: { authMap, pastSeeds },
     })
   }

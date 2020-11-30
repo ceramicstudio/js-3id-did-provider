@@ -31,22 +31,51 @@ describe('DidProvider', () => {
   })
 
   test('`did_authenticate` method returns the accounts', async () => {
+    global.Date.now = jest.fn(() => 1606236374000)
     const config = {
       permissions: { request: jest.fn(async (origin, paths) => paths) },
-      threeIdx: { id: 'did:3:test' },
+      threeIdx: {
+        id: 'did:3:test',
+        get3idVersion: jest.fn(async () => '0'),
+      },
+      keyring: {
+        getSigner: () => () => Promise.resolve('signed'),
+        getMgmtSigner: () => () => Promise.resolve('signed'),
+        getKeyFragment: jest.fn(() => 'ab832')
+      },
     }
+    const nonce = 'asdf'
+    const aud = 'foo'
     await expectRPC(
       new DidProvider(config),
       'foo',
       { method: 'did_authenticate' },
-      { result: { did: 'did:3:test', paths: [] } }
+      { result: {
+          payload: 'eyJkaWQiOiJkaWQ6Mzp0ZXN0IiwiZXhwIjoxNjA2MjM2OTc0LCJwYXRocyI6W119',
+          signatures: [
+            {
+              protected: 'eyJraWQiOiJkaWQ6Mzp0ZXN0P3ZlcnNpb24taWQ9MCNhYjgzMiIsImFsZyI6IkVTMjU2SyJ9',
+              signature: 'signed'
+            }
+          ]
+        }
+      }
     )
     expect(config.permissions.request).toBeCalledWith('foo', [])
     await expectRPC(
       new DidProvider(config),
       'foo',
-      { method: 'did_authenticate', params: { paths: ['/1'] } },
-      { result: { did: 'did:3:test', paths: ['/1'] } }
+      { method: 'did_authenticate', params: { paths: ['/1'], nonce, aud } },
+      { result: {
+          payload: 'eyJhdWQiOiJmb28iLCJkaWQiOiJkaWQ6Mzp0ZXN0IiwiZXhwIjoxNjA2MjM2OTc0LCJub25jZSI6ImFzZGYiLCJwYXRocyI6WyIvMSJdfQ',
+          signatures: [
+            {
+              protected: 'eyJraWQiOiJkaWQ6Mzp0ZXN0P3ZlcnNpb24taWQ9MCNhYjgzMiIsImFsZyI6IkVTMjU2SyJ9',
+              signature: 'signed'
+            }
+          ]
+        }
+      }
     )
   })
 
@@ -63,7 +92,7 @@ describe('DidProvider', () => {
     expect(permissions.has).toBeCalledWith('bar')
   })
 
-  test('`did_createJWS` returns the JWS string', async () => {
+  test('`did_createJWS` returns the general JWS', async () => {
     const config = {
       permissions: { has: jest.fn(() => true) },
       threeIdx: {
@@ -85,14 +114,20 @@ describe('DidProvider', () => {
       new DidProvider(config),
       null,
       { method: 'did_createJWS', params: { payload, protected, did } },
-      { result: { jws: 'eyJiYXIiOiJiYXoiLCJraWQiOiJkaWQ6Mzphc2RmP3ZlcnNpb24taWQ9MCNhYjgzMiIsImFsZyI6IkVTMjU2SyJ9.eyJmb28iOiJiYXIifQ.signed' } }
+      { result: { jws: { payload: 'eyJmb28iOiJiYXIifQ', signatures: [{ protected: 'eyJiYXIiOiJiYXoiLCJraWQiOiJkaWQ6Mzphc2RmP3ZlcnNpb24taWQ9MCNhYjgzMiIsImFsZyI6IkVTMjU2SyJ9', signature: 'signed' }]} } }
+    )
+    await expectRPC(
+      new DidProvider(config),
+      null,
+      { method: 'did_createJWS', params: { payload, protected, did, revocable: true } },
+      { result: { jws: { payload: 'eyJmb28iOiJiYXIifQ', signatures: [{ protected: 'eyJiYXIiOiJiYXoiLCJraWQiOiJkaWQ6Mzphc2RmI2FiODMyIiwiYWxnIjoiRVMyNTZLIn0', signature: 'signed' }]} } }
     )
     did = 'did:key:fewfq'
     await expectRPC(
       new DidProvider(config),
       null,
       { method: 'did_createJWS', params: { payload, protected, did } },
-      { result: { jws: 'eyJiYXIiOiJiYXoiLCJraWQiOiJkaWQ6a2V5OmZld2ZxI2Zld2ZxIiwiYWxnIjoiRVMyNTZLIn0.eyJmb28iOiJiYXIifQ.signed' } }
+      { result: { jws: { payload: 'eyJmb28iOiJiYXIifQ', signatures: [{ protected: 'eyJiYXIiOiJiYXoiLCJraWQiOiJkaWQ6a2V5OmZld2ZxI2Zld2ZxIiwiYWxnIjoiRVMyNTZLIn0', signature: 'signed' }]} } }
     )
   })
 

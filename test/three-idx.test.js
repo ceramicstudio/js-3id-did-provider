@@ -1,12 +1,12 @@
 import tmp from 'tmp-promise'
-import Ceramic from '@ceramicnetwork/ceramic-core'
+import Ceramic from '@ceramicnetwork/core'
 import Ipfs from 'ipfs'
 import all from 'it-all'
 import CID from 'cids'
 import { AccountID } from 'caip'
 import { createLink } from '3id-blockchain-utils'
-import { schemas, definitions } from '@ceramicstudio/idx-constants'
-import { publishIDXConfig } from '@ceramicstudio/idx-tools'
+//import { schemas, definitions } from '@ceramicstudio/idx-constants'
+//import { publishIDXConfig } from '@ceramicstudio/idx-tools'
 
 import { ThreeIDX } from '../src/three-idx'
 import { DidProvider } from '../src/did-provider'
@@ -20,7 +20,8 @@ import legacy from 'multiformats/cjs/src/legacy.js'
 import * as u8a from 'uint8arrays'
 
 const seed = u8a.fromString('8e641c0dc77f6916cc7f743dad774cdf9f6f7bcb880b11395149dd878377cd398650bbfd4607962b49953c87da4d7f3ff247ed734b06f96bdd69479377bc612b', 'base16')
-const KEYCHAIN_DEF = definitions.threeIdKeychain
+//const KEYCHAIN_DEF = definitions.threeIdKeychain
+const KEYCHAIN_DEF = 'keychain'
 
 const genIpfsConf = (folder) => {
   basicsImport.multicodec.add(dagJose)
@@ -76,14 +77,17 @@ const mockedPermissions = {
 describe('ThreeIDX', () => {
   jest.setTimeout(25000)
   let tmpFolder
-  let ipfs, ceramic
+  let ipfs, ceramic, execAnchor
   let keyring, threeIdx
 
   beforeAll(async () => {
     tmpFolder = await tmp.dir({ unsafeCleanup: true })
     ipfs = await Ipfs.create(genIpfsConf(tmpFolder.path))
-    ceramic = await Ceramic.create(ipfs, { stateStorePath: tmpFolder.path + '/ceramic/'})
-    await publishIDXConfig(ceramic)
+    ceramic = await Ceramic.create(ipfs, { stateStorePath: tmpFolder.path + '/ceramic/', anchorOnRequest: false })
+    //await publishIDXConfig(ceramic)
+    execAnchor = async () => {
+      await ceramic.context.anchorService.anchor()
+    }
   })
 
   afterAll(async () => {
@@ -101,7 +105,7 @@ describe('ThreeIDX', () => {
     keyring = new Keyring(seed)
     await setup3id(threeIdx, keyring)
     const { log, ...state } = threeIdx.docs.threeId.state
-    expect({  ...state, log: log.map(cid => new CID(cid.bytes)) }).toMatchSnapshot()
+    expect({  ...state, log: log.map(({ cid }) => new CID(cid.bytes)) }).toMatchSnapshot()
   })
 
   it('handles v0 3ID correctly', async () => {
@@ -119,9 +123,10 @@ describe('ThreeIDX', () => {
     expect(await threeIdx.get3idVersion()).toEqual('0')
     // with anchor, createIDX to update 3id doc
     await threeIdx.createIDX()
+    await execAnchor()
     await new Promise(resolve => threeIdx.docs.threeId.on('change', resolve))
-    const latestVer = (await ceramic.listVersions(threeIdx.docs.threeId.id)).pop()
-    expect(await threeIdx.get3idVersion()).toEqual(latestVer)
+    const latestVer = threeIdx.docs.threeId.versionId.version
+    expect(await threeIdx.get3idVersion()).toEqual(latestVer.toString())
   })
 
   it('creates authMapEntry', async () => {
@@ -155,8 +160,8 @@ describe('ThreeIDX', () => {
       pastSeeds: []
     })
     expect(threeIdx.docs.idx.content).toEqual({ [KEYCHAIN_DEF]: threeIdx.docs[KEYCHAIN_DEF].id.toUrl('base36') })
-    expect(threeIdx.docs.idx.metadata.schema).toBe(schemas.IdentityIndex)
-    expect(threeIdx.docs[KEYCHAIN_DEF].metadata.schema).toBe(schemas.ThreeIdKeychain)
+    //expect(threeIdx.docs.idx.metadata.schema).toBe(schemas.IdentityIndex)
+    //expect(threeIdx.docs[KEYCHAIN_DEF].metadata.schema).toBe(schemas.ThreeIdKeychain)
     expect(threeIdx.docs.threeId.content).toEqual(expect.objectContaining({ 'idx': threeIdx.docs.idx.id.toUrl('base36') }))
     // should be pinned
     expect(await all(await ceramic.pin.ls())).toEqual(expect.arrayContaining([
@@ -172,8 +177,8 @@ describe('ThreeIDX', () => {
     await threeIdx.createIDX()
 
     expect(threeIdx.docs.idx.content).toEqual({ [KEYCHAIN_DEF]: threeIdx.docs[KEYCHAIN_DEF].id.toUrl('base36') })
-    expect(threeIdx.docs.idx.metadata.schema).toBe(schemas.IdentityIndex)
-    expect(threeIdx.docs[KEYCHAIN_DEF].metadata.schema).toBe(schemas.ThreeIdKeychain)
+    //expect(threeIdx.docs.idx.metadata.schema).toBe(schemas.IdentityIndex)
+    //expect(threeIdx.docs[KEYCHAIN_DEF].metadata.schema).toBe(schemas.ThreeIdKeychain)
     expect(threeIdx.docs.threeId.content).toEqual(expect.objectContaining({ 'idx': threeIdx.docs.idx.id.toUrl('base36') }))
     // should be pinned
     expect(await all(await ceramic.pin.ls())).toEqual(expect.arrayContaining([
@@ -210,8 +215,8 @@ describe('ThreeIDX', () => {
     await threeIdx.resetIDX()
 
     expect(threeIdx.docs.idx.content).toEqual({ [KEYCHAIN_DEF]: threeIdx.docs[KEYCHAIN_DEF].id.toUrl('base36') })
-    expect(threeIdx.docs.idx.metadata.schema).toBe(schemas.IdentityIndex)
-    expect(threeIdx.docs[KEYCHAIN_DEF].metadata.schema).toBe(schemas.ThreeIdKeychain)
+    //expect(threeIdx.docs.idx.metadata.schema).toBe(schemas.IdentityIndex)
+    //expect(threeIdx.docs[KEYCHAIN_DEF].metadata.schema).toBe(schemas.ThreeIdKeychain)
   })
 
   it('addAuthEntries', async () => {
@@ -250,7 +255,9 @@ describe('ThreeIDX', () => {
     const { newAuthEntry: nae2, accountId: ai2 } = resolved[1]
     const { newAuthEntry: nae3, accountId: ai3 } = resolved[2]
     await threeIdx.createIDX(nae1)
+    await execAnchor()
     await threeIdx.addAuthEntries([nae2, nae3])
+    await execAnchor()
 
     // Rotate keys correctly
     await keyring.generateNewKeys(await threeIdx.get3idVersion())
@@ -258,6 +265,7 @@ describe('ThreeIDX', () => {
     const updatedEntry1 = { pub: nae1.pub, data: fakeJWE(), id: fakeJWE() }
     const updatedEntry2 = { pub: nae2.pub, data: fakeJWE(), id: fakeJWE() }
     await threeIdx.rotateKeys(new3idState, keyring.pastSeeds, [updatedEntry1, updatedEntry2])
+    await execAnchor()
     expect(threeIdx.getAllAuthEntries()).toEqual(expect.arrayContaining([updatedEntry1, updatedEntry2]))
     const state = threeIdx.docs.threeId.state
     expect(state.content).toEqual(expect.objectContaining(new3idState.content))

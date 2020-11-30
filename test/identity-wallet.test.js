@@ -4,7 +4,7 @@ import { randomBytes } from '../src/crypto'
 import { verifyJWT } from 'did-jwt'
 import { Resolver } from 'did-resolver'
 import tmp from 'tmp-promise'
-import Ceramic from '@ceramicnetwork/ceramic-core'
+import Ceramic from '@ceramicnetwork/core'
 import Ipfs from 'ipfs'
 import { publishIDXConfig } from '@ceramicstudio/idx-tools'
 
@@ -35,13 +35,16 @@ const genIpfsConf = (folder) => {
 describe('IdentityWallet', () => {
   jest.setTimeout(45000)
   let tmpFolder
-  let ipfs, ceramic
+  let ipfs, ceramic, execAnchor
 
   beforeAll(async () => {
     tmpFolder = await tmp.dir({ unsafeCleanup: true })
     ipfs = await Ipfs.create(genIpfsConf(tmpFolder.path))
-    ceramic = await Ceramic.create(ipfs, { stateStorePath: tmpFolder.path + '/ceramic/'})
-    await publishIDXConfig(ceramic)
+    ceramic = await Ceramic.create(ipfs, { stateStorePath: tmpFolder.path + '/ceramic/', anchorOnRequest: false })
+    //await publishIDXConfig(ceramic)
+    execAnchor = async () => {
+      await ceramic.context.anchorService.anchor()
+    }
   })
 
   afterAll(async () => {
@@ -133,6 +136,7 @@ describe('IdentityWallet', () => {
         ceramic
       }
       const idw1 = await IdentityWallet.create(config1)
+      await execAnchor()
       expect(await idw1.keychain.list()).toEqual(['auth1'])
       const config2 = {
         getPermission: getPermissionMock,
