@@ -1,7 +1,7 @@
 [![CircleCI](https://img.shields.io/circleci/project/github/ceramicstudio/js-3id-did-provider.svg?style=for-the-badge)](https://circleci.com/gh/ceramicstudio/js-3id-did-provider)
 [![Discord](https://img.shields.io/discord/484729862368526356.svg?style=for-the-badge)](https://discordapp.com/invite/Z3f3Cxy)
-[![npm](https://img.shields.io/npm/dt/js-3id-did-provider.svg?style=for-the-badge)](https://www.npmjs.com/package/js-3id-did-provider)
-[![npm](https://img.shields.io/npm/v/js-3id-did-provider.svg?style=for-the-badge)](https://www.npmjs.com/package/js-3id-did-provider)
+[![npm](https://img.shields.io/npm/dt/3id-did-provider.svg?style=for-the-badge)](https://www.npmjs.com/package/3id-did-provider)
+[![npm](https://img.shields.io/npm/v/3id-did-provider.svg?style=for-the-badge)](https://www.npmjs.com/package/3id-did-provider)
 [![Codecov](https://img.shields.io/codecov/c/github/ceramicstudio/js-3id-did-provider.svg?style=for-the-badge)](https://codecov.io/gh/ceramicstudio/js-3id-did-provider)
 [![Twitter Follow](https://img.shields.io/twitter/follow/ceramicnetwork.svg?style=for-the-badge&label=Twitter)](https://twitter.com/ceramicnetwork)
 
@@ -19,7 +19,7 @@ $ npm install 3id-did-provider
 
 ### <a name="usage"></a>Usage
 #### Import ThreeIdProvider into your project
-Import the js-3id-did-provider module
+Import the 3id-did-provider module
 ```js
 const ThreeIdProvider = require('3id-did-provider')
 ```
