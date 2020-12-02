@@ -1,6 +1,6 @@
 {
   "name": "3id-did-provider",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Create and manage 3IDs",
   "main": "lib/threeid-provider.js",
   "types": "lib/threeid-provider.d.ts",
@@ -32,14 +32,14 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/3box/identity-wallet-js.git"
+    "url": "git+https://github.com/ceramicstudio/js-3id-did-provider.git"
   },
   "author": "3box <team@3box.io>",
   "license": "(Apache-2.0 OR MIT)",
   "bugs": {
-    "url": "https://github.com/3box/identity-wallet-js/issues"
+    "url": "https://github.com/ceramicstudio/js-3id-did-provider/issues"
   },
-  "homepage": "https://github.com/3box/identity-wallet-js#readme",
+  "homepage": "https://github.com/ceramicstudio/js-3id-did-provider#readme",
   "dependencies": {
     "3id-blockchain-utils": "^1.0.0",
     "@babel/runtime": "^7.12.1",
