@@ -1,13 +1,15 @@
-import { CeramicApi, Doctype } from '@ceramicnetwork/ceramic-common'
-import CeramicClient from '@ceramicnetwork/ceramic-http-client'
+import { CeramicApi, Doctype } from '@ceramicnetwork/common'
+import CeramicClient from '@ceramicnetwork/http-client'
 import { schemas, definitions } from '@ceramicstudio/idx-constants'
 import { LinkProof } from '3id-blockchain-utils'
 
+import type CID from 'cids'
 import type { DidProvider } from './did-provider'
 import type { ThreeIdState } from './keyring'
 import type { JWE } from 'did-jwt'
 
 const KEYCHAIN_DEF = definitions.threeIdKeychain
+const IDX = 'IDX'
 const { IdentityIndex, ThreeIdKeychain } = schemas
 
 export interface EncData {
@@ -61,25 +63,24 @@ export class ThreeIDX {
 
   async create3idDoc(docParams: Record<string, any>): Promise<void> {
     this.docs.threeId = await this.ceramic.createDocument('tile', docParams, {
-      applyOnly: true,
+      anchor: false,
+      publish: false,
     })
   }
 
-  async get3idVersion(): Promise<string> {
-    return (await this.ceramic.listVersions(this.docs.threeId.id)).pop() || '0'
+  get3idVersion(): string {
+    const docId = this.docs.threeId.versionId
+    const version = docId.version as CID
+    return version.equals(docId.cid) ? '0' : version.toString()
   }
 
   async createAuthMapEntry(authEntry: NewAuthEntry): Promise<AuthEntryMap> {
     const authLink = authEntry.linkProof.account
-    // tmp if statement, can be removed when fix released:
-    // https://github.com/ceramicnetwork/js-ceramic/pull/287
-    if (!this.docs[authLink]) {
-      this.docs[authLink] = await this.ceramic.createDocument(
-        'account-link',
-        { metadata: { controllers: [authLink] } },
-        { applyOnly: true }
-      )
-    }
+    this.docs[authLink] = await this.ceramic.createDocument(
+      'caip10-link',
+      { metadata: { controllers: [authLink] } },
+      { anchor: false, publish: false }
+    )
     await this.docs[authLink].change({ content: authEntry.linkProof })
     await this.ceramic.pin.add(this.docs[authLink].id)
     const tmpEntry: TempAuthEntry = Object.assign({}, authEntry)
@@ -92,17 +93,17 @@ export class ThreeIDX {
    */
   async createIDX(authEntry?: NewAuthEntry): Promise<void> {
     const entry = authEntry ? await this.createAuthMapEntry(authEntry) : {}
-    await this.createKeychainDoc(entry)
-    this.docs.idx = await this.ceramic.createDocument('tile', {
-      metadata: { controllers: [this.id], schema: IdentityIndex },
-      content: { [KEYCHAIN_DEF]: this.docs[KEYCHAIN_DEF].id.toUrl('base36') },
-    })
-    await this.docs.threeId.change({
-      content: Object.assign(this.docs.threeId.content, {
-        idx: this.docs.idx.id.baseID.toUrl('base36'),
-      }),
-    })
-    await this.pinAllDocs()
+    // eslint-disable-next-line prettier/prettier
+    await Promise.all([
+      this.loadKeychainDoc(this.id),
+      this.loadIDXDoc(this.id)
+    ])
+    // eslint-disable-next-line prettier/prettier
+    await Promise.all([
+      this.pinAllDocs(),
+      this.updateKeychainDoc(entry),
+      this.addKeychainToIDX()
+    ])
   }
 
   /**
@@ -110,19 +111,18 @@ export class ThreeIDX {
    */
   async loadIDX(authLink: string): Promise<EncKeyMaterial | null> {
     this.docs[authLink] = await this.ceramic.createDocument(
-      'account-link',
+      'caip10-link',
       { metadata: { controllers: [authLink] } },
-      { applyOnly: true }
+      { anchor: false, publish: false }
     )
     const did = this.docs[authLink].content
     if (!did) return null
-    this.docs.threeId = await this.ceramic.loadDocument(`ceramic://${did.split(':')[2] as string}`)
-    const idxDocid = this.docs.threeId.content.idx
-    if (!idxDocid) return null
-    this.docs.idx = await this.ceramic.loadDocument(idxDocid)
-    const authKeychainDocid = this.docs.idx.content[KEYCHAIN_DEF]
-    if (!authKeychainDocid) return null
-    this.docs[KEYCHAIN_DEF] = await this.ceramic.loadDocument(authKeychainDocid)
+    const [threeId] = await Promise.all([
+      this.ceramic.loadDocument(did.split(':')[2]),
+      this.loadKeychainDoc(did),
+      this.loadIDXDoc(did),
+    ])
+    this.docs.threeId = threeId
     const linkDocid = this.docs[authLink].id.baseID.toString()
     const { authMap, pastSeeds } = this.docs[KEYCHAIN_DEF].content
     return {
@@ -138,10 +138,13 @@ export class ThreeIDX {
     if (this.docs.idx == null) {
       throw new Error('No IDX doc')
     }
-    await this.docs.idx.change({
-      metadata: { controllers: [this.id], schema: IdentityIndex },
-      content: { [KEYCHAIN_DEF]: this.docs[KEYCHAIN_DEF].id.toUrl('base36') },
-    })
+    const update: Record<string, any> = {
+      content: { [KEYCHAIN_DEF]: this.docs[KEYCHAIN_DEF].id.toUrl() },
+    }
+    if (!this.docs.idx.metadata.schema) {
+      update.metadata = { schema: IdentityIndex }
+    }
+    await this.docs.idx.change(update)
   }
 
   /**
@@ -149,17 +152,17 @@ export class ThreeIDX {
    */
   async addAuthEntries(authEntries: Array<NewAuthEntry>): Promise<void> {
     const mapEntries = await Promise.all(authEntries.map(this.createAuthMapEntry.bind(this)))
-    const content = this.docs[KEYCHAIN_DEF].content
+    const { authMap, pastSeeds } = this.docs[KEYCHAIN_DEF].content
     const newAuthEntries = mapEntries.reduce((acc, entry) => Object.assign(acc, entry), {})
-    Object.assign(content.authMap, newAuthEntries)
-    await this.docs[KEYCHAIN_DEF].change({ content })
+    Object.assign(authMap, newAuthEntries)
+    await this.updateKeychainDoc(authMap, pastSeeds)
   }
 
   /**
    * Returns all public keys that is in the auth keychain.
    */
   getAllAuthEntries(): Array<AuthEntry> {
-    if (!this.docs[KEYCHAIN_DEF]) return []
+    if (!this.docs[KEYCHAIN_DEF] || !this.docs[KEYCHAIN_DEF].content.authMap) return []
     const authMap = this.docs[KEYCHAIN_DEF].content.authMap
     return Object.values(authMap)
   }
@@ -172,11 +175,45 @@ export class ThreeIDX {
     )
   }
 
-  async createKeychainDoc(authMap: AuthEntryMap, pastSeeds: Array<JWE> = []): Promise<void> {
-    this.docs[KEYCHAIN_DEF] = await this.ceramic.createDocument('tile', {
-      metadata: { controllers: [this.id], schema: ThreeIdKeychain },
-      content: { authMap, pastSeeds },
-    })
+  async loadIDXDoc(did: string): Promise<void> {
+    this.docs.idx = await this.ceramic.createDocument(
+      'tile',
+      { deterministic: true, metadata: { controllers: [did], family: IDX } },
+      { anchor: false, publish: false }
+    )
+  }
+
+  async addKeychainToIDX(): Promise<void> {
+    const content = this.docs.idx.content
+    if (!content || !content[KEYCHAIN_DEF]) {
+      const update: Record<string, any> = {
+        content: Object.assign(content || {}, {
+          [KEYCHAIN_DEF]: this.docs[KEYCHAIN_DEF].id.toUrl(),
+        }),
+      }
+      if (!this.docs.idx.metadata.schema) {
+        update.metadata = { schema: IdentityIndex }
+      }
+      await this.docs.idx.change(update)
+    }
+  }
+
+  async loadKeychainDoc(did: string): Promise<void> {
+    this.docs[KEYCHAIN_DEF] = await this.ceramic.createDocument(
+      'tile',
+      { deterministic: true, metadata: { controllers: [did], family: KEYCHAIN_DEF } },
+      { anchor: false, publish: false }
+    )
+  }
+
+  async updateKeychainDoc(authMap: AuthEntryMap, pastSeeds: Array<JWE> = []): Promise<void> {
+    if (Object.keys(authMap).length !== 0) {
+      const update: Record<string, any> = { content: { authMap, pastSeeds } }
+      if (!this.docs[KEYCHAIN_DEF].metadata.schema) {
+        update.metadata = { schema: ThreeIdKeychain }
+      }
+      await this.docs[KEYCHAIN_DEF].change(update)
+    }
   }
 
   /**
@@ -204,17 +241,8 @@ export class ThreeIDX {
       if (entry) authMap[link] = entry
       return authMap
     }, {})
-    // Create a new 3ID keychain document
-    await this.createKeychainDoc(authMap, pastSeeds)
+    promises.push(this.updateKeychainDoc(authMap, pastSeeds))
     promises.push(this.pinAllDocs())
-    // Update IDX to point to new keychain
-    promises.push(
-      this.docs.idx.change({
-        content: Object.assign(this.docs.idx.content, {
-          [KEYCHAIN_DEF]: this.docs[KEYCHAIN_DEF].id.toUrl('base36'),
-        }),
-      })
-    )
     await Promise.all(promises)
   }
 }

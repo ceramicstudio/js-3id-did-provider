@@ -4,15 +4,17 @@ import { randomBytes } from '../src/crypto'
 import { verifyJWT } from 'did-jwt'
 import { Resolver } from 'did-resolver'
 import tmp from 'tmp-promise'
-import Ceramic from '@ceramicnetwork/ceramic-core'
+import Ceramic from '@ceramicnetwork/core'
 import Ipfs from 'ipfs'
 import { publishIDXConfig } from '@ceramicstudio/idx-tools'
+import { definitions } from '@ceramicstudio/idx-constants'
 
 import dagJose from 'dag-jose'
 import basicsImport from 'multiformats/cjs/src/basics-import.js'
 import legacy from 'multiformats/cjs/src/legacy.js'
 import * as u8a from 'uint8arrays'
 
+const KEYCHAIN_DEF = definitions.threeIdKeychain
 const seed = u8a.fromString('6e34b2e1a9624113d81ece8a8a22e6e97f0e145c25c1d4d2d0e62753b4060c837097f768559e17ec89ee20cba153b23b9987912ec1e860fa1212ba4b84c776ce', 'base16')
 
 const randomAuthSecret = () => randomBytes(32)
@@ -40,7 +42,7 @@ describe('IdentityWallet', () => {
   beforeAll(async () => {
     tmpFolder = await tmp.dir({ unsafeCleanup: true })
     ipfs = await Ipfs.create(genIpfsConf(tmpFolder.path))
-    ceramic = await Ceramic.create(ipfs, { stateStorePath: tmpFolder.path + '/ceramic/'})
+    ceramic = await Ceramic.create(ipfs, { stateStorePath: tmpFolder.path + '/ceramic/' })
     await publishIDXConfig(ceramic)
   })
 
@@ -107,7 +109,7 @@ describe('IdentityWallet', () => {
     })
 
     it('Creates instance from added authSecret', async () => {
-      const config1 = { getPermission: getPermissionMock, seed, ceramic }
+      const config1 = { getPermission: getPermissionMock, seed: randomBytes(32), ceramic }
       const idw1 = await IdentityWallet.create(config1)
       expect(await idw1.keychain.list()).toEqual([])
 
@@ -142,6 +144,8 @@ describe('IdentityWallet', () => {
       }
       await idw1.keychain.add(config2.authId, config2.authSecret)
       await idw1.keychain.commit()
+      // wait for anchor to happen
+      await new Promise(resolve => idw1._threeIdx.docs[KEYCHAIN_DEF].on('change', resolve))
       expect(await idw1.keychain.list()).toEqual(['auth1', 'auth2'])
 
       await idw1.keychain.remove('auth1')

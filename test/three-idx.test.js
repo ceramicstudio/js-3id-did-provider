@@ -1,5 +1,5 @@
 import tmp from 'tmp-promise'
-import Ceramic from '@ceramicnetwork/ceramic-core'
+import Ceramic from '@ceramicnetwork/core'
 import Ipfs from 'ipfs'
 import all from 'it-all'
 import CID from 'cids'
@@ -82,7 +82,7 @@ describe('ThreeIDX', () => {
   beforeAll(async () => {
     tmpFolder = await tmp.dir({ unsafeCleanup: true })
     ipfs = await Ipfs.create(genIpfsConf(tmpFolder.path))
-    ceramic = await Ceramic.create(ipfs, { stateStorePath: tmpFolder.path + '/ceramic/'})
+    ceramic = await Ceramic.create(ipfs, { stateStorePath: tmpFolder.path + '/ceramic/' })
     await publishIDXConfig(ceramic)
   })
 
@@ -101,7 +101,7 @@ describe('ThreeIDX', () => {
     keyring = new Keyring(seed)
     await setup3id(threeIdx, keyring)
     const { log, ...state } = threeIdx.docs.threeId.state
-    expect({  ...state, log: log.map(cid => new CID(cid.bytes)) }).toMatchSnapshot()
+    expect({  ...state, log: log.map(({ cid }) => new CID(cid.bytes)) }).toMatchSnapshot()
   })
 
   it('handles v0 3ID correctly', async () => {
@@ -116,12 +116,14 @@ describe('ThreeIDX', () => {
   it('gets correct 3id version', async () => {
     await setup3id(threeIdx, keyring)
     // with no anchor
-    expect(await threeIdx.get3idVersion()).toEqual('0')
+    expect(threeIdx.get3idVersion()).toEqual('0')
     // with anchor, createIDX to update 3id doc
     await threeIdx.createIDX()
+    // update the 3id doc
+    await threeIdx.docs.threeId.change({ content: { asdf: 123 }})
     await new Promise(resolve => threeIdx.docs.threeId.on('change', resolve))
-    const latestVer = (await ceramic.listVersions(threeIdx.docs.threeId.id)).pop()
-    expect(await threeIdx.get3idVersion()).toEqual(latestVer)
+    const latestVer = threeIdx.docs.threeId.versionId.version
+    expect(threeIdx.get3idVersion()).toEqual(latestVer.toString())
   })
 
   it('creates authMapEntry', async () => {
@@ -157,7 +159,6 @@ describe('ThreeIDX', () => {
     expect(threeIdx.docs.idx.content).toEqual({ [KEYCHAIN_DEF]: threeIdx.docs[KEYCHAIN_DEF].id.toUrl('base36') })
     expect(threeIdx.docs.idx.metadata.schema).toBe(schemas.IdentityIndex)
     expect(threeIdx.docs[KEYCHAIN_DEF].metadata.schema).toBe(schemas.ThreeIdKeychain)
-    expect(threeIdx.docs.threeId.content).toEqual(expect.objectContaining({ 'idx': threeIdx.docs.idx.id.toUrl('base36') }))
     // should be pinned
     expect(await all(await ceramic.pin.ls())).toEqual(expect.arrayContaining([
       threeIdx.docs.threeId.id.toString(),
@@ -173,8 +174,7 @@ describe('ThreeIDX', () => {
 
     expect(threeIdx.docs.idx.content).toEqual({ [KEYCHAIN_DEF]: threeIdx.docs[KEYCHAIN_DEF].id.toUrl('base36') })
     expect(threeIdx.docs.idx.metadata.schema).toBe(schemas.IdentityIndex)
-    expect(threeIdx.docs[KEYCHAIN_DEF].metadata.schema).toBe(schemas.ThreeIdKeychain)
-    expect(threeIdx.docs.threeId.content).toEqual(expect.objectContaining({ 'idx': threeIdx.docs.idx.id.toUrl('base36') }))
+    expect(threeIdx.docs[KEYCHAIN_DEF].metadata.schema).toBeUndefined()
     // should be pinned
     expect(await all(await ceramic.pin.ls())).toEqual(expect.arrayContaining([
       threeIdx.docs.threeId.id.toString(),
@@ -211,7 +211,7 @@ describe('ThreeIDX', () => {
 
     expect(threeIdx.docs.idx.content).toEqual({ [KEYCHAIN_DEF]: threeIdx.docs[KEYCHAIN_DEF].id.toUrl('base36') })
     expect(threeIdx.docs.idx.metadata.schema).toBe(schemas.IdentityIndex)
-    expect(threeIdx.docs[KEYCHAIN_DEF].metadata.schema).toBe(schemas.ThreeIdKeychain)
+    expect(threeIdx.docs[KEYCHAIN_DEF].metadata.schema).toBeUndefined()
   })
 
   it('addAuthEntries', async () => {
@@ -251,9 +251,11 @@ describe('ThreeIDX', () => {
     const { newAuthEntry: nae3, accountId: ai3 } = resolved[2]
     await threeIdx.createIDX(nae1)
     await threeIdx.addAuthEntries([nae2, nae3])
+    // wait for anchor to happen
+    await new Promise(resolve => threeIdx.docs[KEYCHAIN_DEF].on('change', resolve))
 
     // Rotate keys correctly
-    await keyring.generateNewKeys(await threeIdx.get3idVersion())
+    await keyring.generateNewKeys(threeIdx.get3idVersion())
     const new3idState = keyring.get3idState()
     const updatedEntry1 = { pub: nae1.pub, data: fakeJWE(), id: fakeJWE() }
     const updatedEntry2 = { pub: nae2.pub, data: fakeJWE(), id: fakeJWE() }

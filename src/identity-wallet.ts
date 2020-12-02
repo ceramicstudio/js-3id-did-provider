@@ -1,4 +1,4 @@
-import { CeramicApi } from '@ceramicnetwork/ceramic-common'
+import { CeramicApi } from '@ceramicnetwork/common'
 
 import { DidProvider } from './did-provider'
 import Keyring from './keyring'
