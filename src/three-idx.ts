@@ -117,13 +117,12 @@ export class ThreeIDX {
     )
     const did = this.docs[authLink].content
     if (!did) return null
-    await Promise.all([
+    const [threeId] = await Promise.all([
+      this.ceramic.loadDocument(did.split(':')[2]),
       this.loadKeychainDoc(did),
       this.loadIDXDoc(did),
-      (async () => {
-        this.docs.threeId = await this.ceramic.loadDocument(did.split(':')[2] as string)
-      })(),
     ])
+    this.docs.threeId = threeId
     const linkDocid = this.docs[authLink].id.baseID.toString()
     const { authMap, pastSeeds } = this.docs[KEYCHAIN_DEF].content
     return {
