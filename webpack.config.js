@@ -1,11 +1,11 @@
 const path = require('path')
 
 module.exports = {
-  entry: './src/identity-wallet.ts',
+  entry: './src/threeid-provider.ts',
   output: {
-    filename: 'identity-wallet.js',
+    filename: 'threeid-provider.js',
     path: path.resolve(__dirname, 'dist'),
-    library: 'IdentityWallet',
+    library: 'ThreeIdProvider',
     libraryTarget: 'umd',
     umdNamedDefine: true,
   },

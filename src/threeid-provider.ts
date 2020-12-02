@@ -16,9 +16,9 @@ type IDWConfig = {
   disableIDX?: boolean
 } & (AuthConfig | SeedConfig)
 
-export default class IdentityWallet {
+export default class ThreeIdProvider {
   /**
-   * Use IdentityWallet.create() to create an IdentityWallet instance
+   * Use ThreeIdProvider.create() to create an ThreeIdProvider instance
    */
   constructor(
     protected _threeIdx: ThreeIDX,
@@ -40,25 +40,25 @@ export default class IdentityWallet {
   }
 
   /**
-   * @property {string} id                 The DID of the IdentityWallet instance
+   * @property {string} id                 The DID of the ThreeIdProvider instance
    */
   get id(): string {
     return this._threeIdx.id
   }
 
   /**
-   * Creates an instance of IdentityWallet
+   * Creates an instance of ThreeIdProvider
    *
    * @param     {Object}        config                  The configuration to be used
    * @param     {Function}      config.getPermission    The function that is called to ask the user for permission
-   * @param     {Uint8Array}    config.seed             The seed of the identity, 32 bytes
+   * @param     {Uint8Array}    config.seed             The seed of the 3ID, 32 bytes
    * @param     {Uint8Array}    config.authSecret       The authSecret to use, 32 bytes
    * @param     {String}        config.authId           The authId is used to identify the authSecret
    * @param     {Boolean}       config.disableIDX       Disable creation of the IDX document
    * @param     {String}        config.v03ID            A v0 3ID, has to be passed if a migration is being preformed
-   * @return    {IdentityWallet}                        An IdentityWallet instance
+   * @return    {ThreeIdProvider}                       An ThreeIdProvider instance
    */
-  static async create(config: IDWConfig): Promise<IdentityWallet> {
+  static async create(config: IDWConfig): Promise<ThreeIdProvider> {
     if (config.seed && config.authSecret) throw new Error("Can't use both seed and authSecret")
     if (!config.seed && !config.authSecret) throw new Error('Either seed or authSecret is needed')
     if (config.authSecret && !config.authId) {
@@ -86,7 +86,7 @@ export default class IdentityWallet {
       keychain = await Keychain.load(threeIdx, config.authSecret, makeTmpProvider)
     }
     permissions.setDID(threeIdx.id)
-    const idw = new IdentityWallet(threeIdx, permissions, keychain as Keychain)
+    const idw = new ThreeIdProvider(threeIdx, permissions, keychain as Keychain)
     await idw._threeIdx.setDIDProvider(idw.getDidProvider(SELF_ORIGIN))
     if (config.authId && !(await keychain?.list())?.length) {
       // Add the auth method to the keychain
@@ -103,7 +103,7 @@ export default class IdentityWallet {
   /**
    * Get the DIDProvider
    *
-   * @return    {DidProvider}                   The DIDProvider for this IdentityWallet instance
+   * @return    {DidProvider}                   The DIDProvider for this ThreeIdProvider instance
    */
   getDidProvider(forcedOrigin?: string): DidProvider {
     return new DidProvider({

@@ -1,36 +1,35 @@
-[![CircleCI](https://img.shields.io/circleci/project/github/3box/identity-wallet-js.svg?style=for-the-badge)](https://circleci.com/gh/3box/identity-wallet-js)
+[![CircleCI](https://img.shields.io/circleci/project/github/ceramicstudio/js-3id-did-provider.svg?style=for-the-badge)](https://circleci.com/gh/ceramicstudio/js-3id-did-provider)
 [![Discord](https://img.shields.io/discord/484729862368526356.svg?style=for-the-badge)](https://discordapp.com/invite/Z3f3Cxy)
-[![npm](https://img.shields.io/npm/dt/identity-wallet.svg?style=for-the-badge)](https://www.npmjs.com/package/identity-wallet)
-[![npm](https://img.shields.io/npm/v/identity-wallet.svg?style=for-the-badge)](https://www.npmjs.com/package/identity-wallet)
-[![Codecov](https://img.shields.io/codecov/c/github/3box/identity-wallet-js.svg?style=for-the-badge)](https://codecov.io/gh/3box/identity-wallet-js)
-[![Twitter Follow](https://img.shields.io/twitter/follow/3boxdb.svg?style=for-the-badge&label=Twitter)](https://twitter.com/3boxdb)
+[![npm](https://img.shields.io/npm/dt/3id-did-provider.svg?style=for-the-badge)](https://www.npmjs.com/package/3id-did-provider)
+[![npm](https://img.shields.io/npm/v/3id-did-provider.svg?style=for-the-badge)](https://www.npmjs.com/package/3id-did-provider)
+[![Codecov](https://img.shields.io/codecov/c/github/ceramicstudio/js-3id-did-provider.svg?style=for-the-badge)](https://codecov.io/gh/ceramicstudio/js-3id-did-provider)
+[![Twitter Follow](https://img.shields.io/twitter/follow/ceramicnetwork.svg?style=for-the-badge&label=Twitter)](https://twitter.com/ceramicnetwork)
 
-# Identity Wallet
-🆔-wallet
+# ThreeIdProvider
 
-IdentityWallet is a JavaScript SDK that allows developers to create and manage 3ID identities on the Ceramic network. It exposes a [DID Provider](https://eips.ethereum.org/EIPS/eip-2844) interface which exposes JOSE signing and decryption though a JOSN-RPC interface. IdentityWallet can be used in combination with [js-did](https://github.com/ceramicnetwork/js-did).
+ThreeIdProvider is a JavaScript SDK that allows developers to create and manage 3ID identities on the Ceramic network. It exposes a [DID Provider](https://eips.ethereum.org/EIPS/eip-2844) interface which exposes JOSE signing and decryption though a JOSN-RPC interface. ThreeIdProvider can be used in combination with [js-did](https://github.com/ceramicnetwork/js-did).
 
 
 ## Getting Started
 ### <a name="install"></a>Installation
-Install 3box in your npm project:
+Install 3id-did-provider in your npm project:
 ```
-$ npm install identity-wallet
+$ npm install 3id-did-provider
 ```
 
 ### <a name="usage"></a>Usage
-#### Import Identity Wallet into your project
-Import the identity-wallet module
+#### Import ThreeIdProvider into your project
+Import the 3id-did-provider module
 ```js
-const IdentityWallet = require('identity-wallet')
+const ThreeIdProvider = require('3id-did-provider')
 ```
 Import using the dist build in your html code
 ```js
-<script type="text/javascript" src="../dist/identity-wallet.js"></script>
+<script type="text/javascript" src="../dist/threeid-provider.js"></script>
 ```
 
 #### Understanding the `getPermission` function
-the `getPermission` configuration parameter is always required when creating an instance of IdentityWallet. It is used to give an application permission to decrypt and sign data. What this function should do is to present a dialog to the user in the wallet UI, asking for permission to access the given paths.
+the `getPermission` configuration parameter is always required when creating an instance of ThreeIdProvider. It is used to give an application permission to decrypt and sign data. What this function should do is to present a dialog to the user in the wallet UI, asking for permission to access the given paths.
 
 The function is called with one parameter which is the `request` object. It looks like this:
 ```js
@@ -44,27 +43,27 @@ The function is called with one parameter which is the `request` object. It look
 ```
 In the above example the app with origin `https://my.app.origin` is requesting access to `/path/1` and `/path/2`. If the user consents to this the function should just return the `paths` array, otherwise an empty array. Note that an array containing only some of the requested paths may also be returned.
 
-#### Creating a wallet with an authentication method
-To create a wallet with an auth method you can pass two params to the create method of IDW as shown below. If the auth method doesn't have a 3ID associated with it yet IDW will create a new 3ID.
+#### Instantiate ThreeIdProvider with an authentication method
+To create an instance with an auth method you can pass two params to the create function as shown below. If the auth method doesn't have a 3ID associated with it yet a new 3ID will be created.
 ```js
 const authSecret = new Uint8Array([ ... ]) // Entropy used to authenticate
 const authId = 'myAuthenticationMethod' // a name of the auth method
 
-const idWallet = await IdentityWallet.create({ getPermission, authSecret, authId })
+const threeId = await ThreeIdProvider.create({ getPermission, authSecret, authId })
 ```
 
-#### Creating a wallet with a seed
-To create a wallet with a seed you can simply pass it as an option to the constructor. This will create an instance of the IdentityWallet that derives all it's keys from this seed. Be careful, if this seed is lost the identity and all of it's data will be lost as well.
+#### Instantiate ThreeIdProvider with a seed
+To create a wallet with a seed you can simply pass it as an option to the constructor. This will create an instance of the ThreeIdProvider that derives all it's keys from this seed. Be careful, if this seed is lost the DID and all of it's data will be lost as well.
 ```js
 const seed = '0xabc123...' // a hex encoded seed
 
-const idWallet = await IdentityWallet.create({ getPermission, seed })
+const threeId = await ThreeIdProvider.create({ getPermission, seed })
 ```
 
-#### Using the IdentityWallet with js-did
-An instance of the DID provider from IdentityWallet can be passed directly to js-did.
+#### Using the ThreeIdProvider with js-did
+An instance of the DID provider from ThreeIdProvider can be passed directly to js-did.
 ```js
-const provider = idWallet.getDidProvider()
+const provider = threeId.getDidProvider()
 const did = new DID({ provider })
 ```
 
@@ -72,88 +71,6 @@ const did = new DID({ provider })
 [@oed](https://github.com/oed)
 
 ## <a name="api"></a> API Documentation
-<a name="IdentityWallet"></a>
-
-### IdentityWallet
-**Kind**: global class  
-
-* [IdentityWallet](#IdentityWallet)
-    * [new IdentityWallet()](#new_IdentityWallet_new)
-    * _instance_
-        * [.keychain](#IdentityWallet+keychain)
-        * [.permissions](#IdentityWallet+permissions)
-        * [.id](#IdentityWallet+id)
-        * [.getDidProvider()](#IdentityWallet+getDidProvider) ⇒ <code>DidProvider</code>
-        * [.resetIDX()](#IdentityWallet+resetIDX)
-    * _static_
-        * [.create(config)](#IdentityWallet.create) ⇒ [<code>IdentityWallet</code>](#IdentityWallet)
-
-<a name="new_IdentityWallet_new"></a>
-
-#### new IdentityWallet()
-Use IdentityWallet.create() to create an IdentityWallet instance
-
-<a name="IdentityWallet+keychain"></a>
-
-#### identityWallet.keychain
-**Kind**: instance property of [<code>IdentityWallet</code>](#IdentityWallet)  
-**Properties**
-
-| Name | Type | Description |
-| --- | --- | --- |
-| keychain | [<code>Keychain</code>](#Keychain) | Edit the keychain |
-
-<a name="IdentityWallet+permissions"></a>
-
-#### identityWallet.permissions
-**Kind**: instance property of [<code>IdentityWallet</code>](#IdentityWallet)  
-**Properties**
-
-| Name | Type | Description |
-| --- | --- | --- |
-| permissions | [<code>Permissions</code>](#Permissions) | Edit permissions |
-
-<a name="IdentityWallet+id"></a>
-
-#### identityWallet.id
-**Kind**: instance property of [<code>IdentityWallet</code>](#IdentityWallet)  
-**Properties**
-
-| Name | Type | Description |
-| --- | --- | --- |
-| id | <code>string</code> | The DID of the IdentityWallet instance |
-
-<a name="IdentityWallet+getDidProvider"></a>
-
-#### identityWallet.getDidProvider() ⇒ <code>DidProvider</code>
-Get the DIDProvider
-
-**Kind**: instance method of [<code>IdentityWallet</code>](#IdentityWallet)  
-**Returns**: <code>DidProvider</code> - The DIDProvider for this IdentityWallet instance  
-<a name="IdentityWallet+resetIDX"></a>
-
-#### identityWallet.resetIDX()
-Reset the IDX doc structure to a default (mostly empty) state.
-
-**Kind**: instance method of [<code>IdentityWallet</code>](#IdentityWallet)  
-<a name="IdentityWallet.create"></a>
-
-#### IdentityWallet.create(config) ⇒ [<code>IdentityWallet</code>](#IdentityWallet)
-Creates an instance of IdentityWallet
-
-**Kind**: static method of [<code>IdentityWallet</code>](#IdentityWallet)  
-**Returns**: [<code>IdentityWallet</code>](#IdentityWallet) - An IdentityWallet instance  
-
-| Param | Type | Description |
-| --- | --- | --- |
-| config | <code>Object</code> | The configuration to be used |
-| config.getPermission | <code>function</code> | The function that is called to ask the user for permission |
-| config.seed | <code>Uint8Array</code> | The seed of the identity, 32 bytes |
-| config.authSecret | <code>Uint8Array</code> | The authSecret to use, 32 bytes |
-| config.authId | <code>String</code> | The authId is used to identify the authSecret |
-| config.disableIDX | <code>Boolean</code> | Disable creation of the IDX document |
-| config.v03ID | <code>String</code> | A v0 3ID, has to be passed if a migration is being preformed |
-
 <a name="Keychain"></a>
 
 ### Keychain
@@ -284,4 +201,86 @@ Set the paths which the given origin should have permission for.
 | --- | --- | --- |
 | origin | <code>String</code> | Application domain |
 | paths | <code>Array.&lt;String&gt;</code> | The desired paths |
+
+<a name="ThreeIdProvider"></a>
+
+### ThreeIdProvider
+**Kind**: global class  
+
+* [ThreeIdProvider](#ThreeIdProvider)
+    * [new ThreeIdProvider()](#new_ThreeIdProvider_new)
+    * _instance_
+        * [.keychain](#ThreeIdProvider+keychain)
+        * [.permissions](#ThreeIdProvider+permissions)
+        * [.id](#ThreeIdProvider+id)
+        * [.getDidProvider()](#ThreeIdProvider+getDidProvider) ⇒ <code>DidProvider</code>
+        * [.resetIDX()](#ThreeIdProvider+resetIDX)
+    * _static_
+        * [.create(config)](#ThreeIdProvider.create) ⇒ [<code>ThreeIdProvider</code>](#ThreeIdProvider)
+
+<a name="new_ThreeIdProvider_new"></a>
+
+#### new ThreeIdProvider()
+Use ThreeIdProvider.create() to create an ThreeIdProvider instance
+
+<a name="ThreeIdProvider+keychain"></a>
+
+#### threeIdProvider.keychain
+**Kind**: instance property of [<code>ThreeIdProvider</code>](#ThreeIdProvider)  
+**Properties**
+
+| Name | Type | Description |
+| --- | --- | --- |
+| keychain | [<code>Keychain</code>](#Keychain) | Edit the keychain |
+
+<a name="ThreeIdProvider+permissions"></a>
+
+#### threeIdProvider.permissions
+**Kind**: instance property of [<code>ThreeIdProvider</code>](#ThreeIdProvider)  
+**Properties**
+
+| Name | Type | Description |
+| --- | --- | --- |
+| permissions | [<code>Permissions</code>](#Permissions) | Edit permissions |
+
+<a name="ThreeIdProvider+id"></a>
+
+#### threeIdProvider.id
+**Kind**: instance property of [<code>ThreeIdProvider</code>](#ThreeIdProvider)  
+**Properties**
+
+| Name | Type | Description |
+| --- | --- | --- |
+| id | <code>string</code> | The DID of the ThreeIdProvider instance |
+
+<a name="ThreeIdProvider+getDidProvider"></a>
+
+#### threeIdProvider.getDidProvider() ⇒ <code>DidProvider</code>
+Get the DIDProvider
+
+**Kind**: instance method of [<code>ThreeIdProvider</code>](#ThreeIdProvider)  
+**Returns**: <code>DidProvider</code> - The DIDProvider for this ThreeIdProvider instance  
+<a name="ThreeIdProvider+resetIDX"></a>
+
+#### threeIdProvider.resetIDX()
+Reset the IDX doc structure to a default (mostly empty) state.
+
+**Kind**: instance method of [<code>ThreeIdProvider</code>](#ThreeIdProvider)  
+<a name="ThreeIdProvider.create"></a>
+
+#### ThreeIdProvider.create(config) ⇒ [<code>ThreeIdProvider</code>](#ThreeIdProvider)
+Creates an instance of ThreeIdProvider
+
+**Kind**: static method of [<code>ThreeIdProvider</code>](#ThreeIdProvider)  
+**Returns**: [<code>ThreeIdProvider</code>](#ThreeIdProvider) - An ThreeIdProvider instance  
+
+| Param | Type | Description |
+| --- | --- | --- |
+| config | <code>Object</code> | The configuration to be used |
+| config.getPermission | <code>function</code> | The function that is called to ask the user for permission |
+| config.seed | <code>Uint8Array</code> | The seed of the 3ID, 32 bytes |
+| config.authSecret | <code>Uint8Array</code> | The authSecret to use, 32 bytes |
+| config.authId | <code>String</code> | The authId is used to identify the authSecret |
+| config.disableIDX | <code>Boolean</code> | Disable creation of the IDX document |
+| config.v03ID | <code>String</code> | A v0 3ID, has to be passed if a migration is being preformed |
 

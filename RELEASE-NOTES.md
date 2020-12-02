@@ -1,5 +1,12 @@
 # Release Notes
 
+## v0.1.0 - 2020-12-02
+Initial release of `3id-did-provider`.
+Major refactor to use Ceramic and 3IDv1.
+
+# IdentityWallet Release Notes
+Package was previously named `identity-wallet`.
+
 ## v1.4.0 - 2020-08-07
 feat: add DID provider
 feat: typescript support

@@ -1,4 +1,4 @@
-import IdentityWallet from '../src/identity-wallet'
+import ThreeIdProvider from '../src/threeid-provider'
 import { randomBytes } from '../src/crypto'
 
 import { verifyJWT } from 'did-jwt'
@@ -34,7 +34,7 @@ const genIpfsConf = (folder) => {
   }
 }
 
-describe('IdentityWallet', () => {
+describe('ThreeIdProvider', () => {
   jest.setTimeout(45000)
   let tmpFolder
   let ipfs, ceramic
@@ -59,7 +59,7 @@ describe('IdentityWallet', () => {
         seed,
         ceramic
       }
-      const idw = await IdentityWallet.create(config)
+      const idw = await ThreeIdProvider.create(config)
       expect(await ceramic.context.resolver.resolve(idw.id)).toBeDefined()
       expect(await idw.keychain.list()).toEqual([])
     })
@@ -71,7 +71,7 @@ describe('IdentityWallet', () => {
         authId: 'testAuth',
         ceramic
       }
-      const idw = await IdentityWallet.create(config)
+      const idw = await ThreeIdProvider.create(config)
       expect(await ceramic.context.resolver.resolve(idw.id)).toBeDefined()
       expect(await idw.keychain.list()).toEqual(['testAuth'])
     })
@@ -83,11 +83,11 @@ describe('IdentityWallet', () => {
         authId: 'testAuth',
         ceramic
       }
-      const idw1 = await IdentityWallet.create(config)
+      const idw1 = await ThreeIdProvider.create(config)
       expect(await ceramic.context.resolver.resolve(idw1.id)).toBeDefined()
       expect(await idw1.keychain.list()).toEqual(['testAuth'])
 
-      const idw2 = await IdentityWallet.create(config)
+      const idw2 = await ThreeIdProvider.create(config)
       expect(await idw2.keychain.list()).toEqual(['testAuth'])
       expect(idw1.id).toEqual(idw2.id)
     })
@@ -100,7 +100,7 @@ describe('IdentityWallet', () => {
   describe('.keychain', () => {
     it('Adds authSecret to the keychain', async () => {
       const config1 = { getPermission: getPermissionMock, seed, ceramic }
-      const idw1 = await IdentityWallet.create(config1)
+      const idw1 = await ThreeIdProvider.create(config1)
       expect(await idw1.keychain.list()).toEqual([])
 
       await idw1.keychain.add('auth2', randomAuthSecret())
@@ -110,7 +110,7 @@ describe('IdentityWallet', () => {
 
     it('Creates instance from added authSecret', async () => {
       const config1 = { getPermission: getPermissionMock, seed: randomBytes(32), ceramic }
-      const idw1 = await IdentityWallet.create(config1)
+      const idw1 = await ThreeIdProvider.create(config1)
       expect(await idw1.keychain.list()).toEqual([])
 
       const config2 = {
@@ -122,7 +122,7 @@ describe('IdentityWallet', () => {
       await idw1.keychain.add(config2.authId, config2.authSecret)
       await idw1.keychain.commit()
 
-      const idw2 = await IdentityWallet.create(config2)
+      const idw2 = await ThreeIdProvider.create(config2)
       expect(await idw2.keychain.list()).toEqual(['auth2'])
       expect(idw1.id).toEqual(idw2.id)
     })
@@ -134,7 +134,7 @@ describe('IdentityWallet', () => {
         authId: 'auth1',
         ceramic
       }
-      const idw1 = await IdentityWallet.create(config1)
+      const idw1 = await ThreeIdProvider.create(config1)
       expect(await idw1.keychain.list()).toEqual(['auth1'])
       const config2 = {
         getPermission: getPermissionMock,
@@ -151,9 +151,9 @@ describe('IdentityWallet', () => {
       await idw1.keychain.remove('auth1')
       await idw1.keychain.commit()
       expect(await idw1.keychain.list()).toEqual(['auth2'])
-      const idw2 = await IdentityWallet.create(config2)
+      const idw2 = await ThreeIdProvider.create(config2)
       expect(idw1.id).toEqual(idw2.id)
-      await expect(IdentityWallet.create(config1)).rejects.toThrow('Unable to find auth data')
+      await expect(ThreeIdProvider.create(config1)).rejects.toThrow('Unable to find auth data')
     })
 
     it.skip('Does keyrotation when v03ID is being used', async () => {
@@ -163,14 +163,14 @@ describe('IdentityWallet', () => {
 
   it('.resetIDX calls the method on threeIdx', async () => {
     const reset = jest.fn()
-    const idw = await IdentityWallet.create({ getPermission: getPermissionMock, seed, ceramic })
+    const idw = await ThreeIdProvider.create({ getPermission: getPermissionMock, seed, ceramic })
     idw._threeIdx.resetIDX = reset
     await idw.resetIDX()
     expect(reset).toHaveBeenCalled()
   })
 })
 
-describe('IdentityWallet with disabled IDX', () => {
+describe('ThreeIdProvider with disabled IDX', () => {
   let tmpFolder
   let ipfs, ceramic
 
@@ -194,7 +194,7 @@ describe('IdentityWallet with disabled IDX', () => {
         ceramic,
         disableIDX: true,
       }
-      const idw = await IdentityWallet.create(config)
+      const idw = await ThreeIdProvider.create(config)
       expect(await ceramic.context.resolver.resolve(idw.id)).toBeDefined()
       expect(await idw.keychain.list()).toEqual([])
       expect(idw._threeIdx.docs.idx).toBeUndefined()
@@ -208,7 +208,7 @@ describe('IdentityWallet with disabled IDX', () => {
         ceramic,
         disableIDX: true,
       }
-      await expect(IdentityWallet.create(config)).rejects.toThrow(
+      await expect(ThreeIdProvider.create(config)).rejects.toThrow(
         'AuthId cannot be used with disableIDX'
       )
     })
