@@ -116,14 +116,14 @@ describe('ThreeIDX', () => {
   it('gets correct 3id version', async () => {
     await setup3id(threeIdx, keyring)
     // with no anchor
-    expect(await threeIdx.get3idVersion()).toEqual('0')
+    expect(threeIdx.get3idVersion()).toEqual('0')
     // with anchor, createIDX to update 3id doc
     await threeIdx.createIDX()
     // update the 3id doc
     await threeIdx.docs.threeId.change({ content: { asdf: 123 }})
     await new Promise(resolve => threeIdx.docs.threeId.on('change', resolve))
     const latestVer = threeIdx.docs.threeId.versionId.version
-    expect(await threeIdx.get3idVersion()).toEqual(latestVer.toString())
+    expect(threeIdx.get3idVersion()).toEqual(latestVer.toString())
   })
 
   it('creates authMapEntry', async () => {
@@ -255,7 +255,7 @@ describe('ThreeIDX', () => {
     await new Promise(resolve => threeIdx.docs[KEYCHAIN_DEF].on('change', resolve))
 
     // Rotate keys correctly
-    await keyring.generateNewKeys(await threeIdx.get3idVersion())
+    await keyring.generateNewKeys(threeIdx.get3idVersion())
     const new3idState = keyring.get3idState()
     const updatedEntry1 = { pub: nae1.pub, data: fakeJWE(), id: fakeJWE() }
     const updatedEntry2 = { pub: nae2.pub, data: fakeJWE(), id: fakeJWE() }

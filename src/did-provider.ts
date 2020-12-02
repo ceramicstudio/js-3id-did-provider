@@ -29,6 +29,7 @@ export type Context = {
 interface CreateJWSParams {
   payload: Record<string, any>
   protected?: Record<string, any>
+  revocable?: boolean
   did: string
 }
 
@@ -39,6 +40,8 @@ interface DecryptJWEParams {
 
 interface AuthParams {
   paths: Array<string>
+  nonce: string
+  aud?: string
 }
 
 interface JWSSignature {
@@ -66,7 +69,7 @@ async function sign(
   threeIdx: ThreeIDX,
   protectedHeader: Record<string, any> = {},
   revocable?: boolean
-): string {
+): Promise<GeneralJWS> {
   let [did, keyFragment] = didWithFragment.split('#') // eslint-disable-line prefer-const
   let kid, signer
   if (did.startsWith('did:key:')) {
@@ -75,22 +78,26 @@ async function sign(
     signer = keyring.getMgmtSigner(pubkey)
   } else {
     if (did !== threeIdx.id) throw new Error(`Unknown DID: ${did}`)
-    const version = await threeIdx.get3idVersion()
+    const version = threeIdx.get3idVersion()
     if (!keyFragment) keyFragment = keyring.getKeyFragment(version)
     kid = `${did}${revocable ? '' : `?version-id=${version}`}#${keyFragment}`
     signer = keyring.getSigner(version)
   }
   const header = toStableObject(Object.assign(protectedHeader, { kid }))
-  return createJWS(toStableObject(payload), signer, header)
+  const jws = await createJWS(toStableObject(payload), signer, header)
+  return toGeneralJWS(jws)
 }
 
 export const didMethods: HandlerMethods<Context> = {
-  did_authenticate: async ({ permissions, keyring, threeIdx, origin, forcedDID }, params: AuthParams) => {
+  did_authenticate: async (
+    { permissions, keyring, threeIdx, origin, forcedDID },
+    params: AuthParams
+  ) => {
     const paths = await permissions.request(origin, params.paths || [])
     // paths should be an array if permission granted
     // may be a subset or requested paths or empty array
     if (paths === null) throw new RPCError(4001, 'User Rejected Request')
-    const response = await sign(
+    return sign(
       {
         did: forcedDID || threeIdx.id,
         aud: params.aud,
@@ -102,14 +109,20 @@ export const didMethods: HandlerMethods<Context> = {
       keyring,
       threeIdx
     )
-    return toGeneralJWS(response)
   },
   did_createJWS: async ({ permissions, keyring, threeIdx, origin }, params: CreateJWSParams) => {
     if (!permissions.has(origin)) throw new RPCError(4100, 'Unauthorized')
     // TODO - if the requesting DID is our management key
     // (did:key) we should request explicit permission.
-    const jws = await sign(params.payload, params.did, keyring, threeIdx, params.protected, params.revocable)
-    return { jws: toGeneralJWS(jws) }
+    const jws = await sign(
+      params.payload,
+      params.did,
+      keyring,
+      threeIdx,
+      params.protected,
+      params.revocable
+    )
+    return { jws }
   },
   did_decryptJWE: async ({ permissions, keyring, origin }, params: DecryptJWEParams) => {
     if (!permissions.has(origin)) throw new RPCError(4100, 'Unauthorized')

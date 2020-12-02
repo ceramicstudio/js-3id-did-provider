@@ -3,6 +3,7 @@ import CeramicClient from '@ceramicnetwork/http-client'
 import { schemas, definitions } from '@ceramicstudio/idx-constants'
 import { LinkProof } from '3id-blockchain-utils'
 
+import type CID from 'cids'
 import type { DidProvider } from './did-provider'
 import type { ThreeIdState } from './keyring'
 import type { JWE } from 'did-jwt'
@@ -62,13 +63,15 @@ export class ThreeIDX {
 
   async create3idDoc(docParams: Record<string, any>): Promise<void> {
     this.docs.threeId = await this.ceramic.createDocument('tile', docParams, {
-      anchor: false, publish: false,
+      anchor: false,
+      publish: false,
     })
   }
 
-  async get3idVersion(): Promise<string> {
+  get3idVersion(): string {
     const docId = this.docs.threeId.versionId
-    return docId.version.equals(docId.cid) ? '0' : docId.version.toString()
+    const version = docId.version as CID
+    return version.equals(docId.cid) ? '0' : version.toString()
   }
 
   async createAuthMapEntry(authEntry: NewAuthEntry): Promise<AuthEntryMap> {
@@ -90,10 +93,12 @@ export class ThreeIDX {
    */
   async createIDX(authEntry?: NewAuthEntry): Promise<void> {
     const entry = authEntry ? await this.createAuthMapEntry(authEntry) : {}
+    // eslint-disable-next-line prettier/prettier
     await Promise.all([
       this.loadKeychainDoc(this.id),
       this.loadIDXDoc(this.id)
     ])
+    // eslint-disable-next-line prettier/prettier
     await Promise.all([
       this.pinAllDocs(),
       this.updateKeychainDoc(entry),
@@ -117,7 +122,7 @@ export class ThreeIDX {
       this.loadIDXDoc(did),
       (async () => {
         this.docs.threeId = await this.ceramic.loadDocument(did.split(':')[2] as string)
-      })()
+      })(),
     ])
     const linkDocid = this.docs[authLink].id.baseID.toString()
     const { authMap, pastSeeds } = this.docs[KEYCHAIN_DEF].content
@@ -134,7 +139,9 @@ export class ThreeIDX {
     if (this.docs.idx == null) {
       throw new Error('No IDX doc')
     }
-    const update = { content: { [KEYCHAIN_DEF]: this.docs[KEYCHAIN_DEF].id.toUrl('base36') } }
+    const update: Record<string, any> = {
+      content: { [KEYCHAIN_DEF]: this.docs[KEYCHAIN_DEF].id.toUrl() },
+    }
     if (!this.docs.idx.metadata.schema) {
       update.metadata = { schema: IdentityIndex }
     }
@@ -170,7 +177,8 @@ export class ThreeIDX {
   }
 
   async loadIDXDoc(did: string): Promise<void> {
-    this.docs.idx = await this.ceramic.createDocument('tile',
+    this.docs.idx = await this.ceramic.createDocument(
+      'tile',
       { deterministic: true, metadata: { controllers: [did], family: IDX } },
       { anchor: false, publish: false }
     )
@@ -179,10 +187,10 @@ export class ThreeIDX {
   async addKeychainToIDX(): Promise<void> {
     const content = this.docs.idx.content
     if (!content || !content[KEYCHAIN_DEF]) {
-      const update = {
-        content: Object.assign((content || {}), {
-          [KEYCHAIN_DEF]: this.docs[KEYCHAIN_DEF].id.toUrl('base36'),
-        })
+      const update: Record<string, any> = {
+        content: Object.assign(content || {}, {
+          [KEYCHAIN_DEF]: this.docs[KEYCHAIN_DEF].id.toUrl(),
+        }),
       }
       if (!this.docs.idx.metadata.schema) {
         update.metadata = { schema: IdentityIndex }
@@ -192,7 +200,8 @@ export class ThreeIDX {
   }
 
   async loadKeychainDoc(did: string): Promise<void> {
-    this.docs[KEYCHAIN_DEF] = await this.ceramic.createDocument('tile',
+    this.docs[KEYCHAIN_DEF] = await this.ceramic.createDocument(
+      'tile',
       { deterministic: true, metadata: { controllers: [did], family: KEYCHAIN_DEF } },
       { anchor: false, publish: false }
     )
@@ -200,7 +209,7 @@ export class ThreeIDX {
 
   async updateKeychainDoc(authMap: AuthEntryMap, pastSeeds: Array<JWE> = []): Promise<void> {
     if (Object.keys(authMap).length !== 0) {
-      const update = { content: { authMap, pastSeeds } }
+      const update: Record<string, any> = { content: { authMap, pastSeeds } }
       if (!this.docs[KEYCHAIN_DEF].metadata.schema) {
         update.metadata = { schema: ThreeIdKeychain }
       }

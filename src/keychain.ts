@@ -68,7 +68,7 @@ async function rotateKeys(
   keyring: Keyring,
   removedAuthIds: Array<string>
 ): Promise<void> {
-  const version = await threeIdx.get3idVersion()
+  const version = threeIdx.get3idVersion()
   await keyring.generateNewKeys(version)
   const update3idState = keyring.get3idState()
   const pastSeeds = keyring.pastSeeds

@@ -36,7 +36,7 @@ describe('DidProvider', () => {
       permissions: { request: jest.fn(async (origin, paths) => paths) },
       threeIdx: {
         id: 'did:3:test',
-        get3idVersion: jest.fn(async () => '0'),
+        get3idVersion: jest.fn(() => '0'),
       },
       keyring: {
         getSigner: () => () => Promise.resolve('signed'),
@@ -97,9 +97,7 @@ describe('DidProvider', () => {
       permissions: { has: jest.fn(() => true) },
       threeIdx: {
         id: 'did:3:asdf',
-        get3idVersion: jest.fn(async () => '0'),
-        //parseKeyName: (did) => did.split('#')[1] || 'signing',
-        //encodeKidWithVersion: async (keyName) => Promise.resolve('did:3:asdf?version=0#' + keyName),
+        get3idVersion: jest.fn(() => '0'),
       },
       keyring: {
         getSigner: () => () => Promise.resolve('signed'),
