@@ -192,8 +192,8 @@ export class Keychain {
         // If we have a legacy seed v03ID will be defined
         const keyring = new Keyring(new Uint8Array(decrypted.seed), decrypted.v03ID)
         await keyring.loadPastSeeds(authData.pastSeeds)
-        // We might have the v03ID in the past seeds, check and set if present
-        if (keyring.v03ID) threeIdx.setV03ID(keyring.v03ID)
+        // We might have the v03ID in the past seeds, if so we need to create the 3ID documents from the keys
+        if (keyring.v03ID) await threeIdx.create3idDoc(keyring.get3idState(true))
         return new Keychain(keyring, threeIdx)
       } catch (e) {
         if (e.message === 'Failed to decrypt') throw new Error('Auth not allowed')

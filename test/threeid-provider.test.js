@@ -34,6 +34,29 @@ const genIpfsConf = (folder) => {
   }
 }
 
+jest.mock('cross-fetch', (o) => {
+  return (a) => ({
+    ok: true,
+    json: () => ({
+      value: {
+        publicKey: [{
+          id: 'did:3:GENESIS#signingKey',
+          type: 'Secp256k1VerificationKey2018',
+          publicKeyHex: '027ab5238257532f486cbeeac59a5721bbfec2f13c3d26516ca9d4c5f0ec1aa229'
+        }, {
+          id: 'did:3:GENESIS#encryptionKey',
+          type: 'Curve25519EncryptionPublicKey',
+          publicKeyBase64: 'jRKRy3oPhXpUBrFJefO2CJnWw/IoalOPuepAwvTqrEk'
+        }],
+        authentication: [{
+          type: 'Secp256k1SignatureAuthentication2018',
+          publicKey: 'did:3:GENESIS#signingKey'
+        }]
+      }
+    })
+  })
+})
+
 describe('ThreeIdProvider', () => {
   jest.setTimeout(45000)
   let tmpFolder
@@ -60,7 +83,7 @@ describe('ThreeIdProvider', () => {
         ceramic
       }
       const idw = await ThreeIdProvider.create(config)
-      expect(await ceramic.context.resolver.resolve(idw.id)).toBeDefined()
+      expect(await ceramic.context.resolver.resolve(idw.id)).toMatchSnapshot()
       expect(await idw.keychain.list()).toEqual([])
     })
 
@@ -92,8 +115,18 @@ describe('ThreeIdProvider', () => {
       expect(idw1.id).toEqual(idw2.id)
     })
 
-    it.skip('Create instance with seed & v03ID', async () => {
-      // TODO - implment test when 3id-did-resolver has backwards compatibility
+    it('Create instance with seed & v03ID', async () => {
+      const v03ID = 'did:3:bafyreidv6yl2bbmuslkqby45hdn6sd6ha22zlolxjjxxz4suuwfqpezewu'
+      const config = {
+        getPermission: getPermissionMock,
+        seed,
+        v03ID,
+        ceramic
+      }
+      const idw = await ThreeIdProvider.create(config)
+      expect(idw.id).toEqual(v03ID)
+      expect(await ceramic.context.resolver.resolve(idw.id)).toMatchSnapshot()
+      expect(await idw.keychain.list()).toEqual([])
     })
   })
 
@@ -156,8 +189,29 @@ describe('ThreeIdProvider', () => {
       await expect(ThreeIdProvider.create(config1)).rejects.toThrow('Unable to find auth data')
     })
 
-    it.skip('Does keyrotation when v03ID is being used', async () => {
-      // TODO - implment test when 3id-did-resolver has backwards compatibility
+    it('Does keyrotation when v03ID is being used', async () => {
+      const v03ID = 'did:3:bafyreidv6yl2bbmuslkqby45hdn6sd6ha22zlolxjjxxz4suuwfqpezewu'
+      const config = {
+        getPermission: getPermissionMock,
+        seed,
+        v03ID,
+        ceramic
+      }
+      const idw1 = await ThreeIdProvider.create(config)
+      const config1 = { getPermission: getPermissionMock, authId: 'auth1', authSecret: randomAuthSecret(), ceramic }
+      const config2 = { getPermission: getPermissionMock, authId: 'auth2', authSecret: randomAuthSecret(), ceramic }
+      await idw1.keychain.add(config1.authId, config1.authSecret)
+      await idw1.keychain.add(config2.authId, config2.authSecret)
+      await idw1.keychain.commit()
+      await new Promise(resolve => idw1._threeIdx.docs[KEYCHAIN_DEF].on('change', resolve))
+      expect(await idw1.keychain.list()).toEqual(['auth2', 'auth1'])
+
+      await idw1.keychain.remove('auth1')
+      await idw1.keychain.commit()
+      //expect(await idw1.keychain.list()).toEqual(['auth2'])
+      const idw2 = await ThreeIdProvider.create(config2)
+      expect(idw1.id).toEqual(idw2.id)
+      await expect(ThreeIdProvider.create(config1)).rejects.toThrow('Unable to find auth data')
     })
   })
 

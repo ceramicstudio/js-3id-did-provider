@@ -110,7 +110,6 @@ Uint8Array [
 
 exports[`Keyring Generates correct state if v03ID is set 1`] = `
 Object {
-  "content": null,
   "deterministic": true,
   "metadata": Object {
     "controllers": Array [
@@ -123,7 +122,6 @@ Object {
 
 exports[`Keyring Generates correct state if v03ID is set 2`] = `
 Object {
-  "content": null,
   "metadata": Object {
     "controllers": Array [
       "did:key:zQ3shnyMbHDVqqJnm6EiPJ47Vc4ivUFgcaPpEHx9GhyFT5Env",
