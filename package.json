@@ -1,6 +1,6 @@
 {
   "name": "3id-did-provider",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "Create and manage 3IDs",
   "main": "lib/threeid-provider.js",
   "types": "lib/threeid-provider.d.ts",
@@ -43,7 +43,7 @@
   "dependencies": {
     "3id-blockchain-utils": "^1.0.0",
     "@babel/runtime": "^7.12.1",
-    "@ceramicnetwork/http-client": "^0.8.5",
+    "@ceramicnetwork/http-client": "^0.8.7",
     "@ceramicstudio/idx-constants": "^0.4.0",
     "@ethersproject/hdnode": "^5.0.5",
     "@ethersproject/wallet": "^5.0.7",
@@ -67,8 +67,8 @@
     "@babel/plugin-transform-runtime": "^7.12.1",
     "@babel/preset-env": "^7.12.1",
     "@babel/preset-typescript": "^7.12.1",
-    "@ceramicnetwork/common": "^0.14.0",
-    "@ceramicnetwork/core": "^0.16.0",
+    "@ceramicnetwork/common": "^0.14.1",
+    "@ceramicnetwork/core": "^0.16.2",
     "@ceramicstudio/idx-tools": "^0.4.1",
     "@types/elliptic": "^6.4.12",
     "@types/jest": "^26.0.15",

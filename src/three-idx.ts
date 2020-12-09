@@ -16,7 +16,7 @@ const isLegacyDid = (didId: string): boolean => {
   try {
     new CID(didId)
     return true
-  } catch(e) {
+  } catch (e) {
     return false
   }
 }
@@ -126,6 +126,7 @@ export class ThreeIDX {
     )
     const did = this.docs[authLink].content
     if (!did) return null
+    // eslint-disable-next-line prettier/prettier
     await Promise.all([
       this.load3IDDoc(did),
       this.loadKeychainDoc(did),

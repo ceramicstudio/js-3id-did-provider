@@ -22,7 +22,7 @@ interface ThreeIdMetadata extends Record<string, any> {
 
 export interface ThreeIdState {
   metadata: ThreeIdMetadata
-  content: Record<string, any> | null
+  content?: Record<string, any>
   deterministic?: boolean
 }
 
@@ -106,7 +106,7 @@ export default class Keyring {
     let jwe = pastSeeds.pop()
     while (jwe) {
       const decrypted = await asymDecryptJWE(jwe, { decrypter: this.getAsymDecrypter([], version) })
-      version = Object.keys(decrypted).find(k => k !== 'v03ID')
+      version = Object.keys(decrypted).find((k) => k !== 'v03ID') as string
       if (decrypted.v03ID) {
         this._v03ID = decrypted.v03ID as string
         delete decrypted.v03ID
