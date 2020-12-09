@@ -7,6 +7,7 @@ import { randomBytes, asymEncryptJWE, asymDecryptJWE } from './crypto'
 import { encodeKey, hexToU8A, u8aToHex } from './utils'
 
 export const LATEST = 'latest'
+const GENESIS = 'genesis'
 const BASE_PATH = "m/51073068'/0'"
 const ROOT_STORE_PATH = "0'/0'/0'/0'/0'/0'/0'/0'"
 
@@ -21,7 +22,7 @@ interface ThreeIdMetadata extends Record<string, any> {
 
 export interface ThreeIdState {
   metadata: ThreeIdMetadata
-  content: Record<string, any> | null
+  content?: Record<string, any>
   deterministic?: boolean
 }
 
@@ -43,7 +44,8 @@ function deriveKeySet(seed: Uint8Array, v03ID?: string): FullKeySet {
   let hdNode = HDNode.fromSeed(seed).derivePath(BASE_PATH)
   if (v03ID) hdNode = hdNode.derivePath(ROOT_STORE_PATH)
   const signing = hdNode.derivePath('0')
-  const management = hdNode.derivePath('1')
+  // for v03ID the signing key is the management key
+  const management = v03ID ? signing : hdNode.derivePath('1')
   const encryption = generateKeyPairFromSeed(hexToU8A(hdNode.derivePath('2').privateKey.slice(2)))
   return {
     seed,
@@ -76,6 +78,7 @@ export default class Keyring {
       seed = randomBytes(32)
     }
     if (v03ID) this._v03ID = v03ID
+    this._versionMap[GENESIS] = LATEST
     this._keySets[LATEST] = deriveKeySet(seed, v03ID)
     let encKid = encodeKey(this._keySets[LATEST].publicKeys.encryption, 'x25519').slice(-15)
     this._versionMap[encKid] = LATEST
@@ -103,11 +106,12 @@ export default class Keyring {
     let jwe = pastSeeds.pop()
     while (jwe) {
       const decrypted = await asymDecryptJWE(jwe, { decrypter: this.getAsymDecrypter([], version) })
+      version = Object.keys(decrypted).find((k) => k !== 'v03ID') as string
       if (decrypted.v03ID) {
         this._v03ID = decrypted.v03ID as string
         delete decrypted.v03ID
+        this._versionMap[GENESIS] = version
       }
-      version = Object.keys(decrypted)[0]
       this._keySets[version] = deriveKeySet(new Uint8Array(decrypted[version]), this._v03ID)
       this._updateVersionMap(version, this._keySets[version])
       jwe = pastSeeds.pop()
@@ -176,7 +180,8 @@ export default class Keyring {
   }
 
   get3idState(genesis?: boolean): ThreeIdState {
-    const keys = this._keySets[LATEST].publicKeys
+    const keyVer = genesis ? this._versionMap[GENESIS] : LATEST
+    const keys = this._keySets[keyVer].publicKeys
     const signing = encodeKey(keys.signing, 'secp256k1')
     const encryption = encodeKey(keys.encryption, 'x25519')
     // use the last 12 chars as key id
@@ -193,9 +198,8 @@ export default class Keyring {
       state.metadata.family = '3id'
       state.deterministic = true
     }
-    if (this._keySets[LATEST].v03ID) {
-      state.content = null
-      state.metadata.controllers = [`did:key:${signing}`]
+    if (this._keySets[keyVer].v03ID) {
+      delete state.content
     }
     return state
   }

@@ -78,6 +78,7 @@ describe('Keychain', () => {
     const authSecret = randomAuthSecret()
     const keychain = await Keychain.create(threeIdx, () => {}, randomAuthSecret(), v03ID)
     expect(threeIdx.setV03ID).toHaveBeenCalledTimes(1)
+    expect(threeIdx.create3idDoc).toHaveBeenCalledTimes(1)
     await keychain.add('auth1', authSecret)
     await keychain.commit()
 
@@ -86,8 +87,7 @@ describe('Keychain', () => {
       pastSeeds: keychain._keyring.pastSeeds
     }))
     const keychain1 = await Keychain.load(threeIdx, authSecret, () => {})
-    expect(threeIdx.setV03ID).toHaveBeenCalledTimes(2)
-    expect(threeIdx.setV03ID).toHaveBeenNthCalledWith(2, v03ID)
+    expect(threeIdx.create3idDoc).toHaveBeenCalledTimes(2)
     expect(keychain1._keyring.v03ID).toEqual(v03ID)
   })
 

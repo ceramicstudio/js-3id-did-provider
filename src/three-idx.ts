@@ -2,8 +2,8 @@ import { CeramicApi, Doctype } from '@ceramicnetwork/common'
 import CeramicClient from '@ceramicnetwork/http-client'
 import { schemas, definitions } from '@ceramicstudio/idx-constants'
 import { LinkProof } from '3id-blockchain-utils'
+import CID from 'cids'
 
-import type CID from 'cids'
 import type { DidProvider } from './did-provider'
 import type { ThreeIdState } from './keyring'
 import type { JWE } from 'did-jwt'
@@ -11,6 +11,15 @@ import type { JWE } from 'did-jwt'
 const KEYCHAIN_DEF = definitions.threeIdKeychain
 const IDX = 'IDX'
 const { IdentityIndex, ThreeIdKeychain } = schemas
+
+const isLegacyDid = (didId: string): boolean => {
+  try {
+    new CID(didId)
+    return true
+  } catch (e) {
+    return false
+  }
+}
 
 export interface EncData {
   jwe?: JWE
@@ -117,18 +126,28 @@ export class ThreeIDX {
     )
     const did = this.docs[authLink].content
     if (!did) return null
-    const [threeId] = await Promise.all([
-      this.ceramic.loadDocument(did.split(':')[2]),
+    // eslint-disable-next-line prettier/prettier
+    await Promise.all([
+      this.load3IDDoc(did),
       this.loadKeychainDoc(did),
       this.loadIDXDoc(did),
     ])
-    this.docs.threeId = threeId
     const linkDocid = this.docs[authLink].id.baseID.toString()
     const { authMap, pastSeeds } = this.docs[KEYCHAIN_DEF].content
     return {
       seed: authMap[linkDocid]?.data,
       pastSeeds,
     } as EncKeyMaterial
+  }
+
+  async load3IDDoc(did: string): Promise<void> {
+    const id = did.split(':')[2]
+    if (isLegacyDid(id)) {
+      // we have to load the document later when keys are loaded
+      this._v03ID = did
+    } else {
+      this.docs.threeId = await this.ceramic.loadDocument(id)
+    }
   }
 
   /**

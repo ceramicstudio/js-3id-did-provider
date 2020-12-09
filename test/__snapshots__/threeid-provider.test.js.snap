@@ -1,0 +1,71 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`ThreeIdProvider .create Create instance with seed & v03ID 1`] = `
+Object {
+  "@context": "https://w3id.org/did/v1",
+  "authentication": Array [
+    Object {
+      "publicKey": "did:3:bafyreidv6yl2bbmuslkqby45hdn6sd6ha22zlolxjjxxz4suuwfqpezewu#awRV3csnRHjJpWt",
+      "type": "Secp256k1SignatureAuthentication2018",
+    },
+  ],
+  "id": "did:3:bafyreidv6yl2bbmuslkqby45hdn6sd6ha22zlolxjjxxz4suuwfqpezewu",
+  "keyAgreement": Array [
+    Object {
+      "controller": "did:3:bafyreidv6yl2bbmuslkqby45hdn6sd6ha22zlolxjjxxz4suuwfqpezewu",
+      "id": "did:3:bafyreidv6yl2bbmuslkqby45hdn6sd6ha22zlolxjjxxz4suuwfqpezewu#38JciKPaAyHMu5r",
+      "publicKeyBase58": "AVgughn1R4BTrRL2gP6ZmVAhWrzTHRx9jjbi5iKkeXK6",
+      "type": "X25519KeyAgreementKey2019",
+    },
+  ],
+  "publicKey": Array [
+    Object {
+      "controller": "did:3:bafyreidv6yl2bbmuslkqby45hdn6sd6ha22zlolxjjxxz4suuwfqpezewu",
+      "id": "did:3:bafyreidv6yl2bbmuslkqby45hdn6sd6ha22zlolxjjxxz4suuwfqpezewu#awRV3csnRHjJpWt",
+      "publicKeyBase58": "jidgTminnrVUvPAFM3E1w1MYwN2cZ2ttZ7s5V5cc6LfA",
+      "type": "Secp256k1VerificationKey2018",
+    },
+    Object {
+      "controller": "did:3:bafyreidv6yl2bbmuslkqby45hdn6sd6ha22zlolxjjxxz4suuwfqpezewu",
+      "id": "did:3:bafyreidv6yl2bbmuslkqby45hdn6sd6ha22zlolxjjxxz4suuwfqpezewu#38JciKPaAyHMu5r",
+      "publicKeyBase58": "AVgughn1R4BTrRL2gP6ZmVAhWrzTHRx9jjbi5iKkeXK6",
+      "type": "Curve25519EncryptionPublicKey",
+    },
+  ],
+}
+`;
+
+exports[`ThreeIdProvider .create Creates instance from seed 1`] = `
+Object {
+  "@context": "https://w3id.org/did/v1",
+  "authentication": Array [
+    Object {
+      "publicKey": "did:3:kjzl6cwe1jw1492jkxtcnmjd7hvdrr831va15ufxdeifbbcf2hkllmh34dsw3t6#6QF18cvYVco8d2E",
+      "type": "Secp256k1SignatureAuthentication2018",
+    },
+  ],
+  "id": "did:3:kjzl6cwe1jw1492jkxtcnmjd7hvdrr831va15ufxdeifbbcf2hkllmh34dsw3t6",
+  "keyAgreement": Array [
+    Object {
+      "controller": "did:3:kjzl6cwe1jw1492jkxtcnmjd7hvdrr831va15ufxdeifbbcf2hkllmh34dsw3t6",
+      "id": "did:3:kjzl6cwe1jw1492jkxtcnmjd7hvdrr831va15ufxdeifbbcf2hkllmh34dsw3t6#F1ZrAapUezS5zfc",
+      "publicKeyBase58": "9zbh8QS2NG6AAumg82aeX1ckiKc8YdqQyBs8zCLuNctr",
+      "type": "X25519KeyAgreementKey2019",
+    },
+  ],
+  "publicKey": Array [
+    Object {
+      "controller": "did:3:kjzl6cwe1jw1492jkxtcnmjd7hvdrr831va15ufxdeifbbcf2hkllmh34dsw3t6",
+      "id": "did:3:kjzl6cwe1jw1492jkxtcnmjd7hvdrr831va15ufxdeifbbcf2hkllmh34dsw3t6#6QF18cvYVco8d2E",
+      "publicKeyBase58": "2AS5eyYJy1LuLJHmZX7GVZxmtUkgUJYMi5Cs8F9wfv9AW",
+      "type": "Secp256k1VerificationKey2018",
+    },
+    Object {
+      "controller": "did:3:kjzl6cwe1jw1492jkxtcnmjd7hvdrr831va15ufxdeifbbcf2hkllmh34dsw3t6",
+      "id": "did:3:kjzl6cwe1jw1492jkxtcnmjd7hvdrr831va15ufxdeifbbcf2hkllmh34dsw3t6#F1ZrAapUezS5zfc",
+      "publicKeyBase58": "9zbh8QS2NG6AAumg82aeX1ckiKc8YdqQyBs8zCLuNctr",
+      "type": "Curve25519EncryptionPublicKey",
+    },
+  ],
+}
+`;
