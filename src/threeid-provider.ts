@@ -51,6 +51,7 @@ export default class ThreeIdProvider {
    *
    * @param     {Object}        config                  The configuration to be used
    * @param     {Function}      config.getPermission    The function that is called to ask the user for permission
+   * @param     {CeramicApi}    config.ceramic          The ceramic instance to use
    * @param     {Uint8Array}    config.seed             The seed of the 3ID, 32 bytes
    * @param     {Uint8Array}    config.authSecret       The authSecret to use, 32 bytes
    * @param     {String}        config.authId           The authId is used to identify the authSecret
