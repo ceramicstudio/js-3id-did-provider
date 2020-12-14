@@ -48,16 +48,18 @@ To create an instance with an auth method you can pass two params to the create 
 ```js
 const authSecret = new Uint8Array([ ... ]) // 32 bytes of entropy used to authenticate
 const authId = 'myAuthenticationMethod' // a name of the auth method
+const ceramic = ... // An instance of Ceramic (either @ceramicnetwork/core, or @ceramicnetwork/http-client)
 
-const threeId = await ThreeIdProvider.create({ getPermission, authSecret, authId })
+const threeId = await ThreeIdProvider.create({ getPermission, authSecret, authId, ceramic })
 ```
 
 #### Instantiate ThreeIdProvider with a seed
 To create a wallet with a seed you can simply pass it as an option to the constructor. This will create an instance of the ThreeIdProvider that derives all it's keys from this seed. Be careful, if this seed is lost the DID and all of it's data will be lost as well.
 ```js
 const seed = new Uint8Array([ ... ]) // 32 bytes of entropy used as the seed
+const ceramic = ... // An instance of Ceramic (either @ceramicnetwork/core, or @ceramicnetwork/http-client)
 
-const threeId = await ThreeIdProvider.create({ getPermission, seed })
+const threeId = await ThreeIdProvider.create({ getPermission, seed, ceramic })
 ```
 
 #### Using the ThreeIdProvider with js-did
