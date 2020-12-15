@@ -78,9 +78,8 @@ export class ThreeIDX {
   }
 
   get3idVersion(): string {
-    const docId = this.docs.threeId.versionId
-    const version = docId.version as CID
-    return version.equals(docId.cid) ? '0' : version.toString()
+    const docId = this.docs.threeId.anchorCommitIds.pop()
+    return docId ? docId.commit.toString() : '0'
   }
 
   async createAuthMapEntry(authEntry: NewAuthEntry): Promise<AuthEntryMap> {

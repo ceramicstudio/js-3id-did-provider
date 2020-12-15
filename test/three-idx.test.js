@@ -122,8 +122,8 @@ describe('ThreeIDX', () => {
     // update the 3id doc
     await threeIdx.docs.threeId.change({ content: { asdf: 123 }})
     await new Promise(resolve => threeIdx.docs.threeId.on('change', resolve))
-    const latestVer = threeIdx.docs.threeId.versionId.version
-    expect(threeIdx.get3idVersion()).toEqual(latestVer.toString())
+    const latestCommit = threeIdx.docs.threeId.commitId.commit
+    expect(threeIdx.get3idVersion()).toEqual(latestCommit.toString())
   })
 
   it('creates authMapEntry', async () => {
