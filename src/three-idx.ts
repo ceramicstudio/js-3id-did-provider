@@ -79,7 +79,7 @@ export class ThreeIDX {
 
   get3idVersion(): string {
     const docId = this.docs.threeId.anchorCommitIds.pop()
-    return docId ? docId.commit.toString() : '0'
+    return docId ? (docId.commit as CID).toString() : '0'
   }
 
   async createAuthMapEntry(authEntry: NewAuthEntry): Promise<AuthEntryMap> {
