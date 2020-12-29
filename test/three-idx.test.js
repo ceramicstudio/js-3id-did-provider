@@ -10,11 +10,11 @@ import { AccountID } from 'caip'
 import { createLink } from '3id-blockchain-utils'
 import { schemas, definitions } from '@ceramicstudio/idx-constants'
 import { publishIDXConfig } from '@ceramicstudio/idx-tools'
+import { randomBytes } from '@stablelib/random'
 
 import { ThreeIDX } from '../src/three-idx'
 import { DidProvider } from '../src/did-provider'
 import Keyring from '../src/keyring'
-import { randomBytes } from '../src/crypto'
 import { fakeEthProvider } from '../src/utils'
 
 import dagJose from 'dag-jose'

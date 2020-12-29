@@ -4,22 +4,22 @@ import { DID } from 'dids'
 import { Ed25519Provider } from 'key-did-provider-ed25519'
 import KeyResolver from 'key-did-resolver'
 import Keyring, { LATEST } from './keyring'
-import { asymDecryptJWE, asymEncryptJWE, parseJWEKids } from './crypto'
-import { encodeKey, decodeKey, fakeEthProvider } from './utils'
+import { parseJWEKids } from './utils'
 
 async function decryptAuthId(encrypted: EncData, keyring: Keyring): Promise<string> {
   if (!encrypted.jwe) throw new Error('Invalid encrypted block')
-  const decrypter = keyring.getAsymDecrypter(parseJWEKids(encrypted.jwe))
-  const decrypted = await asymDecryptJWE(encrypted.jwe, { decrypter })
+  //const decrypter = keyring.getAsymDecrypter(
+  //const decrypted = await asymDecryptJWE(encrypted.jwe, { decrypter })
+  const decrypted = await keyring.asymDecryptJWE(encrypted.jwe, parseJWEKids(encrypted.jwe))
   return decrypted.id as string
 }
 
 const encrypter = new DID({ resolver: KeyResolver.getResolver() })
 
-async function authSecretToDID(authSecret: Uint8Array): DID {
+async function authSecretToDID(authSecret: Uint8Array): Promise<DID> {
   const did = new DID({
     provider: new Ed25519Provider(authSecret),
-    resolver: KeyResolver.getResolver()
+    resolver: KeyResolver.getResolver(),
   })
   await did.authenticate()
   return did
@@ -31,7 +31,6 @@ export async function newAuthEntry(
   authId: string,
   authSecret: Uint8Array
 ): Promise<NewAuthEntry> {
-  const mainPub = keyring.getEncryptionPublicKey()
   const mainKid = `${threeIdDid}#${keyring.getKeyFragment(LATEST, true)}`
   const did = await authSecretToDID(authSecret)
 
@@ -40,7 +39,7 @@ export async function newAuthEntry(
   if (keyring.v03ID) cleartext.v03ID = keyring.v03ID
   const resolvedPromises = await Promise.all([
     did.createDagJWE(cleartext, [did.id]),
-    asymEncryptJWE({ id: authId }, { publicKey: mainPub, kid: mainKid }),
+    keyring.asymEncryptJWE({ id: authId }, mainKid),
   ])
   return {
     did,
@@ -48,7 +47,7 @@ export async function newAuthEntry(
       [did.id]: {
         data: { jwe: resolvedPromises[0] },
         id: { jwe: resolvedPromises[1] },
-      }
+      },
     },
   }
 }
@@ -60,14 +59,13 @@ export async function updateAuthEntry(
   threeIdDid: string,
   authDid: string
 ): Promise<AuthEntry | null> {
-  const mainPub = keyring.getEncryptionPublicKey()
   const mainKid = `${threeIdDid}#${keyring.getKeyFragment(LATEST, true)}`
   const authId = await decryptAuthId(authEntry.id, keyring)
   // Return null if auth entry should be removed
   if (removedAuthIds.find((id) => id === authId)) return null
   const jwes = await Promise.all([
     encrypter.createDagJWE({ seed: keyring.seed }, [authDid]),
-    asymEncryptJWE({ id: authId }, { publicKey: mainPub, kid: mainKid }),
+    keyring.asymEncryptJWE({ id: authId }, mainKid),
   ])
   return {
     data: { jwe: jwes[0] },
@@ -84,10 +82,16 @@ async function rotateKeys(
   await keyring.generateNewKeys(version)
   const update3idState = keyring.get3idState()
   const authMap = threeIdx.getAuthMap()
-  const newAuthMap = {}
+  const newAuthMap: Record<string, any> = {}
   await Promise.all(
     Object.keys(authMap).map(async (authDid) => {
-      const entry = await updateAuthEntry(keyring, authMap[authDid], removedAuthIds, threeIdx.id, authDid)
+      const entry = await updateAuthEntry(
+        keyring,
+        authMap[authDid],
+        removedAuthIds,
+        threeIdx.id,
+        authDid
+      )
       if (entry) {
         newAuthMap[authDid] = entry
       }

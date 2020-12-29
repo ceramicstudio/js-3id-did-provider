@@ -2,13 +2,13 @@ import { CeramicApi, Doctype, CeramicRecord } from '@ceramicnetwork/common'
 import { TileDoctype } from '@ceramicnetwork/doctype-tile'
 import CeramicClient from '@ceramicnetwork/http-client'
 import { schemas, definitions } from '@ceramicstudio/idx-constants'
-import { LinkProof } from '3id-blockchain-utils'
 import CID from 'cids'
 
-import type { DID } from 'dids'
 import type { DidProvider } from './did-provider'
 import type { ThreeIdState } from './keyring'
+import type { DID } from 'dids'
 import type { JWE } from 'did-jwt'
+import type DocID from '@ceramicnetwork/docid'
 
 const KEYCHAIN_DEF = definitions.threeIdKeychain
 const IDX = 'IDX'
@@ -44,7 +44,7 @@ interface AuthMap {
 }
 
 export interface NewAuthEntry {
-  mapEntry: authMap
+  mapEntry: AuthMap
   did: DID
 }
 
@@ -121,13 +121,13 @@ export class ThreeIDX {
     // eslint-disable-next-line prettier/prettier
     await Promise.all([
       this.loadDoc(KEYCHAIN_DEF, this.id, KEYCHAIN_DEF),
-      this.loadDoc('idx', this.id, IDX)
+      this.loadDoc('idx', this.id, IDX),
     ])
     // eslint-disable-next-line prettier/prettier
     await Promise.all([
       this.pinAllDocs(),
       this.updateKeychainDoc(newEntry?.mapEntry),
-      this.addKeychainToIDX()
+      this.addKeychainToIDX(),
     ])
     // Only update the link document after the keychain have been updated.
     const docUpdate = await docUpdatePromise
@@ -188,12 +188,13 @@ export class ThreeIDX {
   async addAuthEntries(newEntries: Array<NewAuthEntry>): Promise<void> {
     const linkDocUpdatesPromise = Promise.all(newEntries.map(this.createAuthLinkUpdate.bind(this)))
     const { authMap, pastSeeds } = this.docs[KEYCHAIN_DEF].content
-    const newAuthEntries = newEntries.reduce((acc, { mapEntry }) => Object.assign(acc, mapEntry), {})
+    const newAuthEntries = newEntries.reduce(
+      (acc, { mapEntry }) => Object.assign(acc, mapEntry),
+      {}
+    )
     Object.assign(authMap, newAuthEntries)
     await this.updateKeychainDoc(authMap, pastSeeds)
-    await Promise.all(
-      (await linkDocUpdatesPromise).map(this.applyAuthLinkUpdate.bind(this))
-    )
+    await Promise.all((await linkDocUpdatesPromise).map(this.applyAuthLinkUpdate.bind(this)))
   }
 
   /**

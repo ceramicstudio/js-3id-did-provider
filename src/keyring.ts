@@ -1,8 +1,18 @@
 import { generateKeyPairFromSeed } from '@stablelib/x25519'
 import { HDNode } from '@ethersproject/hdnode'
-import { EllipticSigner, Signer, Decrypter, x25519Decrypter, JWE } from 'did-jwt'
+import {
+  EllipticSigner,
+  Signer,
+  Decrypter,
+  x25519Decrypter,
+  x25519Encrypter,
+  createJWE,
+  decryptJWE,
+  JWE,
+} from 'did-jwt'
 
-import { randomBytes, asymEncryptJWE, asymDecryptJWE } from './crypto'
+import { randomBytes } from '@stablelib/random'
+import { prepareCleartext, decodeCleartext } from 'dag-jose-utils'
 import { encodeKey, hexToU8A, u8aToHex } from './utils'
 
 export const LATEST = 'latest'
@@ -99,7 +109,7 @@ export default class Keyring {
     let version: string = LATEST
     let jwe = pastSeeds.pop()
     while (jwe) {
-      const decrypted = await asymDecryptJWE(jwe, { decrypter: this.getAsymDecrypter([], version) })
+      const decrypted = await this.asymDecryptJWE(jwe, [], version)
       version = Object.keys(decrypted).find((k) => k !== 'v03ID') as string
       if (decrypted.v03ID) {
         this._v03ID = decrypted.v03ID as string
@@ -132,9 +142,7 @@ export default class Keyring {
     // Encrypt the previous seed to the new seed
     const cleartext: Record<string, any> = { [prevVersion]: this._keySets[prevVersion].seed }
     if (this._keySets[prevVersion].v03ID) cleartext.v03ID = this._keySets[prevVersion].v03ID
-    this._pastSeeds.push(
-      await asymEncryptJWE(cleartext, { publicKey: this.getEncryptionPublicKey() })
-    )
+    this._pastSeeds.push(await this.asymEncryptJWE(cleartext))
   }
 
   getAsymDecrypter(fragments: Array<string> = [], version?: string): Decrypter {
@@ -144,6 +152,19 @@ export default class Keyring {
     }
     const key = this._keySets[version].secretKeys.encryption
     return x25519Decrypter(key)
+  }
+
+  async asymDecryptJWE(
+    jwe: JWE,
+    kids: Array<string>,
+    version?: string
+  ): Promise<Record<string, any>> {
+    return decodeCleartext(await decryptJWE(jwe, this.getAsymDecrypter(kids, version)))
+  }
+
+  async asymEncryptJWE(cleartext: Record<string, any>, kid?: string): Promise<JWE> {
+    const encrypter = x25519Encrypter(this.getEncryptionPublicKey(), kid)
+    return createJWE(prepareCleartext(cleartext), [encrypter])
   }
 
   getSigner(version: string = LATEST): Signer {

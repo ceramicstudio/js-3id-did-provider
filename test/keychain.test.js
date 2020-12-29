@@ -1,14 +1,9 @@
 import { validateLink } from '3id-blockchain-utils'
 import * as u8a from 'uint8arrays'
+import { randomBytes } from '@stablelib/random'
 
 import { Keychain, newAuthEntry } from '../src/keychain'
 import Keyring from '../src/keyring'
-import {
-  AsymEncryptedMessage,
-  asymDecrypt,
-  asymEncrypt,
-  randomBytes,
-} from '../src/crypto'
 
 const seed = u8a.fromString('8e641c0dc77f6916cc7f743dad774cdf9f6f7bcb880b11395149dd878377cd398650bbfd4607962b49953c87da4d7f3ff247ed734b06f96bdd69479377bc612b', 'base16')
 const randomAuthSecret = () => randomBytes(32)

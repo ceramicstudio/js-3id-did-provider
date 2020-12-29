@@ -1,6 +1,6 @@
 import ThreeIdProvider from '../src/threeid-provider'
-import { randomBytes } from '../src/crypto'
 
+import { randomBytes } from '@stablelib/random'
 import { verifyJWT } from 'did-jwt'
 import { Resolver } from 'did-resolver'
 import tmp from 'tmp-promise'
