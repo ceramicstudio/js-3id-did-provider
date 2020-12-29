@@ -1,6 +1,5 @@
-import { generateKeyPairFromSeed, KeyPair } from '@stablelib/x25519'
+import { generateKeyPairFromSeed } from '@stablelib/x25519'
 import { HDNode } from '@ethersproject/hdnode'
-import { Wallet } from '@ethersproject/wallet'
 import { EllipticSigner, Signer, Decrypter, x25519Decrypter, JWE } from 'did-jwt'
 
 import { randomBytes, asymEncryptJWE, asymDecryptJWE } from './crypto'
@@ -8,13 +7,8 @@ import { encodeKey, hexToU8A, u8aToHex } from './utils'
 
 export const LATEST = 'latest'
 const GENESIS = 'genesis'
-const BASE_PATH = "m/51073068'/0'"
-const ROOT_STORE_PATH = "0'/0'/0'/0'/0'/0'/0'/0'"
-
-// Using the long paths with base and rootstore is extremely slow.
-// For auth simple paths are used instead.
-const AUTH_PATH_WALLET = '0'
-const AUTH_PATH_ASYM_ENCRYPTION = '2'
+const BASE_PATH = "m/51073068'"
+const ROOT_STORE_PATH = "0'/0'/0'/0'/0'/0'/0'/0'/0'"
 
 interface ThreeIdMetadata extends Record<string, any> {
   controllers: Array<string>
@@ -202,15 +196,5 @@ export default class Keyring {
       delete state.content
     }
     return state
-  }
-
-  static authSecretToKeyPair(authSecret: Uint8Array): KeyPair {
-    const node = HDNode.fromSeed(authSecret).derivePath(AUTH_PATH_ASYM_ENCRYPTION)
-    return generateKeyPairFromSeed(hexToU8A(node.privateKey.slice(2)))
-  }
-
-  static authSecretToWallet(authSecret: Uint8Array): Wallet {
-    const node = HDNode.fromSeed(authSecret).derivePath(AUTH_PATH_WALLET)
-    return new Wallet(node.privateKey)
   }
 }

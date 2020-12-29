@@ -4,14 +4,14 @@ exports[`Keyring Derives correct keys from seed 1`] = `
 Object {
   "content": Object {
     "publicKeys": Object {
-      "HqWJATWq82EABVs": "zQ3shRHw1ZYQRjdojgJftsbPuAYaJp1k1HHqWJATWq82EABVs",
-      "va4hhib8MaZU2bn": "z6LSmA6mRJBttYqSVLq7zr5NMZJmGu7Urva4hhib8MaZU2bn",
+      "XQCT2xJHsdY6iJH": "z6LSqKWh3XQ7AfsJuE2KR23cozEut8D5CXQCT2xJHsdY6iJH",
+      "yh27jTt7Ny2Pwdy": "zQ3shrMGEKAjUTMmvDkcZ7Y3x9XnVjTH3myh27jTt7Ny2Pwdy",
     },
   },
   "deterministic": true,
   "metadata": Object {
     "controllers": Array [
-      "did:key:zQ3sha3tk9URYc9Pu3Hb6dHyhWXjVKCZbfGosg4GMQdQE72DD",
+      "did:key:zQ3shQNcackrTByiYaPGso1Nt7b6r1gSMg4XXBmavzvTMqX1h",
     ],
     "family": "3id",
   },
@@ -22,13 +22,13 @@ exports[`Keyring Derives correct keys from seed 2`] = `
 Object {
   "content": Object {
     "publicKeys": Object {
-      "HqWJATWq82EABVs": "zQ3shRHw1ZYQRjdojgJftsbPuAYaJp1k1HHqWJATWq82EABVs",
-      "va4hhib8MaZU2bn": "z6LSmA6mRJBttYqSVLq7zr5NMZJmGu7Urva4hhib8MaZU2bn",
+      "XQCT2xJHsdY6iJH": "z6LSqKWh3XQ7AfsJuE2KR23cozEut8D5CXQCT2xJHsdY6iJH",
+      "yh27jTt7Ny2Pwdy": "zQ3shrMGEKAjUTMmvDkcZ7Y3x9XnVjTH3myh27jTt7Ny2Pwdy",
     },
   },
   "metadata": Object {
     "controllers": Array [
-      "did:key:zQ3sha3tk9URYc9Pu3Hb6dHyhWXjVKCZbfGosg4GMQdQE72DD",
+      "did:key:zQ3shQNcackrTByiYaPGso1Nt7b6r1gSMg4XXBmavzvTMqX1h",
     ],
   },
 }
@@ -36,38 +36,38 @@ Object {
 
 exports[`Keyring Derives correct keys from seed 3`] = `
 Uint8Array [
-  140,
-  224,
-  120,
-  198,
-  47,
-  177,
-  130,
-  80,
-  120,
-  20,
-  9,
-  162,
-  176,
-  48,
-  126,
+  202,
+  184,
+  127,
+  147,
+  222,
+  181,
+  132,
+  185,
   227,
-  114,
-  6,
-  253,
-  10,
-  59,
-  176,
-  221,
-  134,
-  48,
-  46,
-  65,
-  111,
-  227,
+  190,
+  245,
+  131,
+  105,
+  245,
+  254,
+  12,
+  206,
+  100,
   188,
-  5,
-  93,
+  219,
+  82,
+  145,
+  229,
+  212,
+  206,
+  221,
+  91,
+  119,
+  181,
+  158,
+  76,
+  102,
 ]
 `;
 

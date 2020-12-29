@@ -178,7 +178,7 @@ describe('ThreeIdProvider', () => {
       await idw1.keychain.add(config2.authId, config2.authSecret)
       await idw1.keychain.commit()
       // wait for anchor to happen
-      await new Promise(resolve => idw1._threeIdx.docs[KEYCHAIN_DEF].on('change', resolve))
+      //await new Promise(resolve => idw1._threeIdx.docs[KEYCHAIN_DEF].on('change', resolve))
       expect(await idw1.keychain.list()).toEqual(['auth1', 'auth2'])
 
       await idw1.keychain.remove('auth1')
@@ -203,7 +203,7 @@ describe('ThreeIdProvider', () => {
       await idw1.keychain.add(config1.authId, config1.authSecret)
       await idw1.keychain.add(config2.authId, config2.authSecret)
       await idw1.keychain.commit()
-      await new Promise(resolve => idw1._threeIdx.docs[KEYCHAIN_DEF].on('change', resolve))
+      //await new Promise(resolve => idw1._threeIdx.docs[KEYCHAIN_DEF].on('change', resolve))
       expect(await idw1.keychain.list()).toEqual(['auth2', 'auth1'])
 
       await idw1.keychain.remove('auth1')
