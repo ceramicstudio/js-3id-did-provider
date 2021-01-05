@@ -8,8 +8,6 @@ import { parseJWEKids } from './utils'
 
 async function decryptAuthId(encrypted: EncData, keyring: Keyring): Promise<string> {
   if (!encrypted.jwe) throw new Error('Invalid encrypted block')
-  //const decrypter = keyring.getAsymDecrypter(
-  //const decrypted = await asymDecryptJWE(encrypted.jwe, { decrypter })
   const decrypted = await keyring.asymDecryptJWE(encrypted.jwe, parseJWEKids(encrypted.jwe))
   return decrypted.id as string
 }

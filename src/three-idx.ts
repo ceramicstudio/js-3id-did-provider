@@ -35,8 +35,6 @@ export interface EncKeyMaterial {
 export interface AuthEntry {
   data: EncData
   id: EncData
-  //linkDoc: string
-  //pub: string // base58 multicodec x25519 public key
 }
 
 interface AuthMap {

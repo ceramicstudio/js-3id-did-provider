@@ -44,7 +44,6 @@ interface FullKeySet {
 }
 
 function deriveKeySet(seed: Uint8Array, v03ID?: string): FullKeySet {
-  // TODO - dont' use ROOT_STORE_PATH unless when needed. Very expensive.
   let hdNode = HDNode.fromSeed(seed).derivePath(BASE_PATH)
   if (v03ID) hdNode = hdNode.derivePath(ROOT_STORE_PATH)
   const signing = hdNode.derivePath('0')

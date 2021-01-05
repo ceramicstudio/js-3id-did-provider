@@ -241,8 +241,6 @@ describe('ThreeIDX', () => {
     await threeIdx.createIDX(nae1)
     await threeIdx.addAuthEntries([nae2, nae3])
     const doc = threeIdx.docs[KEYCHAIN_DEF]
-    // wait for anchor to happen
-    //await new Promise(resolve => threeIdx.docs[KEYCHAIN_DEF].on('change', resolve))
 
     // Rotate keys correctly
     await keyring.generateNewKeys(threeIdx.get3idVersion())
