@@ -13,8 +13,7 @@ import {
 import Keyring from './keyring'
 import { ThreeIDX } from './three-idx'
 import Permissions from './permissions'
-import { parseJWEKids } from './crypto'
-import { toStableObject, encodeBase64 } from './utils'
+import { toStableObject, encodeBase64, parseJWEKids } from './utils'
 
 type Origin = string | null | undefined
 

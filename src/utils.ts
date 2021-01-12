@@ -1,6 +1,7 @@
-import { Wallet } from '@ethersproject/wallet'
 import stringify from 'fast-json-stable-stringify'
 import * as u8a from 'uint8arrays'
+
+import type { JWE } from 'did-jwt'
 
 const B16 = 'base16'
 const B64 = 'base64pad'
@@ -36,22 +37,14 @@ export function decodeKey(key: string): Uint8Array {
   return bytes.slice(2)
 }
 
-export const fakeEthProvider = (wallet: Wallet): any => ({
-  send: (
-    request: { method: string; params: Array<any> },
-    callback: (err: Error | null | undefined, res?: any) => void
-  ) => {
-    if (request.method !== 'personal_sign') {
-      callback(new Error('only supports personal_sign'))
-    } else {
-      let message = request.params[0] as string
-      if (message.startsWith('0x')) {
-        message = u8a.toString(hexToU8A(message.slice(2)))
-      }
-      callback(null, { result: wallet.signMessage(message) })
-    }
-  },
-})
+export function parseJWEKids(jwe: JWE): Array<string> {
+  return (
+    jwe.recipients?.reduce((kids: Array<string>, recipient): Array<string> => {
+      if (recipient.header?.kid) kids.push(recipient.header.kid.split('#')[1])
+      return kids
+    }, []) || []
+  )
+}
 
 export function hexToU8A(s: string): Uint8Array {
   return u8a.fromString(s, B16)

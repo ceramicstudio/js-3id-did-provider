@@ -1,14 +1,9 @@
 import { validateLink } from '3id-blockchain-utils'
 import * as u8a from 'uint8arrays'
+import { randomBytes } from '@stablelib/random'
 
 import { Keychain, newAuthEntry } from '../src/keychain'
 import Keyring from '../src/keyring'
-import {
-  AsymEncryptedMessage,
-  asymDecrypt,
-  asymEncrypt,
-  randomBytes,
-} from '../src/crypto'
 
 const seed = u8a.fromString('8e641c0dc77f6916cc7f743dad774cdf9f6f7bcb880b11395149dd878377cd398650bbfd4607962b49953c87da4d7f3ff247ed734b06f96bdd69479377bc612b', 'base16')
 const randomAuthSecret = () => randomBytes(32)
@@ -22,19 +17,19 @@ describe('Keychain', () => {
   })
 
   beforeEach(async () => {
-    let authEntries = []
+    let authMap = []
     threeIdx = {
       id: 'did:3:asdf',
       addAuthEntry: jest.fn(),
       loadIDX: jest.fn(async () => null),
       setDIDProvider: jest.fn(),
       create3idDoc: jest.fn(),
-      createIDX: jest.fn(async entry => authEntries.push(entry)),
-      addAuthEntries: jest.fn(async entries => authEntries = authEntries.concat(entries)),
-      getAllAuthEntries: jest.fn(() => authEntries),
+      createIDX: jest.fn(async entry => Object.assign(authMap, entry.mapEntry)),
+      addAuthEntries: jest.fn(async entries => entries.map(entry => Object.assign(authMap, entry.mapEntry))),
+      getAuthMap: jest.fn(() => authMap),
       get3idVersion: jest.fn(async () => '0'),
       rotateKeys: jest.fn(),
-      setV03ID: jest.fn()
+      setV03ID: jest.fn(),
     }
   })
 
@@ -62,10 +57,11 @@ describe('Keychain', () => {
     const authSecret = randomAuthSecret()
     // add the auth entry to IDX
     const tmpKc = await Keychain.load(threeIdx, authSecret, () => {})
-    threeIdx.createIDX(await newAuthEntry(tmpKc._keyring, threeIdx.id, 'authid', authSecret))
+    const newEntry = await newAuthEntry(tmpKc._keyring, threeIdx.id, 'authid', authSecret)
+    threeIdx.createIDX(newEntry)
 
     threeIdx.loadIDX = jest.fn(async () => ({
-      seed: threeIdx.getAllAuthEntries()[0].data,
+      seed: threeIdx.getAuthMap()[newEntry.did.id].data,
       pastSeeds: []
     }))
     const keychain = await Keychain.load(threeIdx, authSecret, () => {})
@@ -83,7 +79,7 @@ describe('Keychain', () => {
     await keychain.commit()
 
     threeIdx.loadIDX = jest.fn(async () => ({
-      seed: threeIdx.getAllAuthEntries()[0].data,
+      seed: Object.values(threeIdx.getAuthMap())[0].data,
       pastSeeds: keychain._keyring.pastSeeds
     }))
     const keychain1 = await Keychain.load(threeIdx, authSecret, () => {})
@@ -130,7 +126,7 @@ describe('Keychain', () => {
     expect(await keychain.list()).toEqual(['authid', 'auth1'])
     await keychain.commit()
     threeIdx.loadIDX = jest.fn(async () => ({
-      seed: threeIdx.rotateKeys.mock.calls[0][2][0].data,
+      seed: Object.values(threeIdx.rotateKeys.mock.calls[0][2])[0].data,
       pastSeeds: threeIdx.rotateKeys.mock.calls[0][1],
     }))
     // load with auth1

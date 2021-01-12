@@ -1,20 +1,24 @@
-import { generateKeyPairFromSeed, KeyPair } from '@stablelib/x25519'
+import { generateKeyPairFromSeed } from '@stablelib/x25519'
 import { HDNode } from '@ethersproject/hdnode'
-import { Wallet } from '@ethersproject/wallet'
-import { EllipticSigner, Signer, Decrypter, x25519Decrypter, JWE } from 'did-jwt'
+import {
+  EllipticSigner,
+  Signer,
+  Decrypter,
+  x25519Decrypter,
+  x25519Encrypter,
+  createJWE,
+  decryptJWE,
+  JWE,
+} from 'did-jwt'
 
-import { randomBytes, asymEncryptJWE, asymDecryptJWE } from './crypto'
+import { randomBytes } from '@stablelib/random'
+import { prepareCleartext, decodeCleartext } from 'dag-jose-utils'
 import { encodeKey, hexToU8A, u8aToHex } from './utils'
 
 export const LATEST = 'latest'
 const GENESIS = 'genesis'
-const BASE_PATH = "m/51073068'/0'"
-const ROOT_STORE_PATH = "0'/0'/0'/0'/0'/0'/0'/0'"
-
-// Using the long paths with base and rootstore is extremely slow.
-// For auth simple paths are used instead.
-const AUTH_PATH_WALLET = '0'
-const AUTH_PATH_ASYM_ENCRYPTION = '2'
+const BASE_PATH = "m/51073068'"
+const ROOT_STORE_PATH = "0'/0'/0'/0'/0'/0'/0'/0'/0'"
 
 interface ThreeIdMetadata extends Record<string, any> {
   controllers: Array<string>
@@ -40,7 +44,6 @@ interface FullKeySet {
 }
 
 function deriveKeySet(seed: Uint8Array, v03ID?: string): FullKeySet {
-  // TODO - dont' use ROOT_STORE_PATH unless when needed. Very expensive.
   let hdNode = HDNode.fromSeed(seed).derivePath(BASE_PATH)
   if (v03ID) hdNode = hdNode.derivePath(ROOT_STORE_PATH)
   const signing = hdNode.derivePath('0')
@@ -105,7 +108,7 @@ export default class Keyring {
     let version: string = LATEST
     let jwe = pastSeeds.pop()
     while (jwe) {
-      const decrypted = await asymDecryptJWE(jwe, { decrypter: this.getAsymDecrypter([], version) })
+      const decrypted = await this.asymDecryptJWE(jwe, [], version)
       version = Object.keys(decrypted).find((k) => k !== 'v03ID') as string
       if (decrypted.v03ID) {
         this._v03ID = decrypted.v03ID as string
@@ -138,9 +141,7 @@ export default class Keyring {
     // Encrypt the previous seed to the new seed
     const cleartext: Record<string, any> = { [prevVersion]: this._keySets[prevVersion].seed }
     if (this._keySets[prevVersion].v03ID) cleartext.v03ID = this._keySets[prevVersion].v03ID
-    this._pastSeeds.push(
-      await asymEncryptJWE(cleartext, { publicKey: this.getEncryptionPublicKey() })
-    )
+    this._pastSeeds.push(await this.asymEncryptJWE(cleartext))
   }
 
   getAsymDecrypter(fragments: Array<string> = [], version?: string): Decrypter {
@@ -150,6 +151,19 @@ export default class Keyring {
     }
     const key = this._keySets[version].secretKeys.encryption
     return x25519Decrypter(key)
+  }
+
+  async asymDecryptJWE(
+    jwe: JWE,
+    kids: Array<string>,
+    version?: string
+  ): Promise<Record<string, any>> {
+    return decodeCleartext(await decryptJWE(jwe, this.getAsymDecrypter(kids, version)))
+  }
+
+  async asymEncryptJWE(cleartext: Record<string, any>, kid?: string): Promise<JWE> {
+    const encrypter = x25519Encrypter(this.getEncryptionPublicKey(), kid)
+    return createJWE(prepareCleartext(cleartext), [encrypter])
   }
 
   getSigner(version: string = LATEST): Signer {
@@ -202,15 +216,5 @@ export default class Keyring {
       delete state.content
     }
     return state
-  }
-
-  static authSecretToKeyPair(authSecret: Uint8Array): KeyPair {
-    const node = HDNode.fromSeed(authSecret).derivePath(AUTH_PATH_ASYM_ENCRYPTION)
-    return generateKeyPairFromSeed(hexToU8A(node.privateKey.slice(2)))
-  }
-
-  static authSecretToWallet(authSecret: Uint8Array): Wallet {
-    const node = HDNode.fromSeed(authSecret).derivePath(AUTH_PATH_WALLET)
-    return new Wallet(node.privateKey)
   }
 }

@@ -1,6 +1,6 @@
 import ThreeIdProvider from '../src/threeid-provider'
-import { randomBytes } from '../src/crypto'
 
+import { randomBytes } from '@stablelib/random'
 import { verifyJWT } from 'did-jwt'
 import { Resolver } from 'did-resolver'
 import tmp from 'tmp-promise'
@@ -177,8 +177,6 @@ describe('ThreeIdProvider', () => {
       }
       await idw1.keychain.add(config2.authId, config2.authSecret)
       await idw1.keychain.commit()
-      // wait for anchor to happen
-      await new Promise(resolve => idw1._threeIdx.docs[KEYCHAIN_DEF].on('change', resolve))
       expect(await idw1.keychain.list()).toEqual(['auth1', 'auth2'])
 
       await idw1.keychain.remove('auth1')
@@ -203,12 +201,11 @@ describe('ThreeIdProvider', () => {
       await idw1.keychain.add(config1.authId, config1.authSecret)
       await idw1.keychain.add(config2.authId, config2.authSecret)
       await idw1.keychain.commit()
-      await new Promise(resolve => idw1._threeIdx.docs[KEYCHAIN_DEF].on('change', resolve))
       expect(await idw1.keychain.list()).toEqual(['auth2', 'auth1'])
 
       await idw1.keychain.remove('auth1')
       await idw1.keychain.commit()
-      //expect(await idw1.keychain.list()).toEqual(['auth2'])
+      expect(await idw1.keychain.list()).toEqual(['auth2'])
       const idw2 = await ThreeIdProvider.create(config2)
       expect(idw1.id).toEqual(idw2.id)
       await expect(ThreeIdProvider.create(config1)).rejects.toThrow('Unable to find auth data')

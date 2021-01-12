@@ -1,7 +1,7 @@
 import { mnemonicToSeed } from '@ethersproject/hdnode'
 import * as u8a from 'uint8arrays'
 
-import { randomBytes } from '../src/crypto'
+import { randomBytes } from '@stablelib/random'
 import Keyring from '../src/keyring'
 
 describe('Keyring', () => {

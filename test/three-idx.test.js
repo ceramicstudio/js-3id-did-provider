@@ -1,5 +1,8 @@
 import tmp from 'tmp-promise'
 import Ceramic from '@ceramicnetwork/core'
+import { DID } from 'dids'
+import { Ed25519Provider } from 'key-did-provider-ed25519'
+import KeyResolver from 'key-did-resolver'
 import Ipfs from 'ipfs'
 import all from 'it-all'
 import CID from 'cids'
@@ -7,11 +10,11 @@ import { AccountID } from 'caip'
 import { createLink } from '3id-blockchain-utils'
 import { schemas, definitions } from '@ceramicstudio/idx-constants'
 import { publishIDXConfig } from '@ceramicstudio/idx-tools'
+import { randomBytes } from '@stablelib/random'
 
 import { ThreeIDX } from '../src/three-idx'
 import { DidProvider } from '../src/did-provider'
 import Keyring from '../src/keyring'
-import { randomBytes } from '../src/crypto'
 import { fakeEthProvider } from '../src/utils'
 
 import dagJose from 'dag-jose'
@@ -46,16 +49,19 @@ const fakeJWE = () => ({
     iv: 'iv',
   }
 })
-const genAuthEntryCreate = async (did) => {
-  const wallet = Keyring.authSecretToWallet(randomSecret())
-  const accountId = new AccountID({ address: wallet.address, chainId: 'eip155:1' })
-  const newAuthEntry = {
-    pub: 'publickey' + randomSecret(),
-    data: fakeJWE(),
-    id: fakeJWE(),
-    linkProof: await createLink(did || 'did:3:asdf', accountId, fakeEthProvider(wallet))
+const genAuthEntryCreate = async () => {
+  const provider = new Ed25519Provider(randomBytes(32))
+  const did = new DID({ provider, resolver: KeyResolver.getResolver() })
+  await did.authenticate()
+  return {
+    did,
+    mapEntry: {
+      [did.id]: {
+        data: fakeJWE(),
+        id: fakeJWE(),
+      }
+    }
   }
-  return { newAuthEntry, accountId: accountId.toString() }
 }
 
 const setup3id = async (threeIdx, keyring) => {
@@ -127,33 +133,25 @@ describe('ThreeIDX', () => {
   })
 
   it('creates authMapEntry', async () => {
-    const { newAuthEntry, accountId } = await genAuthEntryCreate()
-    const authMapEntry = await threeIdx.createAuthMapEntry(newAuthEntry)
+    await setup3id(threeIdx, keyring)
+    const newAuthEntry = await genAuthEntryCreate()
+    const update = await threeIdx.createAuthLinkUpdate(newAuthEntry)
 
-    expect(authMapEntry).toEqual({
-      [threeIdx.docs[accountId].id]: {
-        pub: newAuthEntry.pub,
-        data: newAuthEntry.data,
-        id: newAuthEntry.id,
-      }
-    })
-    expect(threeIdx.docs[accountId].controllers).toEqual([accountId])
-    expect(threeIdx.docs[accountId].content).toEqual('did:3:asdf')
+    expect(update.did).toEqual(newAuthEntry.did.id)
+    expect(threeIdx.docs[update.did].controllers).toEqual([newAuthEntry.did.id])
+    expect(threeIdx.docs[update.did].content).toEqual({})
+
+    await threeIdx.applyAuthLinkUpdate(update)
+    expect(threeIdx.docs[update.did].content).toEqual({ did: threeIdx.id })
   })
 
   it('createIDX with new auth entry', async () => {
     await setup3id(threeIdx, keyring)
-    const { newAuthEntry, accountId } = await genAuthEntryCreate()
+    const newAuthEntry = await genAuthEntryCreate()
     await threeIdx.createIDX(newAuthEntry)
 
     expect(threeIdx.docs[KEYCHAIN_DEF].content).toEqual({
-      authMap: {
-        [threeIdx.docs[accountId].id.toString()]: {
-          pub: newAuthEntry.pub,
-          data: newAuthEntry.data,
-          id: newAuthEntry.id,
-        }
-      },
+      authMap: newAuthEntry.mapEntry,
       pastSeeds: []
     })
     expect(threeIdx.docs.idx.content).toEqual({ [KEYCHAIN_DEF]: threeIdx.docs[KEYCHAIN_DEF].id.toUrl('base36') })
@@ -164,7 +162,7 @@ describe('ThreeIDX', () => {
       threeIdx.docs.threeId.id.toString(),
       threeIdx.docs.idx.id.toString(),
       threeIdx.docs[KEYCHAIN_DEF].id.toString(),
-      threeIdx.docs[accountId].id.toString(),
+      threeIdx.docs[newAuthEntry.did.id].id.toString(),
     ].map(docid => docid.replace('ceramic://', '/ceramic/'))))
   })
 
@@ -184,18 +182,18 @@ describe('ThreeIDX', () => {
 
   it('loadIDX fails if authLink does not exist', async () => {
     await setup3id(threeIdx, keyring)
-    const { newAuthEntry, accountId } = await genAuthEntryCreate(threeIdx.id)
+    const newAuthEntry = await genAuthEntryCreate(threeIdx.id)
 
-    expect(await threeIdx.loadIDX(accountId)).toEqual(null)
+    expect(await threeIdx.loadIDX(newAuthEntry.did.id)).toEqual(null)
   })
 
   it('loadIDX works if IDX created', async () => {
     await setup3id(threeIdx, keyring)
-    const { newAuthEntry, accountId } = await genAuthEntryCreate(threeIdx.id)
+    const newAuthEntry = await genAuthEntryCreate(threeIdx.id)
     await threeIdx.createIDX(newAuthEntry)
 
-    expect(await threeIdx.loadIDX(accountId)).toEqual({
-      seed: newAuthEntry.data,
+    expect(await threeIdx.loadIDX(newAuthEntry.did.id)).toEqual({
+      seed: newAuthEntry.mapEntry[newAuthEntry.did.id].data,
       pastSeeds: []
     })
   })
@@ -216,58 +214,50 @@ describe('ThreeIDX', () => {
 
   it('addAuthEntries', async () => {
     await setup3id(threeIdx, keyring)
-    const resolved = await Promise.all([
+    const [nae1, nae2, nae3] = await Promise.all([
       genAuthEntryCreate(threeIdx.id),
       genAuthEntryCreate(threeIdx.id),
       genAuthEntryCreate(threeIdx.id)
     ])
-    const { newAuthEntry: nae1, accountId: ai1 } = resolved[0]
-    const { newAuthEntry: nae2, accountId: ai2 } = resolved[1]
-    const { newAuthEntry: nae3, accountId: ai3 } = resolved[2]
-    const authEntry1 = { pub: nae1.pub, data: nae1.data, id: nae1.id }
-    const authEntry2 = { pub: nae2.pub, data: nae2.data, id: nae2.id }
-    const authEntry3 = { pub: nae3.pub, data: nae3.data, id: nae3.id }
     await threeIdx.createIDX(nae1)
-    expect(threeIdx.getAllAuthEntries()).toEqual([authEntry1])
+    expect(threeIdx.getAuthMap()).toEqual(nae1.mapEntry)
     await threeIdx.addAuthEntries([nae2, nae3])
 
-    expect(threeIdx.getAllAuthEntries()).toEqual([authEntry1, authEntry2, authEntry3])
+    expect(threeIdx.getAuthMap()).toEqual({ ...nae1.mapEntry, ...nae2.mapEntry, ...nae3.mapEntry })
     expect(await all(await ceramic.pin.ls())).toEqual(expect.arrayContaining([
-      threeIdx.docs[ai1].id.toString(),
-      threeIdx.docs[ai2].id.toString(),
-      threeIdx.docs[ai3].id.toString(),
+      threeIdx.docs[nae1.did.id].id.toString(),
+      threeIdx.docs[nae2.did.id].id.toString(),
+      threeIdx.docs[nae3.did.id].id.toString(),
     ]))
   })
 
   it('rotateKeys', async () => {
     await setup3id(threeIdx, keyring)
-    const resolved = await Promise.all([
+    const [nae1, nae2, nae3] = await Promise.all([
       genAuthEntryCreate(threeIdx.id),
       genAuthEntryCreate(threeIdx.id),
       genAuthEntryCreate(threeIdx.id)
     ])
-    const { newAuthEntry: nae1, accountId: ai1 } = resolved[0]
-    const { newAuthEntry: nae2, accountId: ai2 } = resolved[1]
-    const { newAuthEntry: nae3, accountId: ai3 } = resolved[2]
     await threeIdx.createIDX(nae1)
     await threeIdx.addAuthEntries([nae2, nae3])
-    // wait for anchor to happen
-    await new Promise(resolve => threeIdx.docs[KEYCHAIN_DEF].on('change', resolve))
+    const doc = threeIdx.docs[KEYCHAIN_DEF]
 
     // Rotate keys correctly
     await keyring.generateNewKeys(threeIdx.get3idVersion())
     const new3idState = keyring.get3idState()
-    const updatedEntry1 = { pub: nae1.pub, data: fakeJWE(), id: fakeJWE() }
-    const updatedEntry2 = { pub: nae2.pub, data: fakeJWE(), id: fakeJWE() }
-    await threeIdx.rotateKeys(new3idState, keyring.pastSeeds, [updatedEntry1, updatedEntry2])
-    expect(threeIdx.getAllAuthEntries()).toEqual(expect.arrayContaining([updatedEntry1, updatedEntry2]))
+    const updatedAuthMap = {
+      [nae1.did.id]: { data: fakeJWE(), id: fakeJWE() },
+      [nae2.did.id]: { data: fakeJWE(), id: fakeJWE() }
+    }
+    await threeIdx.rotateKeys(new3idState, keyring.pastSeeds, updatedAuthMap)
+    expect(threeIdx.getAuthMap()).toEqual(updatedAuthMap)
     const state = threeIdx.docs.threeId.state
     expect(state.content).toEqual(expect.objectContaining(new3idState.content))
     expect(state.metadata.controllers).toEqual(new3idState.metadata.controllers)
 
     // load 3id with rotated keys
-    expect(await threeIdx.loadIDX(ai1)).toEqual({
-      seed: updatedEntry1.data,
+    expect(await threeIdx.loadIDX(nae1.did.id)).toEqual({
+      seed: updatedAuthMap[nae1.did.id].data,
       pastSeeds: keyring.pastSeeds
     })
   })

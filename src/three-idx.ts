@@ -1,12 +1,14 @@
-import { CeramicApi, Doctype } from '@ceramicnetwork/common'
+import { CeramicApi, Doctype, CeramicRecord } from '@ceramicnetwork/common'
+import { TileDoctype } from '@ceramicnetwork/doctype-tile'
 import CeramicClient from '@ceramicnetwork/http-client'
 import { schemas, definitions } from '@ceramicstudio/idx-constants'
-import { LinkProof } from '3id-blockchain-utils'
 import CID from 'cids'
 
 import type { DidProvider } from './did-provider'
 import type { ThreeIdState } from './keyring'
+import type { DID } from 'dids'
 import type { JWE } from 'did-jwt'
+import type DocID from '@ceramicnetwork/docid'
 
 const KEYCHAIN_DEF = definitions.threeIdKeychain
 const IDX = 'IDX'
@@ -31,21 +33,23 @@ export interface EncKeyMaterial {
 }
 
 export interface AuthEntry {
-  pub: string // base58 multicodec x25519 public key
   data: EncData
   id: EncData
 }
 
-interface AuthEntryMap {
-  [link: string]: AuthEntry
+interface AuthMap {
+  [did: string]: AuthEntry
 }
 
-export interface NewAuthEntry extends AuthEntry {
-  linkProof: LinkProof
+export interface NewAuthEntry {
+  mapEntry: AuthMap
+  did: DID
 }
 
-export interface TempAuthEntry extends AuthEntry {
-  linkProof?: LinkProof
+interface AuthLinkDocUpdate {
+  record: CeramicRecord
+  docid: DocID
+  did: string
 }
 
 export class ThreeIDX {
@@ -82,59 +86,70 @@ export class ThreeIDX {
     return docId ? (docId.commit as CID).toString() : '0'
   }
 
-  async createAuthMapEntry(authEntry: NewAuthEntry): Promise<AuthEntryMap> {
-    const authLink = authEntry.linkProof.account
-    this.docs[authLink] = await this.ceramic.createDocument(
-      'caip10-link',
-      { metadata: { controllers: [authLink] } },
+  async loadDoc(name: string, controller: string, family: string): Promise<void> {
+    this.docs[name] = await this.ceramic.createDocument(
+      'tile',
+      { deterministic: true, metadata: { controllers: [controller], family } },
       { anchor: false, publish: false }
     )
-    await this.docs[authLink].change({ content: authEntry.linkProof })
-    await this.ceramic.pin.add(this.docs[authLink].id)
-    const tmpEntry: TempAuthEntry = Object.assign({}, authEntry)
-    delete tmpEntry.linkProof
-    return { [this.docs[authLink].id.baseID.toString()]: tmpEntry }
+  }
+
+  async createAuthLinkUpdate({ did }: NewAuthEntry): Promise<AuthLinkDocUpdate> {
+    const didString = did.id
+    await this.loadDoc(didString, didString, 'authLink')
+    await this.ceramic.pin.add(this.docs[didString].id)
+    return {
+      record: await TileDoctype._makeRecord(this.docs[didString], did, { did: this.id }),
+      docid: this.docs[didString].id,
+      did: didString,
+    }
+  }
+
+  async applyAuthLinkUpdate({ docid, record, did }: AuthLinkDocUpdate): Promise<void> {
+    if (this.docs[did].content !== this.id) {
+      await this.ceramic.applyRecord(docid, record)
+    }
   }
 
   /**
    * Create a new IDX structure that has a given authEntry in it's keychain.
    */
-  async createIDX(authEntry?: NewAuthEntry): Promise<void> {
-    const entry = authEntry ? await this.createAuthMapEntry(authEntry) : {}
+  async createIDX(newEntry?: NewAuthEntry): Promise<void> {
+    const docUpdatePromise = newEntry ? this.createAuthLinkUpdate(newEntry) : Promise.resolve(null)
     // eslint-disable-next-line prettier/prettier
     await Promise.all([
-      this.loadKeychainDoc(this.id),
-      this.loadIDXDoc(this.id)
+      this.loadDoc(KEYCHAIN_DEF, this.id, KEYCHAIN_DEF),
+      this.loadDoc('idx', this.id, IDX),
     ])
     // eslint-disable-next-line prettier/prettier
     await Promise.all([
       this.pinAllDocs(),
-      this.updateKeychainDoc(entry),
-      this.addKeychainToIDX()
+      this.updateKeychainDoc(newEntry?.mapEntry),
+      this.addKeychainToIDX(),
     ])
+    // Only update the link document after the keychain have been updated.
+    const docUpdate = await docUpdatePromise
+    if (docUpdate) {
+      await this.applyAuthLinkUpdate(docUpdate)
+    }
   }
 
   /**
    * Returns the encrypted JWE for the given authLink
    */
-  async loadIDX(authLink: string): Promise<EncKeyMaterial | null> {
-    this.docs[authLink] = await this.ceramic.createDocument(
-      'caip10-link',
-      { metadata: { controllers: [authLink] } },
-      { anchor: false, publish: false }
-    )
-    const did = this.docs[authLink].content
+  async loadIDX(authDid: string): Promise<EncKeyMaterial | null> {
+    await this.loadDoc(authDid, authDid, 'authLink')
+    const { did } = this.docs[authDid].content
     if (!did) return null
     // eslint-disable-next-line prettier/prettier
     await Promise.all([
       this.load3IDDoc(did),
-      this.loadKeychainDoc(did),
-      this.loadIDXDoc(did),
+      this.loadDoc(KEYCHAIN_DEF, did, KEYCHAIN_DEF),
+      this.loadDoc('idx', did, IDX),
     ])
-    const linkDocid = this.docs[authLink].id.baseID.toString()
     const { authMap, pastSeeds } = this.docs[KEYCHAIN_DEF].content
     return {
-      seed: authMap[linkDocid]?.data,
+      seed: authMap[authDid]?.data,
       pastSeeds,
     } as EncKeyMaterial
   }
@@ -168,21 +183,24 @@ export class ThreeIDX {
   /**
    * Adds a new AuthEntries to the Auth keychain.
    */
-  async addAuthEntries(authEntries: Array<NewAuthEntry>): Promise<void> {
-    const mapEntries = await Promise.all(authEntries.map(this.createAuthMapEntry.bind(this)))
+  async addAuthEntries(newEntries: Array<NewAuthEntry>): Promise<void> {
+    const linkDocUpdatesPromise = Promise.all(newEntries.map(this.createAuthLinkUpdate.bind(this)))
     const { authMap, pastSeeds } = this.docs[KEYCHAIN_DEF].content
-    const newAuthEntries = mapEntries.reduce((acc, entry) => Object.assign(acc, entry), {})
+    const newAuthEntries = newEntries.reduce(
+      (acc, { mapEntry }) => Object.assign(acc, mapEntry),
+      {}
+    )
     Object.assign(authMap, newAuthEntries)
     await this.updateKeychainDoc(authMap, pastSeeds)
+    await Promise.all((await linkDocUpdatesPromise).map(this.applyAuthLinkUpdate.bind(this)))
   }
 
   /**
    * Returns all public keys that is in the auth keychain.
    */
-  getAllAuthEntries(): Array<AuthEntry> {
-    if (!this.docs[KEYCHAIN_DEF] || !this.docs[KEYCHAIN_DEF].content.authMap) return []
-    const authMap = this.docs[KEYCHAIN_DEF].content.authMap
-    return Object.values(authMap)
+  getAuthMap(): AuthMap {
+    if (!this.docs[KEYCHAIN_DEF] || !this.docs[KEYCHAIN_DEF].content.authMap) return {}
+    return this.docs[KEYCHAIN_DEF].content.authMap as AuthMap
   }
 
   async pinAllDocs(): Promise<void> {
@@ -190,14 +208,6 @@ export class ThreeIDX {
       Object.values(this.docs).map(async (doc) => {
         await this.ceramic.pin.add(doc.id)
       })
-    )
-  }
-
-  async loadIDXDoc(did: string): Promise<void> {
-    this.docs.idx = await this.ceramic.createDocument(
-      'tile',
-      { deterministic: true, metadata: { controllers: [did], family: IDX } },
-      { anchor: false, publish: false }
     )
   }
 
@@ -216,15 +226,7 @@ export class ThreeIDX {
     }
   }
 
-  async loadKeychainDoc(did: string): Promise<void> {
-    this.docs[KEYCHAIN_DEF] = await this.ceramic.createDocument(
-      'tile',
-      { deterministic: true, metadata: { controllers: [did], family: KEYCHAIN_DEF } },
-      { anchor: false, publish: false }
-    )
-  }
-
-  async updateKeychainDoc(authMap: AuthEntryMap, pastSeeds: Array<JWE> = []): Promise<void> {
+  async updateKeychainDoc(authMap: AuthMap = {}, pastSeeds: Array<JWE> = []): Promise<void> {
     if (Object.keys(authMap).length !== 0) {
       const update: Record<string, any> = { content: { authMap, pastSeeds } }
       if (!this.docs[KEYCHAIN_DEF].metadata.schema) {
@@ -242,25 +244,17 @@ export class ThreeIDX {
   async rotateKeys(
     threeIdState: ThreeIdState,
     pastSeeds: Array<JWE>,
-    updatedAuthEntries: Array<AuthEntry>
+    authMap: AuthMap
   ): Promise<void> {
     if (!threeIdState.content) throw new Error('Content has to be defined')
-    // Rotate keys in 3ID document
-    const promises = [
+    // Rotate keys in 3ID document and update keychain
+    await Promise.all([
       this.docs.threeId.change({
         metadata: threeIdState.metadata,
         content: { ...this.docs.threeId.content, publicKeys: threeIdState.content.publicKeys },
       }),
-    ]
-    // update the authMap
-    const oldAuthMap = this.docs[KEYCHAIN_DEF].content.authMap
-    const authMap = Object.keys(oldAuthMap).reduce((authMap: AuthEntryMap, link: string) => {
-      const entry = updatedAuthEntries.find((entry) => entry.pub === oldAuthMap[link].pub)
-      if (entry) authMap[link] = entry
-      return authMap
-    }, {})
-    promises.push(this.updateKeychainDoc(authMap, pastSeeds))
-    promises.push(this.pinAllDocs())
-    await Promise.all(promises)
+      this.updateKeychainDoc(authMap, pastSeeds),
+      this.pinAllDocs(),
+    ])
   }
 }
