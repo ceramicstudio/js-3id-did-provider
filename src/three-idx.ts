@@ -1,4 +1,4 @@
-import { CeramicApi, Doctype, CeramicRecord } from '@ceramicnetwork/common'
+import { CeramicApi, Doctype, CeramicCommit } from '@ceramicnetwork/common'
 import { TileDoctype } from '@ceramicnetwork/doctype-tile'
 import CeramicClient from '@ceramicnetwork/http-client'
 import { schemas, definitions } from '@ceramicstudio/idx-constants'
@@ -47,7 +47,7 @@ export interface NewAuthEntry {
 }
 
 interface AuthLinkDocUpdate {
-  record: CeramicRecord
+  commit: CeramicCommit
   docid: DocID
   did: string
 }
@@ -99,15 +99,15 @@ export class ThreeIDX {
     await this.loadDoc(didString, didString, 'authLink')
     await this.ceramic.pin.add(this.docs[didString].id)
     return {
-      record: await TileDoctype._makeRecord(this.docs[didString], did, { did: this.id }),
+      commit: await TileDoctype._makeCommit(this.docs[didString], did, { did: this.id }),
       docid: this.docs[didString].id,
       did: didString,
     }
   }
 
-  async applyAuthLinkUpdate({ docid, record, did }: AuthLinkDocUpdate): Promise<void> {
+  async applyAuthLinkUpdate({ docid, commit, did }: AuthLinkDocUpdate): Promise<void> {
     if (this.docs[did].content !== this.id) {
-      await this.ceramic.applyRecord(docid, record)
+      await this.ceramic.applyRecord(docid, commit)
     }
   }
 

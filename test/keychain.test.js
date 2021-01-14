@@ -1,4 +1,3 @@
-import { validateLink } from '3id-blockchain-utils'
 import * as u8a from 'uint8arrays'
 import { randomBytes } from '@stablelib/random'
 
