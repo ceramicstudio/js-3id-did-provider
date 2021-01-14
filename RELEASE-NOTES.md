@@ -1,5 +1,10 @@
 # Release Notes
 
+## v0.4.0 - 2021-01-14
+* ref: Use `did:key` for authMethods
+* chore: Latest Ceramic version
+* chore: Integration tests for 3IDv0
+
 ## v0.1.0 - 2020-12-02
 Initial release of `3id-did-provider`.
 Major refactor to use Ceramic and 3IDv1.
