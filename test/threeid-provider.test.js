@@ -15,7 +15,7 @@ import legacy from 'multiformats/cjs/src/legacy.js'
 import * as u8a from 'uint8arrays'
 
 const KEYCHAIN_DEF = definitions.threeIdKeychain
-const seed = u8a.fromString('6e34b2e1a9624113d81ece8a8a22e6e97f0e145c25c1d4d2d0e62753b4060c837097f768559e17ec89ee20cba153b23b9987912ec1e860fa1212ba4b84c776ce', 'base16')
+const seed = u8a.fromString('af0253c646e3d6ccf93758154f55b6055ab5739e22d54fb0b3b6ad1819c73ffaaca52378afeda236f41755c59db9e8aeb30d4cefbd61327603ba6aee63a59b1d', 'base16')
 
 const randomAuthSecret = () => randomBytes(32)
 const getPermissionMock = jest.fn(async () => [])
@@ -42,11 +42,11 @@ jest.mock('cross-fetch', (o) => {
         publicKey: [{
           id: 'did:3:GENESIS#signingKey',
           type: 'Secp256k1VerificationKey2018',
-          publicKeyHex: '027ab5238257532f486cbeeac59a5721bbfec2f13c3d26516ca9d4c5f0ec1aa229'
+          publicKeyHex: '0452fbcde75f7ddd7cff18767e2b5536211f500ad474c15da8e74577a573e7a346f2192ef49a5aa0552c41f181a7950af3afdb93cafcbff18156943e3ba312e5b2'
         }, {
           id: 'did:3:GENESIS#encryptionKey',
           type: 'Curve25519EncryptionPublicKey',
-          publicKeyBase64: 'jRKRy3oPhXpUBrFJefO2CJnWw/IoalOPuepAwvTqrEk'
+          publicKeyBase64: 'DFxR24MNHVxEDAdL2f6pPEwNDJ2p0Ldyjoo7y/ItLDc='
         }],
         authentication: [{
           type: 'Secp256k1SignatureAuthentication2018',
@@ -188,7 +188,7 @@ describe('ThreeIdProvider', () => {
     })
 
     it('Does keyrotation when v03ID is being used', async () => {
-      const v03ID = 'did:3:bafyreidv6yl2bbmuslkqby45hdn6sd6ha22zlolxjjxxz4suuwfqpezewu'
+      const v03ID = 'did:3:bafyreiffkeeq4wq2htejqla2is5ognligi4lvjhwrpqpl2kazjdoecmugi'
       const config = {
         getPermission: getPermissionMock,
         seed,

@@ -113,7 +113,7 @@ Object {
   "deterministic": true,
   "metadata": Object {
     "controllers": Array [
-      "did:key:zQ3shnyMbHDVqqJnm6EiPJ47Vc4ivUFgcaPpEHx9GhyFT5Env",
+      "did:key:zQ3shbBE65QyvqVfo5yNpzN4Qf4LypkgdsoMyjoWbWz79r6j4",
     ],
     "family": "3id",
   },
@@ -124,7 +124,7 @@ exports[`Keyring Generates correct state if v03ID is set 2`] = `
 Object {
   "metadata": Object {
     "controllers": Array [
-      "did:key:zQ3shnyMbHDVqqJnm6EiPJ47Vc4ivUFgcaPpEHx9GhyFT5Env",
+      "did:key:zQ3shbBE65QyvqVfo5yNpzN4Qf4LypkgdsoMyjoWbWz79r6j4",
     ],
   },
 }
