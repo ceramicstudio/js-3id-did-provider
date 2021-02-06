@@ -45,8 +45,12 @@ interface FullKeySet {
 
 function deriveKeySet(seed: Uint8Array, v03ID?: string): FullKeySet {
   const seedNode = HDNode.fromSeed(seed)
-  let hdNode = seedNode.derivePath(BASE_PATH)
-  if (v03ID) hdNode = seedNode.derivePath(LEGACY_BASE_PATH)
+  let hdNode
+  if (v03ID) {
+    hdNode = seedNode.derivePath(LEGACY_BASE_PATH)
+  } else {
+    hdNode = seedNode.derivePath(BASE_PATH)
+  }
   const signing = hdNode.derivePath('0')
   // for v03ID the signing key is the management key
   const management = v03ID ? signing : hdNode.derivePath('1')
