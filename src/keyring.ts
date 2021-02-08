@@ -18,7 +18,7 @@ import { encodeKey, hexToU8A, u8aToHex } from './utils'
 export const LATEST = 'latest'
 const GENESIS = 'genesis'
 const BASE_PATH = "m/51073068'"
-const ROOT_STORE_PATH = "0'/0'/0'/0'/0'/0'/0'/0'/0'"
+const LEGACY_BASE_PATH = "m/7696500'/0'/0'"
 
 interface ThreeIdMetadata extends Record<string, any> {
   controllers: Array<string>
@@ -44,8 +44,13 @@ interface FullKeySet {
 }
 
 function deriveKeySet(seed: Uint8Array, v03ID?: string): FullKeySet {
-  let hdNode = HDNode.fromSeed(seed).derivePath(BASE_PATH)
-  if (v03ID) hdNode = hdNode.derivePath(ROOT_STORE_PATH)
+  const seedNode = HDNode.fromSeed(seed)
+  let hdNode
+  if (v03ID) {
+    hdNode = seedNode.derivePath(LEGACY_BASE_PATH)
+  } else {
+    hdNode = seedNode.derivePath(BASE_PATH)
+  }
   const signing = hdNode.derivePath('0')
   // for v03ID the signing key is the management key
   const management = v03ID ? signing : hdNode.derivePath('1')
