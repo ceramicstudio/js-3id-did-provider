@@ -7,7 +7,7 @@
 
 # ThreeIdProvider
 
-ThreeIdProvider is a JavaScript SDK that allows developers to create and manage 3ID identities on the Ceramic network. It exposes a [DID Provider](https://eips.ethereum.org/EIPS/eip-2844) interface which exposes JOSE signing and decryption though a JOSN-RPC interface. ThreeIdProvider can be used in combination with [js-did](https://github.com/ceramicnetwork/js-did).
+ThreeIdProvider is a JavaScript SDK that allows developers to create and manage 3ID identities on the Ceramic network. It exposes a [DID Provider](https://eips.ethereum.org/EIPS/eip-2844) interface which exposes JOSE signing and decryption though a JSON-RPC interface. ThreeIdProvider can be used in combination with [js-did](https://github.com/ceramicnetwork/js-did).
 
 
 ## Getting Started
