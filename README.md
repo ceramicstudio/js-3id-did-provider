@@ -44,7 +44,7 @@ The function is called with one parameter which is the `request` object. It look
 In the above example the app with origin `https://my.app.origin` is requesting access to `/path/1` and `/path/2`. If the user consents to this the function should just return the `paths` array, otherwise an empty array. Note that an array containing only some of the requested paths may also be returned.
 
 #### Instantiate ThreeIdProvider with an authentication method
-To create an instance with an auth method you can pass two params to the create function as shown below. If the auth method doesn't have a 3ID associated with it yet a new 3ID will be created.
+To create an instance with an auth method you can pass two params to the create function as shown below. If the auth method doesn't have a 3ID associated with it yet a new 3ID will be created. This means that a seed will be randomly generated in the background. and the given *authSecret* will be added as an authentication method to the newly created 3ID.
 ```js
 const authSecret = new Uint8Array([ ... ]) // 32 bytes of entropy used to authenticate
 const authId = 'myAuthenticationMethod' // a name of the auth method
@@ -65,8 +65,13 @@ const threeId = await ThreeIdProvider.create({ getPermission, seed, ceramic })
 #### Using the ThreeIdProvider with js-did
 An instance of the DID provider from ThreeIdProvider can be passed directly to js-did.
 ```js
+import ThreeIdResolver from '@ceramicnetwork/3id-did-resolve'
+import Ceramic from '@ceramicnetwork/http-client'
+
 const provider = threeId.getDidProvider()
-const did = new DID({ provider })
+const resolver = ThreeIdResolver.getResolver(new Ceramic())
+
+const did = new DID({ provider, resolver })
 ```
 
 ## Maintainers
