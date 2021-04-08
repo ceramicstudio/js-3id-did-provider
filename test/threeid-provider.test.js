@@ -9,8 +9,8 @@ import Ipfs from 'ipfs'
 import { publishIDXConfig } from '@ceramicstudio/idx-tools'
 import { definitions } from '@ceramicstudio/idx-constants'
 
-import dagJose from 'dag-jose'
-import basicsImport from 'multiformats/cjs/src/basics-import.js'
+import dagJose from 'dag-jose';
+import { sha256 } from 'multiformats/cjs/src/hashes/sha2.js'
 import legacy from 'multiformats/cjs/src/legacy.js'
 import * as u8a from 'uint8arrays'
 
@@ -21,8 +21,9 @@ const randomAuthSecret = () => randomBytes(32)
 const getPermissionMock = jest.fn(async () => [])
 
 const genIpfsConf = (folder) => {
-  basicsImport.multicodec.add(dagJose)
-  const format = legacy(basicsImport, dagJose.name)
+  const hasher = {}
+  hasher[sha256.code] = sha256
+  const format = legacy(dagJose, {hashes: hasher})
   return {
     ipld: { formats: [format] },
     repo: `${folder}/ipfs/`,
@@ -65,7 +66,7 @@ describe('ThreeIdProvider', () => {
   beforeAll(async () => {
     tmpFolder = await tmp.dir({ unsafeCleanup: true })
     ipfs = await Ipfs.create(genIpfsConf(tmpFolder.path))
-    ceramic = await Ceramic.create(ipfs, { stateStorePath: tmpFolder.path + '/ceramic/' })
+    ceramic = await Ceramic.create(ipfs, { stateStoreDirectory: tmpFolder.path + '/ceramic/' })
     await publishIDXConfig(ceramic)
   })
 
@@ -228,7 +229,7 @@ describe('ThreeIdProvider with disabled IDX', () => {
   beforeAll(async () => {
     tmpFolder = await tmp.dir({ unsafeCleanup: true })
     ipfs = await Ipfs.create(genIpfsConf(tmpFolder.path))
-    ceramic = await Ceramic.create(ipfs, { stateStorePath: tmpFolder.path + '/ceramic/' })
+    ceramic = await Ceramic.create(ipfs, { stateStoreDirectory: tmpFolder.path + '/ceramic/' })
   })
 
   afterAll(async () => {

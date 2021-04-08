@@ -16,8 +16,8 @@ import { DidProvider } from '../src/did-provider'
 import Keyring from '../src/keyring'
 import { fakeEthProvider } from '../src/utils'
 
-import dagJose from 'dag-jose'
-import basicsImport from 'multiformats/cjs/src/basics-import.js'
+import dagJose from 'dag-jose';
+import { sha256 } from 'multiformats/cjs/src/hashes/sha2.js'
 import legacy from 'multiformats/cjs/src/legacy.js'
 import * as u8a from 'uint8arrays'
 
@@ -25,8 +25,9 @@ const seed = u8a.fromString('8e641c0dc77f6916cc7f743dad774cdf9f6f7bcb880b1139514
 const KEYCHAIN_DEF = definitions.threeIdKeychain
 
 const genIpfsConf = (folder) => {
-  basicsImport.multicodec.add(dagJose)
-  const format = legacy(basicsImport, dagJose.name)
+  const hasher = {}
+  hasher[sha256.code] = sha256
+  const format = legacy(dagJose, {hashes: hasher})
   return {
     ipld: { formats: [format] },
     repo: `${folder}/ipfs/`,
@@ -37,7 +38,6 @@ const genIpfsConf = (folder) => {
     silent: true,
   }
 }
-
 const randomSecret = () => '0x' + Buffer.from(randomBytes(32)).toString('hex')
 
 const fakeJWE = () => ({
@@ -87,7 +87,7 @@ describe('ThreeIDX', () => {
   beforeAll(async () => {
     tmpFolder = await tmp.dir({ unsafeCleanup: true })
     ipfs = await Ipfs.create(genIpfsConf(tmpFolder.path))
-    ceramic = await Ceramic.create(ipfs, { stateStorePath: tmpFolder.path + '/ceramic/' })
+    ceramic = await Ceramic.create(ipfs, { stateStoreDirectory: tmpFolder.path + '/ceramic/' })
     await publishIDXConfig(ceramic)
   })
 
