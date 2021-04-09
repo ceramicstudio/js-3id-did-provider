@@ -161,7 +161,7 @@ describe('ThreeIdProvider', () => {
       expect(idw1.id).toEqual(idw2.id)
     })
 
-    it('Removes authSecret from keychain and creates instance', async () => {
+    it.only('Removes authSecret from keychain and creates instance', async () => {
       const config1 = {
         getPermission: getPermissionMock,
         authSecret: randomAuthSecret(),
@@ -178,10 +178,12 @@ describe('ThreeIdProvider', () => {
       }
       await idw1.keychain.add(config2.authId, config2.authSecret)
       await idw1.keychain.commit()
+      // sometimes fails here, update not applied
       expect(await idw1.keychain.list()).toEqual(['auth1', 'auth2'])
 
       await idw1.keychain.remove('auth1')
       await idw1.keychain.commit()
+      // othwerwise here, update not applied
       expect(await idw1.keychain.list()).toEqual(['auth2'])
       const idw2 = await ThreeIdProvider.create(config2)
       expect(idw1.id).toEqual(idw2.id)

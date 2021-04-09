@@ -232,7 +232,9 @@ export class ThreeIDX {
       if (!this.docs[KEYCHAIN_DEF].metadata.schema) {
         update.metadata = { schema: ThreeIdKeychain }
       }
+      console.log(this.docs[KEYCHAIN_DEF].content)
       await this.docs[KEYCHAIN_DEF].change(update)
+      console.log(this.docs[KEYCHAIN_DEF].content)
     }
   }
 
