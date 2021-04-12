@@ -9,8 +9,8 @@ import Ipfs from 'ipfs'
 import { publishIDXConfig } from '@ceramicstudio/idx-tools'
 import { definitions } from '@ceramicstudio/idx-constants'
 
-import dagJose from 'dag-jose'
-import basicsImport from 'multiformats/cjs/src/basics-import.js'
+import dagJose from 'dag-jose';
+import { sha256 } from 'multiformats/cjs/src/hashes/sha2.js'
 import legacy from 'multiformats/cjs/src/legacy.js'
 import * as u8a from 'uint8arrays'
 
@@ -21,8 +21,9 @@ const randomAuthSecret = () => randomBytes(32)
 const getPermissionMock = jest.fn(async () => [])
 
 const genIpfsConf = (folder) => {
-  basicsImport.multicodec.add(dagJose)
-  const format = legacy(basicsImport, dagJose.name)
+  const hasher = {}
+  hasher[sha256.code] = sha256
+  const format = legacy(dagJose, {hashes: hasher})
   return {
     ipld: { formats: [format] },
     repo: `${folder}/ipfs/`,
@@ -33,6 +34,10 @@ const genIpfsConf = (folder) => {
     silent: true,
   }
 }
+
+const pauseSeconds = (sec) =>  new Promise(res  =>
+  setTimeout(res, sec * 1000)
+)
 
 jest.mock('cross-fetch', (o) => {
   return (a) => ({
@@ -65,7 +70,7 @@ describe('ThreeIdProvider', () => {
   beforeAll(async () => {
     tmpFolder = await tmp.dir({ unsafeCleanup: true })
     ipfs = await Ipfs.create(genIpfsConf(tmpFolder.path))
-    ceramic = await Ceramic.create(ipfs, { stateStorePath: tmpFolder.path + '/ceramic/' })
+    ceramic = await Ceramic.create(ipfs, { stateStoreDirectory: tmpFolder.path + '/ceramic/', anchorOnRequest: false })
     await publishIDXConfig(ceramic)
   })
 
@@ -176,11 +181,14 @@ describe('ThreeIdProvider', () => {
         ceramic
       }
       await idw1.keychain.add(config2.authId, config2.authSecret)
+      await pauseSeconds(2)
       await idw1.keychain.commit()
       expect(await idw1.keychain.list()).toEqual(['auth1', 'auth2'])
 
       await idw1.keychain.remove('auth1')
+      await pauseSeconds(2)
       await idw1.keychain.commit()
+  
       expect(await idw1.keychain.list()).toEqual(['auth2'])
       const idw2 = await ThreeIdProvider.create(config2)
       expect(idw1.id).toEqual(idw2.id)
@@ -200,11 +208,14 @@ describe('ThreeIdProvider', () => {
       const config2 = { getPermission: getPermissionMock, authId: 'auth2', authSecret: randomAuthSecret(), ceramic }
       await idw1.keychain.add(config1.authId, config1.authSecret)
       await idw1.keychain.add(config2.authId, config2.authSecret)
+      await pauseSeconds(2)
       await idw1.keychain.commit()
       expect(await idw1.keychain.list()).toEqual(['auth2', 'auth1'])
 
       await idw1.keychain.remove('auth1')
+      await pauseSeconds(2)
       await idw1.keychain.commit()
+   
       expect(await idw1.keychain.list()).toEqual(['auth2'])
       const idw2 = await ThreeIdProvider.create(config2)
       expect(idw1.id).toEqual(idw2.id)
@@ -228,7 +239,7 @@ describe('ThreeIdProvider with disabled IDX', () => {
   beforeAll(async () => {
     tmpFolder = await tmp.dir({ unsafeCleanup: true })
     ipfs = await Ipfs.create(genIpfsConf(tmpFolder.path))
-    ceramic = await Ceramic.create(ipfs, { stateStorePath: tmpFolder.path + '/ceramic/' })
+    ceramic = await Ceramic.create(ipfs, { stateStoreDirectory: tmpFolder.path + '/ceramic/' })
   })
 
   afterAll(async () => {

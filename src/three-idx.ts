@@ -83,7 +83,7 @@ export class ThreeIDX {
 
   get3idVersion(): string {
     const docId = this.docs.threeId.anchorCommitIds.pop()
-    return docId ? (docId.commit as CID).toString() : '0'
+    return docId ? docId.commit.toString() : '0'
   }
 
   async loadDoc(name: string, controller: string, family: string): Promise<void> {
