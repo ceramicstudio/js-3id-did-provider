@@ -40,6 +40,11 @@ const genIpfsConf = (folder) => {
 }
 const randomSecret = () => '0x' + Buffer.from(randomBytes(32)).toString('hex')
 
+const pauseSeconds = (sec) =>  new Promise(res  =>
+  setTimeout(res, sec * 1000)
+)
+
+
 const fakeJWE = () => ({
   jwe: {
     protected: 'prot',
@@ -87,7 +92,7 @@ describe('ThreeIDX', () => {
   beforeAll(async () => {
     tmpFolder = await tmp.dir({ unsafeCleanup: true })
     ipfs = await Ipfs.create(genIpfsConf(tmpFolder.path))
-    ceramic = await Ceramic.create(ipfs, { stateStoreDirectory: tmpFolder.path + '/ceramic/' })
+    ceramic = await Ceramic.create(ipfs, { stateStoreDirectory: tmpFolder.path + '/ceramic/', anchorOnRequest: false })
     await publishIDXConfig(ceramic)
   })
 
@@ -125,9 +130,13 @@ describe('ThreeIDX', () => {
     // with anchor, createIDX to update 3id doc
     await threeIdx.createIDX()
     // update the 3id doc
+    await ceramic.context.anchorService.anchor()
+    await pauseSeconds(1)
     await threeIdx.docs.threeId.change({ content: { asdf: 123 }})
-    await new Promise(resolve => threeIdx.docs.threeId.on('change', resolve))
+    await ceramic.context.anchorService.anchor()
+    await pauseSeconds(1)
     const latestCommit = threeIdx.docs.threeId.commitId.commit
+    console.log(latestCommit)
     expect(threeIdx.get3idVersion()).toEqual(latestCommit.toString())
   })
 
@@ -249,6 +258,9 @@ describe('ThreeIDX', () => {
       [nae2.did.id]: { data: fakeJWE(), id: fakeJWE() }
     }
     await threeIdx.rotateKeys(new3idState, keyring.pastSeeds, updatedAuthMap)
+    await ceramic.context.anchorService.anchor()
+    await pauseSeconds(2)
+
     expect(threeIdx.getAuthMap()).toEqual(updatedAuthMap)
     const state = threeIdx.docs.threeId.state
     expect(state.content).toEqual(expect.objectContaining(new3idState.content))

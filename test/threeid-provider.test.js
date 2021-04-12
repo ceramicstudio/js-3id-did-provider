@@ -35,6 +35,10 @@ const genIpfsConf = (folder) => {
   }
 }
 
+const pauseSeconds = (sec) =>  new Promise(res  =>
+  setTimeout(res, sec * 1000)
+)
+
 jest.mock('cross-fetch', (o) => {
   return (a) => ({
     ok: true,
@@ -66,7 +70,7 @@ describe('ThreeIdProvider', () => {
   beforeAll(async () => {
     tmpFolder = await tmp.dir({ unsafeCleanup: true })
     ipfs = await Ipfs.create(genIpfsConf(tmpFolder.path))
-    ceramic = await Ceramic.create(ipfs, { stateStoreDirectory: tmpFolder.path + '/ceramic/' })
+    ceramic = await Ceramic.create(ipfs, { stateStoreDirectory: tmpFolder.path + '/ceramic/', anchorOnRequest: false })
     await publishIDXConfig(ceramic)
   })
 
@@ -177,11 +181,14 @@ describe('ThreeIdProvider', () => {
         ceramic
       }
       await idw1.keychain.add(config2.authId, config2.authSecret)
+      await pauseSeconds(2)
       await idw1.keychain.commit()
       expect(await idw1.keychain.list()).toEqual(['auth1', 'auth2'])
 
       await idw1.keychain.remove('auth1')
+      await pauseSeconds(2)
       await idw1.keychain.commit()
+  
       expect(await idw1.keychain.list()).toEqual(['auth2'])
       const idw2 = await ThreeIdProvider.create(config2)
       expect(idw1.id).toEqual(idw2.id)
@@ -201,11 +208,14 @@ describe('ThreeIdProvider', () => {
       const config2 = { getPermission: getPermissionMock, authId: 'auth2', authSecret: randomAuthSecret(), ceramic }
       await idw1.keychain.add(config1.authId, config1.authSecret)
       await idw1.keychain.add(config2.authId, config2.authSecret)
+      await pauseSeconds(2)
       await idw1.keychain.commit()
       expect(await idw1.keychain.list()).toEqual(['auth2', 'auth1'])
 
       await idw1.keychain.remove('auth1')
+      await pauseSeconds(2)
       await idw1.keychain.commit()
+   
       expect(await idw1.keychain.list()).toEqual(['auth2'])
       const idw2 = await ThreeIdProvider.create(config2)
       expect(idw1.id).toEqual(idw2.id)
