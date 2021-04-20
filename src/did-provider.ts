@@ -1,14 +1,16 @@
-import { createJWS, decryptJWE, JWE } from 'did-jwt'
 import { decodeCleartext } from 'dag-jose-utils'
-import {
-  HandlerMethods,
-  RequestHandler,
-  RPCConnection,
-  RPCError,
-  RPCRequest,
-  RPCResponse,
-  createHandler,
-} from 'rpc-utils'
+import { createJWS, decryptJWE } from 'did-jwt'
+import type {
+  AuthParams,
+  CreateJWSParams,
+  DecryptJWEParams,
+  DIDMethodName,
+  DIDProvider,
+  DIDProviderMethods,
+  GeneralJWS,
+} from 'dids'
+import { HandlerMethods, RPCError, createHandler } from 'rpc-utils'
+import type { RPCRequest, RPCResponse } from 'rpc-utils'
 
 import Keyring from './keyring'
 import { ThreeIDX } from './three-idx'
@@ -23,34 +25,6 @@ export type Context = {
   keyring: Keyring
   origin: Origin
   forcedDID?: string
-}
-
-interface CreateJWSParams {
-  payload: Record<string, any>
-  protected?: Record<string, any>
-  revocable?: boolean
-  did: string
-}
-
-interface DecryptJWEParams {
-  jwe: JWE
-  did?: string
-}
-
-interface AuthParams {
-  paths: Array<string>
-  nonce: string
-  aud?: string
-}
-
-interface JWSSignature {
-  protected: string
-  signature: string
-}
-
-interface GeneralJWS {
-  payload: string
-  signatures: Array<JWSSignature>
 }
 
 function toGeneralJWS(jws: string): GeneralJWS {
@@ -87,7 +61,7 @@ async function sign(
   return toGeneralJWS(jws)
 }
 
-export const didMethods: HandlerMethods<Context> = {
+export const didMethods: HandlerMethods<Context, DIDProviderMethods> = {
   did_authenticate: async (
     { permissions, keyring, threeIdx, origin, forcedDID },
     params: AuthParams
@@ -109,7 +83,10 @@ export const didMethods: HandlerMethods<Context> = {
       threeIdx
     )
   },
-  did_createJWS: async ({ permissions, keyring, threeIdx, origin }, params: CreateJWSParams) => {
+  did_createJWS: async (
+    { permissions, keyring, threeIdx, origin },
+    params: CreateJWSParams & { did: string; revocable?: boolean }
+  ) => {
     if (!permissions.has(origin)) throw new RPCError(4100, 'Unauthorized')
     // TODO - if the requesting DID is our management key
     // (did:key) we should request explicit permission.
@@ -148,15 +125,23 @@ export interface ProviderConfig {
   forcedDID?: string
 }
 
-export class DidProvider implements RPCConnection {
-  protected _handle: RequestHandler
+type HandleMethod = <Name extends DIDMethodName>(
+  origin: string,
+  msg: RPCRequest<DIDProviderMethods, Name>
+) => Promise<RPCResponse<DIDProviderMethods, Name> | null>
+
+export class DidProvider implements DIDProvider {
+  _handle: HandleMethod
 
   constructor({ permissions, threeIdx, keyring, forcedOrigin, forcedDID }: ProviderConfig) {
-    const handler = createHandler<Context>(didMethods)
-    this._handle = (origin: string, msg: RPCRequest) => {
-      return handler(
+    const handler = createHandler<Context, DIDProviderMethods>(didMethods)
+    this._handle = async <Name extends DIDMethodName>(
+      origin: string,
+      msg: RPCRequest<DIDProviderMethods, Name>
+    ): Promise<RPCResponse<DIDProviderMethods, Name> | null> => {
+      return await handler(
         {
-          origin: forcedOrigin || origin,
+          origin: forcedOrigin ?? origin,
           permissions,
           threeIdx,
           keyring,
@@ -167,11 +152,14 @@ export class DidProvider implements RPCConnection {
     }
   }
 
-  public get isDidProvider(): boolean {
+  get isDidProvider(): boolean {
     return true
   }
 
-  public async send(msg: RPCRequest, origin?: Origin): Promise<RPCResponse | null> {
-    return await this._handle(origin, msg)
+  async send<Name extends DIDMethodName>(
+    msg: RPCRequest<DIDProviderMethods, Name>,
+    origin?: Origin
+  ): Promise<RPCResponse<DIDProviderMethods, Name> | null> {
+    return await this._handle(origin ?? '', msg)
   }
 }
