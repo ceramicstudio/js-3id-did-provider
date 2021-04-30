@@ -1,14 +1,17 @@
-import { CeramicApi, Doctype, CeramicCommit } from '@ceramicnetwork/common'
-import { TileDoctype } from '@ceramicnetwork/doctype-tile'
+import { CeramicApi, CeramicCommit } from '@ceramicnetwork/common'
+import { TileDocument } from '@ceramicnetwork/stream-tile'
 import CeramicClient from '@ceramicnetwork/http-client'
 import { schemas, definitions } from '@ceramicstudio/idx-constants'
 import CID from 'cids'
+import KeyDidResolver from 'key-did-resolver'
+import ThreeIdResolver from '@ceramicnetwork/3id-did-resolver'
+import { Resolver } from 'did-resolver'
+import { DID } from 'dids'
 
 import type { DidProvider } from './did-provider'
 import type { ThreeIdState } from './keyring'
-import type { DID } from 'dids'
 import type { JWE } from 'did-jwt'
-import type DocID from '@ceramicnetwork/docid'
+import type { StreamID } from '@ceramicnetwork/streamid'
 
 const KEYCHAIN_DEF = definitions.threeIdKeychain
 const IDX = 'IDX'
@@ -48,12 +51,12 @@ export interface NewAuthEntry {
 
 interface AuthLinkDocUpdate {
   commit: CeramicCommit
-  docid: DocID
+  docid: StreamID
   did: string
 }
 
 export class ThreeIDX {
-  public docs: Record<string, Doctype>
+  public docs: Record<string, TileDocument>
   public ceramic: CeramicApi
   protected _v03ID?: string
 
@@ -63,7 +66,14 @@ export class ThreeIDX {
   }
 
   async setDIDProvider(provider: DidProvider): Promise<void> {
-    await this.ceramic.setDIDProvider(provider)
+    const keyDidResolver = KeyDidResolver.getResolver()
+    const threeIdResolver = ThreeIdResolver.getResolver(this.ceramic)
+    const resolver = new Resolver({
+      ...threeIdResolver,
+      ...keyDidResolver,
+    })
+    const did = new DID({ provider, resolver })
+    await this.ceramic.setDID(did)
   }
 
   setV03ID(did: string): void {
@@ -74,11 +84,16 @@ export class ThreeIDX {
     return this._v03ID || `did:3:${this.docs.threeId.id.baseID.toString()}`
   }
 
-  async create3idDoc(docParams: Record<string, any>): Promise<void> {
-    this.docs.threeId = await this.ceramic.createDocument('tile', docParams, {
-      anchor: false,
-      publish: false,
-    })
+  async create3idDoc(docParams: ThreeIdState): Promise<void> {
+    this.docs.threeId = await TileDocument.create(
+      this.ceramic,
+      docParams.content,
+      docParams.metadata,
+      {
+        anchor: false,
+        publish: false,
+      }
+    )
   }
 
   get3idVersion(): string {
@@ -86,26 +101,30 @@ export class ThreeIDX {
     return docId ? docId.commit.toString() : '0'
   }
 
-  async loadDoc(name: string, controller: string, family: string): Promise<void> {
-    this.docs[name] = await this.ceramic.createDocument(
-      'tile',
-      { deterministic: true, metadata: { controllers: [controller], family } },
+  async loadDoc(name: string, controller: string, family: string): Promise<TileDocument> {
+    const stream = await TileDocument.create(
+      this.ceramic,
+      {},
+      { controllers: [controller], family: family },
       { anchor: false, publish: false }
     )
+    this.docs[name] = stream
+    return stream
   }
 
   async createAuthLinkUpdate({ did }: NewAuthEntry): Promise<AuthLinkDocUpdate> {
     const didString = did.id
-    await this.loadDoc(didString, didString, 'authLink')
-    await this.ceramic.pin.add(this.docs[didString].id)
+    const tile = await this.loadDoc(didString, didString, 'authLink')
+    await this.ceramic.pin.add(tile.id)
     return {
-      commit: await TileDoctype._makeCommit(this.docs[didString], did, { did: this.id }),
+      commit: await tile.makeCommit(this.ceramic, did),
       docid: this.docs[didString].id,
       did: didString,
     }
   }
 
   async applyAuthLinkUpdate({ docid, commit, did }: AuthLinkDocUpdate): Promise<void> {
+    // @ts-ignore
     if (this.docs[did].content !== this.id) {
       await this.ceramic.applyRecord(docid, commit)
     }
@@ -177,7 +196,7 @@ export class ThreeIDX {
     if (!this.docs.idx.metadata.schema) {
       update.metadata = { schema: IdentityIndex }
     }
-    await this.docs.idx.change(update)
+    await this.docs.idx.update(update.content, update.metadata)
   }
 
   /**
@@ -222,7 +241,7 @@ export class ThreeIDX {
       if (!this.docs.idx.metadata.schema) {
         update.metadata = { schema: IdentityIndex }
       }
-      await this.docs.idx.change(update)
+      await this.docs.idx.update(update)
     }
   }
 
@@ -232,7 +251,7 @@ export class ThreeIDX {
       if (!this.docs[KEYCHAIN_DEF].metadata.schema) {
         update.metadata = { schema: ThreeIdKeychain }
       }
-      await this.docs[KEYCHAIN_DEF].change(update)
+      await this.docs[KEYCHAIN_DEF].update(update.content, update.metadata)
     }
   }
 
@@ -249,10 +268,13 @@ export class ThreeIDX {
     if (!threeIdState.content) throw new Error('Content has to be defined')
     // Rotate keys in 3ID document and update keychain
     await Promise.all([
-      this.docs.threeId.change({
-        metadata: threeIdState.metadata,
-        content: { ...this.docs.threeId.content, publicKeys: threeIdState.content.publicKeys },
-      }),
+      this.docs.threeId.update(
+        {
+          ...this.docs.threeId.content,
+          publicKeys: threeIdState.content.publicKeys,
+        },
+        threeIdState.metadata
+      ),
       this.updateKeychainDoc(authMap, pastSeeds),
       this.pinAllDocs(),
     ])
