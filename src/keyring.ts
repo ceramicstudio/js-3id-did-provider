@@ -14,20 +14,16 @@ import {
 import { randomBytes } from '@stablelib/random'
 import { prepareCleartext, decodeCleartext } from 'dag-jose-utils'
 import { encodeKey, hexToU8A, u8aToHex } from './utils'
+import { StreamMetadata } from '@ceramicnetwork/common'
 
 export const LATEST = 'latest'
 const GENESIS = 'genesis'
 const BASE_PATH = "m/51073068'"
 const LEGACY_BASE_PATH = "m/7696500'/0'/0'"
 
-interface ThreeIdMetadata extends Record<string, any> {
-  controllers: Array<string>
-}
-
 export interface ThreeIdState {
-  metadata: ThreeIdMetadata
+  metadata: StreamMetadata
   content?: Record<string, any>
-  deterministic?: boolean
 }
 
 export interface KeySet {
@@ -215,7 +211,7 @@ export default class Keyring {
     }
     if (genesis) {
       state.metadata.family = '3id'
-      state.deterministic = true
+      state.metadata.deterministic = true
     }
     if (this._keySets[keyVer].v03ID) {
       delete state.content
