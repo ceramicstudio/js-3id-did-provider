@@ -14,7 +14,7 @@ import {
 import { randomBytes } from '@stablelib/random'
 import { prepareCleartext, decodeCleartext } from 'dag-jose-utils'
 import { encodeKey, hexToU8A, u8aToHex } from './utils'
-import { StreamMetadata } from '@ceramicnetwork/common'
+import type { StreamMetadata } from '@ceramicnetwork/common'
 
 export const LATEST = 'latest'
 const GENESIS = 'genesis'

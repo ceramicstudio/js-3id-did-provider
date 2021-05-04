@@ -1,4 +1,4 @@
-import { CeramicApi, CeramicCommit, SyncOptions } from '@ceramicnetwork/common'
+import type { CeramicApi, CeramicCommit } from '@ceramicnetwork/common'
 import { TileDocument } from '@ceramicnetwork/stream-tile'
 import CeramicClient from '@ceramicnetwork/http-client'
 import { definitions, schemas } from '@ceramicstudio/idx-constants'
