@@ -1,10 +1,11 @@
-import Permissions, { SELF_ORIGIN } from '../src/permissions'
+import Permissions, { SELF_ORIGIN } from '../permissions'
 import store from 'store'
 
-let getPermFn = async req => []
+const getPermFn = () => Promise.resolve([])
 
 describe('Permissions', () => {
-  let permissions
+  let permissions: Permissions
+
   beforeEach(() => {
     permissions = new Permissions(getPermFn)
     permissions.setDID('did:3:asdf')
@@ -14,14 +15,16 @@ describe('Permissions', () => {
     store.clearAll()
   })
 
-  it('Correctly constructed', async () => {
+  it('Correctly constructed', () => {
+    // @ts-ignore
     expect(() => new Permissions()).toThrow(/has to be a function/)
     permissions = new Permissions(getPermFn)
     expect(() => permissions.get('app1')).toThrow('DID not set')
+    // @ts-ignore
     expect(() => permissions.set('app1')).toThrow('DID not set')
   })
 
-  it('set / get correctly', async () => {
+  it('set / get correctly', () => {
     permissions.set('app1', ['/1', '/2'])
     permissions.set('app2', ['/a', '/b'])
     expect(permissions.get('app1')).toEqual(['/1', '/2'])
@@ -30,7 +33,7 @@ describe('Permissions', () => {
     expect(permissions.get('app1')).toEqual(null)
   })
 
-  it('has works correctly', async () => {
+  it('has works correctly', () => {
     permissions.set('app1', ['/1', '/2'])
     // Using self origin always returns true
     expect(permissions.has(SELF_ORIGIN)).toBeTruthy()
@@ -45,14 +48,14 @@ describe('Permissions', () => {
   it('request works correctly', async () => {
     expect(await permissions.request('app1', [])).toEqual([])
     expect(await permissions.request('app1', ['/1'])).toEqual([])
-    permissions.getPermission = async req => null
+    ;(permissions as any).getPermission = () => null
     expect(await permissions.request('app2', [])).toEqual(null)
     // will remember previously given permissions
     expect(await permissions.request('app1', [])).toEqual([])
-    permissions.getPermission = async req => ['/1']
+    ;(permissions as any).getPermission = () => Promise.resolve(['/1'])
     expect(await permissions.request('app1', ['/1'])).toEqual(['/1'])
     expect(await permissions.request('app1', ['/1', '/2'])).toEqual(['/1'])
-    permissions.getPermission = async req => ['/1', '/2']
+    ;(permissions as any).getPermission = () => Promise.resolve(['/1', '/2'])
     expect(await permissions.request('app1', ['/1', '/2'])).toEqual(['/1', '/2'])
   })
 })
