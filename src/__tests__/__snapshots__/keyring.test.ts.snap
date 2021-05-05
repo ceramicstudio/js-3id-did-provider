@@ -8,11 +8,11 @@ Object {
       "yh27jTt7Ny2Pwdy": "zQ3shrMGEKAjUTMmvDkcZ7Y3x9XnVjTH3myh27jTt7Ny2Pwdy",
     },
   },
-  "deterministic": true,
   "metadata": Object {
     "controllers": Array [
       "did:key:zQ3shQNcackrTByiYaPGso1Nt7b6r1gSMg4XXBmavzvTMqX1h",
     ],
+    "deterministic": true,
     "family": "3id",
   },
 }
@@ -110,11 +110,11 @@ Uint8Array [
 
 exports[`Keyring Generates correct state if v03ID is set 1`] = `
 Object {
-  "deterministic": true,
   "metadata": Object {
     "controllers": Array [
       "did:key:zQ3shbBE65QyvqVfo5yNpzN4Qf4LypkgdsoMyjoWbWz79r6j4",
     ],
+    "deterministic": true,
     "family": "3id",
   },
 }

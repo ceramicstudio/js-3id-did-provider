@@ -100,7 +100,7 @@ describe('ThreeIDX', () => {
   let anchorService: any
 
   beforeAll(async () => {
-    tmpFolder = await tmp.dir({unsafeCleanup: true})
+    tmpFolder = await tmp.dir({ unsafeCleanup: true })
     ipfs = await Ipfs.create(genIpfsConf(tmpFolder.path))
     ceramic = await Ceramic.create(ipfs, {
       stateStoreDirectory: tmpFolder.path + '/ceramic/',
@@ -131,8 +131,8 @@ describe('ThreeIDX', () => {
   it('creates 3id doc', async () => {
     keyring = new Keyring(seed)
     await setup3id(threeIdx, keyring)
-    const {log, ...state} = threeIdx.docs.threeId.state
-    const actual = {...state, log: log.map(({cid}) => cid.toString())}
+    const { log, ...state } = threeIdx.docs.threeId.state
+    const actual = { ...state, log: log.map(({ cid }) => cid.toString()) }
     delete actual.metadata.unique
     expect(actual).toMatchSnapshot()
   })
@@ -156,7 +156,7 @@ describe('ThreeIDX', () => {
     await anchorService.anchor()
     await pauseSeconds(1)
     await threeIdx.docs.threeId.sync()
-    await threeIdx.docs.threeId.update({asdf: 123}, undefined, {anchor: true})
+    await threeIdx.docs.threeId.update({ asdf: 123 }, undefined, { anchor: true })
     await anchorService.anchor()
     await pauseSeconds(1)
     await threeIdx.docs.threeId.sync()
@@ -174,7 +174,7 @@ describe('ThreeIDX', () => {
     expect(threeIdx.docs[update.did].content).toEqual({})
 
     await threeIdx.applyAuthLinkUpdate(update)
-    expect(threeIdx.docs[update.did].content).toEqual({did: threeIdx.id})
+    expect(threeIdx.docs[update.did].content).toEqual({ did: threeIdx.id })
   })
 
   it('createIDX with new auth entry', async () => {
@@ -268,7 +268,7 @@ describe('ThreeIDX', () => {
     expect(threeIdx.getAuthMap()).toEqual(nae1.mapEntry)
     await threeIdx.addAuthEntries([nae2, nae3])
 
-    expect(threeIdx.getAuthMap()).toEqual({...nae1.mapEntry, ...nae2.mapEntry, ...nae3.mapEntry})
+    expect(threeIdx.getAuthMap()).toEqual({ ...nae1.mapEntry, ...nae2.mapEntry, ...nae3.mapEntry })
     expect(await all(await ceramic.pin.ls())).toEqual(
       expect.arrayContaining([
         threeIdx.docs[nae1.did.id].id.toString(),
@@ -292,8 +292,8 @@ describe('ThreeIDX', () => {
     await keyring.generateNewKeys(threeIdx.get3idVersion())
     const new3idState = keyring.get3idState()
     const updatedAuthMap = {
-      [nae1.did.id]: {data: fakeJWE(), id: fakeJWE()},
-      [nae2.did.id]: {data: fakeJWE(), id: fakeJWE()},
+      [nae1.did.id]: { data: fakeJWE(), id: fakeJWE() },
+      [nae2.did.id]: { data: fakeJWE(), id: fakeJWE() },
     }
     await threeIdx.rotateKeys(new3idState, keyring.pastSeeds, updatedAuthMap)
     await anchorService.anchor()
