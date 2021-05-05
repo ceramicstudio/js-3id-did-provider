@@ -1,18 +1,19 @@
-import { mnemonicToSeed } from '@ethersproject/hdnode'
 import * as u8a from 'uint8arrays'
-
 import { randomBytes } from '@stablelib/random'
 import Keyring from '../src/keyring'
 
 describe('Keyring', () => {
-  const seed = u8a.fromString('f0e4c2f76c58916ec258f246851bea091d14d4247a2fc3e18694461b1816e13b', 'base16')
+  const seed = u8a.fromString(
+    'f0e4c2f76c58916ec258f246851bea091d14d4247a2fc3e18694461b1816e13b',
+    'base16'
+  )
 
-  it('Generates random seed if none passed', async () => {
+  it('Generates random seed if none passed', () => {
     const keyring = new Keyring()
     expect(keyring.seed).toBeDefined()
   })
 
-  it('Derives correct keys from seed', async () => {
+  it('Derives correct keys from seed', () => {
     const keyring = new Keyring(seed)
     expect(keyring.seed).toEqual(seed)
     expect(keyring.pastSeeds).toEqual([])
@@ -23,7 +24,7 @@ describe('Keyring', () => {
     expect(keyring.v03ID).not.toBeDefined()
   })
 
-  it('Generates correct state if v03ID is set', async () => {
+  it('Generates correct state if v03ID is set', () => {
     const v03ID = 'did:3:abc3234'
     const keyring = new Keyring(seed, v03ID)
     expect(keyring.get3idState(true)).toMatchSnapshot()
@@ -60,7 +61,7 @@ describe('Keyring', () => {
     const mgmtSigs = await Promise.all([
       keyring.getMgmtSigner(mgmt0)('asdf'),
       keyring.getMgmtSigner(mgmt1)('asdf'),
-      keyring.getMgmtSigner(mgmt2)('asdf')
+      keyring.getMgmtSigner(mgmt2)('asdf'),
     ])
 
     const pastSeeds = keyring.pastSeeds
@@ -71,11 +72,13 @@ describe('Keyring', () => {
     expect(await keyring1.getSigner(v1)('asdf')).toEqual(signed1)
     expect(keyring1.get3idState()).toEqual(docState2)
 
-    expect(await Promise.all([
-      keyring1.getMgmtSigner(mgmt0)('asdf'),
-      keyring1.getMgmtSigner(mgmt1)('asdf'),
-      keyring1.getMgmtSigner(mgmt2)('asdf')
-    ])).toEqual(mgmtSigs)
+    expect(
+      await Promise.all([
+        keyring1.getMgmtSigner(mgmt0)('asdf'),
+        keyring1.getMgmtSigner(mgmt1)('asdf'),
+        keyring1.getMgmtSigner(mgmt2)('asdf'),
+      ])
+    ).toEqual(mgmtSigs)
   })
 
   it('loads legacy keys correctly', async () => {
@@ -91,13 +94,13 @@ describe('Keyring', () => {
     expect(keyring1.v03ID).not.toBeDefined()
     await keyring1.loadPastSeeds(pastSeeds)
     expect(keyring1.v03ID).toEqual(v03ID)
-    expect(keyring1._keySets).toEqual(keyring0._keySets)
+    expect((keyring1 as any)._keySets).toEqual((keyring0 as any)._keySets)
   })
 
   it('generateNewKeys throws if version already exist', async () => {
     const keyring = new Keyring()
     const v = 'versionCID0'
     await keyring.generateNewKeys(v)
-    expect(keyring.generateNewKeys(v)).rejects.toThrow('Key set version already exist')
+    await expect(keyring.generateNewKeys(v)).rejects.toThrow('Key set version already exist')
   })
 })
