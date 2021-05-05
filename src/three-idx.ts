@@ -188,18 +188,6 @@ export class ThreeIDX {
   }
 
   /**
-   * Reset the IDX doc structure to a default (mostly empty) state.
-   */
-  async resetIDX(): Promise<void> {
-    if (this.docs.idx == null) {
-      throw new Error('No IDX doc')
-    }
-    const nextContent = { [KEYCHAIN_DEF]: this.docs[KEYCHAIN_DEF].id.toUrl() }
-    const nextMetadata = this.docs.idx.metadata.schema ? undefined : { schema: IdentityIndex }
-    await this.docs.idx.update(nextContent, nextMetadata)
-  }
-
-  /**
    * Adds a new AuthEntries to the Auth keychain.
    */
   async addAuthEntries(newEntries: Array<NewAuthEntry>): Promise<void> {
