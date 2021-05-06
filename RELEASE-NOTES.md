@@ -1,7 +1,14 @@
 # Release Notes
 
+## v1.0.0 - 2021-05-06
+Release version 1 of 3id-did-provider.
+
+* chore: update dependencies
+* chore: remove resetIDX method (#129)
+* fix: 3IDv0 key derivation
+
 ## v0.4.0 - 2021-01-14
-* ref: Use `did:key` for authMethods
+* ref: use `did:key` for authmethods
 * chore: Bump Ceramic version
 * chore: Integration tests for 3IDv0
 

@@ -221,7 +221,6 @@ Set the paths which the given origin should have permission for.
         * [.permissions](#ThreeIdProvider+permissions)
         * [.id](#ThreeIdProvider+id)
         * [.getDidProvider()](#ThreeIdProvider+getDidProvider) ⇒ <code>DidProvider</code>
-        * [.resetIDX()](#ThreeIdProvider+resetIDX)
     * _static_
         * [.create(config)](#ThreeIdProvider.create) ⇒ [<code>ThreeIdProvider</code>](#ThreeIdProvider)
 
@@ -267,12 +266,6 @@ Get the DIDProvider
 
 **Kind**: instance method of [<code>ThreeIdProvider</code>](#ThreeIdProvider)  
 **Returns**: <code>DidProvider</code> - The DIDProvider for this ThreeIdProvider instance  
-<a name="ThreeIdProvider+resetIDX"></a>
-
-#### threeIdProvider.resetIDX()
-Reset the IDX doc structure to a default (mostly empty) state.
-
-**Kind**: instance method of [<code>ThreeIdProvider</code>](#ThreeIdProvider)  
 <a name="ThreeIdProvider.create"></a>
 
 #### ThreeIdProvider.create(config) ⇒ [<code>ThreeIdProvider</code>](#ThreeIdProvider)
