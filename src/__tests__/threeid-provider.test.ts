@@ -23,6 +23,38 @@ const seed = u8a.fromString(
 const randomAuthSecret = () => randomBytes(32)
 const getPermissionMock = jest.fn(() => Promise.resolve([]))
 
+const didDocResult = (id: string) => ({
+  didDocument: {
+    authentication: [{
+        controller: id,
+        id: id + "#e2Z2Dq3958ZPPWA",
+        publicKeyBase58: "25sGY37UkdKKW4irbH9qxdxRUvqYZi5z26J5EqjTSAueS",
+        type: "EcdsaSecp256k1Signature2019",
+      }],
+    id,
+    keyAgreement: [{
+        controller: id,
+        id: id + "#RvxVH2RhN7KTkKk",
+        publicKeyBase58: "9iv4ZyqUetpcFe4cQuoRwjhUDc42spkocJJkCuTnkNYz",
+        type: "X25519KeyAgreementKey2019",
+      }],
+    verificationMethod: [{
+        controller: id,
+        id: id + "#RvxVH2RhN7KTkKk",
+        publicKeyBase58: "9iv4ZyqUetpcFe4cQuoRwjhUDc42spkocJJkCuTnkNYz",
+        type: "X25519KeyAgreementKey2019",
+      }, {
+        controller: id,
+        id: id + "#e2Z2Dq3958ZPPWA",
+        publicKeyBase58: "25sGY37UkdKKW4irbH9qxdxRUvqYZi5z26J5EqjTSAueS",
+        type: "EcdsaSecp256k1Signature2019",
+      },
+    ],
+  },
+  didDocumentMetadata: { versionId: "0" },
+  didResolutionMetadata: { contentType: "application/did+json" }
+})
+
 function genIpfsConf(folder: string) {
   const hasher: Record<number, Hasher<string, number>> = {}
   hasher[sha256.code] = sha256
@@ -107,7 +139,7 @@ describe('ThreeIdProvider', () => {
         ceramic,
       }
       const idw = await ThreeIdProvider.create(config)
-      expect(await ceramic.did?.resolve(idw.id)).toMatchSnapshot()
+      expect(await ceramic.did?.resolve(idw.id)).toEqual(didDocResult(idw.id))
       expect(await idw.keychain.list()).toEqual([])
     })
 

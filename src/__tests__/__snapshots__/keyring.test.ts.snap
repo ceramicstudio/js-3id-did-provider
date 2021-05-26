@@ -12,7 +12,6 @@ Object {
     "controllers": Array [
       "did:key:zQ3shQNcackrTByiYaPGso1Nt7b6r1gSMg4XXBmavzvTMqX1h",
     ],
-    "deterministic": true,
     "family": "3id",
   },
 }
@@ -126,6 +125,7 @@ Object {
     "controllers": Array [
       "did:key:zQ3shbBE65QyvqVfo5yNpzN4Qf4LypkgdsoMyjoWbWz79r6j4",
     ],
+    "deterministic": true,
   },
 }
 `;

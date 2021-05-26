@@ -131,10 +131,11 @@ describe('ThreeIDX', () => {
   it('creates 3id doc', async () => {
     keyring = new Keyring(seed)
     await setup3id(threeIdx, keyring)
-    const { log, ...state } = threeIdx.docs.threeId.state
-    const actual = { ...state, log: log.map(({ cid }) => cid.toString()) }
-    delete actual.metadata.unique
-    expect(actual).toMatchSnapshot()
+    const state = threeIdx.docs.threeId.state
+    // will be different each run
+    delete state.log
+    delete state.metadata.unique
+    expect(state).toMatchSnapshot()
   })
 
   it('handles v0 3ID correctly', async () => {

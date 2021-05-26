@@ -54,7 +54,7 @@ const threeId = await ThreeIdProvider.create({ getPermission, authSecret, authId
 ```
 
 #### Instantiate ThreeIdProvider with a seed
-To create a wallet with a seed you can simply pass it as an option to the constructor. This will create an instance of the ThreeIdProvider that derives all it's keys from this seed. Be careful, if this seed is lost the DID and all of it's data will be lost as well.
+To create a wallet with a seed you can simply pass it as an option to the constructor. This will create an instance of the ThreeIdProvider that derives all it's keys from this seed. Be careful, if this seed is lost the DID and all of it's data will be lost as well. Note that you will get different 3IDs every time the `create` method is invoked with the same seed. An authentication method must be used in order to interact with the same 3ID consistently.
 ```js
 const seed = new Uint8Array([ ... ]) // 32 bytes of entropy used as the seed
 const ceramic = ... // An instance of Ceramic (either @ceramicnetwork/core, or @ceramicnetwork/http-client)
