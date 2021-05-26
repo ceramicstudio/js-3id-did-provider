@@ -85,16 +85,16 @@ export class ThreeIDX {
     return this._v03ID || `did:3:${this.docs.threeId.id.baseID.toString()}`
   }
 
-  async create3idDoc(docParams: ThreeIdState): Promise<void> {
-    this.docs.threeId = await TileDocument.create(
+  async create3idDoc({ content, metadata }: ThreeIdState): Promise<void> {
+    this.docs.threeId = await TileDocument.create<Record<string, any>>(
       this.ceramic,
-      docParams.content,
-      docParams.metadata,
-      {
-        anchor: false,
-        publish: false,
-      }
+      null,
+      metadata,
+      { anchor: false, publish: false }
     )
+    if (content != null) {
+      await this.docs.threeId.update(content)
+    }
   }
 
   get3idVersion(): string {

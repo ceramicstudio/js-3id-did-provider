@@ -35,11 +35,4 @@ module.exports = {
       },
     ],
   },
-  node: {
-    console: false,
-    fs: 'empty',
-    net: 'empty',
-    tls: 'empty',
-    child_process: 'empty',
-  },
 }
