@@ -85,10 +85,10 @@ const setup3id = async (threeIdx: ThreeIDX, keyring: Keyring) => {
   await threeIdx.setDIDProvider(didProvider)
 }
 
-const mockedPermissions = ({
+const mockedPermissions = {
   request: () => Promise.resolve([]),
   has: () => true,
-} as unknown) as Permissions
+} as unknown as Permissions
 
 describe('ThreeIDX', () => {
   jest.setTimeout(250000)
@@ -131,7 +131,7 @@ describe('ThreeIDX', () => {
   it('creates 3id doc', async () => {
     keyring = new Keyring(seed)
     await setup3id(threeIdx, keyring)
-    const state = threeIdx.docs.threeId.state
+    const state = threeIdx.docs.threeId.state as any
     // will be different each run
     delete state.log
     delete state.metadata.unique

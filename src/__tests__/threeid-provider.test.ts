@@ -25,34 +25,40 @@ const getPermissionMock = jest.fn(() => Promise.resolve([]))
 
 const didDocResult = (id: string) => ({
   didDocument: {
-    authentication: [{
+    authentication: [
+      {
         controller: id,
-        id: id + "#e2Z2Dq3958ZPPWA",
-        publicKeyBase58: "25sGY37UkdKKW4irbH9qxdxRUvqYZi5z26J5EqjTSAueS",
-        type: "EcdsaSecp256k1Signature2019",
-      }],
+        id: id + '#e2Z2Dq3958ZPPWA',
+        publicKeyBase58: '25sGY37UkdKKW4irbH9qxdxRUvqYZi5z26J5EqjTSAueS',
+        type: 'EcdsaSecp256k1Signature2019',
+      },
+    ],
     id,
-    keyAgreement: [{
+    keyAgreement: [
+      {
         controller: id,
-        id: id + "#RvxVH2RhN7KTkKk",
-        publicKeyBase58: "9iv4ZyqUetpcFe4cQuoRwjhUDc42spkocJJkCuTnkNYz",
-        type: "X25519KeyAgreementKey2019",
-      }],
-    verificationMethod: [{
+        id: id + '#RvxVH2RhN7KTkKk',
+        publicKeyBase58: '9iv4ZyqUetpcFe4cQuoRwjhUDc42spkocJJkCuTnkNYz',
+        type: 'X25519KeyAgreementKey2019',
+      },
+    ],
+    verificationMethod: [
+      {
         controller: id,
-        id: id + "#RvxVH2RhN7KTkKk",
-        publicKeyBase58: "9iv4ZyqUetpcFe4cQuoRwjhUDc42spkocJJkCuTnkNYz",
-        type: "X25519KeyAgreementKey2019",
-      }, {
+        id: id + '#RvxVH2RhN7KTkKk',
+        publicKeyBase58: '9iv4ZyqUetpcFe4cQuoRwjhUDc42spkocJJkCuTnkNYz',
+        type: 'X25519KeyAgreementKey2019',
+      },
+      {
         controller: id,
-        id: id + "#e2Z2Dq3958ZPPWA",
-        publicKeyBase58: "25sGY37UkdKKW4irbH9qxdxRUvqYZi5z26J5EqjTSAueS",
-        type: "EcdsaSecp256k1Signature2019",
+        id: id + '#e2Z2Dq3958ZPPWA',
+        publicKeyBase58: '25sGY37UkdKKW4irbH9qxdxRUvqYZi5z26J5EqjTSAueS',
+        type: 'EcdsaSecp256k1Signature2019',
       },
     ],
   },
-  didDocumentMetadata: { versionId: "0" },
-  didResolutionMetadata: { contentType: "application/did+json" }
+  didDocumentMetadata: { versionId: '0' },
+  didResolutionMetadata: { contentType: 'application/did+json' },
 })
 
 function genIpfsConf(folder: string) {

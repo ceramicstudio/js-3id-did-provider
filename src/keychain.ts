@@ -124,11 +124,9 @@ export class Keychain {
    */
   async list(): Promise<Array<string>> {
     return Promise.all(
-      Object.values(this._threeIdx.getAuthMap()).map(
-        async ({ id }: AuthEntry): Promise<string> => {
-          return decryptAuthId(id, this._keyring)
-        }
-      )
+      Object.values(this._threeIdx.getAuthMap()).map(async ({ id }: AuthEntry): Promise<string> => {
+        return decryptAuthId(id, this._keyring)
+      })
     )
   }
 
