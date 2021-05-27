@@ -41,7 +41,7 @@ describe('DidProvider', () => {
     const nonce = 'asdf'
     const aud = 'foo'
     await expectRPC(
-      new DidProvider((config as unknown) as ProviderConfig),
+      new DidProvider(config as unknown as ProviderConfig),
       'foo',
       { method: 'did_authenticate', params: { paths: [] } },
       {
@@ -58,7 +58,7 @@ describe('DidProvider', () => {
     )
     expect(config.permissions.request).toBeCalledWith('foo', [])
     await expectRPC(
-      new DidProvider((config as unknown) as ProviderConfig),
+      new DidProvider(config as unknown as ProviderConfig),
       'foo',
       { method: 'did_authenticate', params: { paths: ['/1'], nonce, aud } },
       {
@@ -81,7 +81,7 @@ describe('DidProvider', () => {
     const protectedHeader = { bar: 'baz' }
     const permissions = { has: jest.fn(() => false) }
     await expectRPC(
-      new DidProvider(({ permissions } as unknown) as ProviderConfig),
+      new DidProvider({ permissions } as unknown as ProviderConfig),
       'bar',
       { method: 'did_createJWS', params: { payload, protected: protectedHeader } },
       { error: { code: 4100, message: 'Unauthorized' } }
@@ -106,7 +106,7 @@ describe('DidProvider', () => {
     const protectedHeader = { bar: 'baz' }
     let did = 'did:3:asdf'
     await expectRPC(
-      new DidProvider((config as unknown) as ProviderConfig),
+      new DidProvider(config as unknown as ProviderConfig),
       null,
       { method: 'did_createJWS', params: { payload, protected: protectedHeader, did } },
       {
@@ -125,7 +125,7 @@ describe('DidProvider', () => {
       }
     )
     await expectRPC(
-      new DidProvider((config as unknown) as ProviderConfig),
+      new DidProvider(config as unknown as ProviderConfig),
       null,
       {
         method: 'did_createJWS',
@@ -148,7 +148,7 @@ describe('DidProvider', () => {
     )
     did = 'did:key:fewfq'
     await expectRPC(
-      new DidProvider((config as unknown) as ProviderConfig),
+      new DidProvider(config as unknown as ProviderConfig),
       null,
       { method: 'did_createJWS', params: { payload, protected: protectedHeader, did } },
       {
@@ -180,7 +180,7 @@ describe('DidProvider', () => {
       keyring,
     }
     await expectRPC(
-      new DidProvider((config as unknown) as ProviderConfig),
+      new DidProvider(config as unknown as ProviderConfig),
       null,
       { method: 'did_decryptJWE', params: { jwe } },
       { result: { cleartext: u8a.toString(cleartext, 'base64pad') } }
@@ -205,13 +205,13 @@ describe('DidProvider', () => {
       keyring,
     }
     await expectRPC(
-      new DidProvider((config as unknown) as ProviderConfig),
+      new DidProvider(config as unknown as ProviderConfig),
       null,
       { method: 'did_decryptJWE', params: { jwe: jwe1 } },
       { result: { cleartext: u8a.toString(cleartext1, 'base64pad') } }
     )
     await expectRPC(
-      new DidProvider((config as unknown) as ProviderConfig),
+      new DidProvider(config as unknown as ProviderConfig),
       null,
       { method: 'did_decryptJWE', params: { jwe: jwe2 } },
       { error: { code: 4100, data: undefined, message: 'Unauthorized' } }

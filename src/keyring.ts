@@ -210,9 +210,9 @@ export default class Keyring {
     }
     if (genesis) {
       state.metadata.family = '3id'
-      state.metadata.deterministic = true
     }
     if (this._keySets[keyVer].v03ID) {
+      state.metadata.deterministic = true
       delete state.content
     }
     return state

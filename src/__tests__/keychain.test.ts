@@ -22,7 +22,7 @@ describe('Keychain', () => {
 
   beforeEach(() => {
     const authMap: AuthMap = {}
-    threeIdx = ({
+    threeIdx = {
       id: 'did:3:asdf',
       loadIDX: jest.fn(() => Promise.resolve(null)),
       setDIDProvider: jest.fn(),
@@ -39,7 +39,7 @@ describe('Keychain', () => {
       get3idVersion: jest.fn(() => '0'),
       rotateKeys: jest.fn(),
       setV03ID: jest.fn(),
-    } as unknown) as ThreeIDX
+    } as unknown as ThreeIDX
   })
 
   it('Create with v03ID', async () => {
