@@ -1,6 +1,6 @@
 {
   "name": "3id-did-provider",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Create and manage 3IDs",
   "main": "lib/threeid-provider.js",
   "types": "lib/threeid-provider.d.ts",
@@ -11,17 +11,10 @@
     "lint": "eslint ./src --ext .js,.ts",
     "test": "jest --coverage --runInBand --env=node",
     "build:es5": "./node_modules/.bin/tsc -p tsconfig.json",
-    "build:dist": "./node_modules/.bin/webpack --config webpack.config.js --mode=development",
-    "build:dist:dev": "./node_modules/.bin/webpack --config webpack.dev.config.js --mode=development",
-    "build:dist:prod": "./node_modules/.bin/webpack --config webpack.config.js --mode=production --output-filename threeid-provider.min.js",
     "build": "npm run build:es5",
     "prepublishOnly": "npm run build; npm run generate-readme",
     "prepare": "npm run build",
     "generate-readme": "cp readme-template.md README.md; jsdoc2md --configure ./jsdoc2md.json -g none -d 3 'src/**/*.ts' >> README.md"
-  },
-  "browser": {
-    "fs": false,
-    "child_process": false
   },
   "jest": {
     "testEnvironment": "node",
@@ -80,7 +73,6 @@
     "@types/node": "^14.14.41",
     "@types/store": "^2.0.2",
     "babel-core": "7.0.0-bridge.0",
-    "babel-loader": "^8.2.2",
     "dag-jose": "^0.3.0",
     "eslint": "^7.24.0",
     "eslint-config-3box": "^0.2.0",
@@ -93,8 +85,6 @@
     "multiformats": "~4.6.1",
     "prettier": "^2.2.1",
     "tmp-promise": "^3.0.2",
-    "typescript": "^4.1.3",
-    "webpack": "^4.44.0",
-    "webpack-cli": "^3.3.12"
+    "typescript": "^4.1.3"
   }
 }
