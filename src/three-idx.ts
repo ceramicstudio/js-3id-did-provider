@@ -164,17 +164,21 @@ export class ThreeIDX {
     await this.loadDoc(authDid, authDid, 'authLink')
     const { did } = this.docs[authDid].content
     if (!did) return null
+    await this.loadAllDocs(did)
+    const { authMap, pastSeeds } = this.docs[KEYCHAIN_DEF].content
+    return {
+      seed: authMap[authDid]?.data,
+      pastSeeds,
+    } as EncKeyMaterial
+  }
+
+  async loadAllDocs(did: string): Promise<void> {
     // eslint-disable-next-line prettier/prettier
     await Promise.all([
       this.load3IDDoc(did),
       this.loadDoc(KEYCHAIN_DEF, did, KEYCHAIN_DEF),
       this.loadDoc('idx', did, IDX),
     ])
-    const { authMap, pastSeeds } = this.docs[KEYCHAIN_DEF].content
-    return {
-      seed: authMap[authDid]?.data,
-      pastSeeds,
-    } as EncKeyMaterial
   }
 
   async load3IDDoc(did: string): Promise<void> {

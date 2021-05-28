@@ -215,6 +215,18 @@ export class Keychain {
     return Keychain.create(threeIdx, makeTmpProvider)
   }
 
+  static async loadFromSeed(
+    threeIdx: ThreeIDX,
+    seed: Uint8Array,
+    did: string,
+    makeTmpProvider: (keyring: Keyring, managementKey: string) => DidProvider
+  ): Promise<Keychain> {
+    const keyring = new Keyring(seed)
+    await threeIdx.loadAllDocs(did)
+    await threeIdx.setDIDProvider(makeTmpProvider(keyring, did))
+    return new Keychain(keyring, threeIdx)
+  }
+
   static async create(
     threeIdx: ThreeIDX,
     makeTmpProvider: (keyring: Keyring, managementKey: string) => DidProvider,

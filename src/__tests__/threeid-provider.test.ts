@@ -149,6 +149,28 @@ describe('ThreeIdProvider', () => {
       expect(await idw.keychain.list()).toEqual([])
     })
 
+    it('Creates instance from seed and same did with seed + did', async () => {
+      // Create new did with seed
+      const config = {
+        getPermission: getPermissionMock,
+        seed,
+        ceramic,
+      }
+      const idw = await ThreeIdProvider.create(config)
+      const expectedDidDoc = didDocResult(idw.id)
+
+      // Expect to load same did with seed when given did
+      const configSeedDid = {
+        getPermission: getPermissionMock,
+        seed,
+        ceramic,
+        did: idw.id,
+      }
+      const idw2 = await ThreeIdProvider.create(configSeedDid)
+      expect(idw2.id).toEqual(idw.id)
+      expect(await ceramic.did?.resolve(idw2.id)).toEqual(expectedDidDoc)
+    })
+
     it('Creates instance from authSecret, new DID', async () => {
       const config = {
         getPermission: getPermissionMock,
