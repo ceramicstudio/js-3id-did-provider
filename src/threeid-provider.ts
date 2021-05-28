@@ -7,7 +7,8 @@ import Permissions, { GetPermissionFn, SELF_ORIGIN } from './permissions'
 import { Keychain } from './keychain'
 
 type AuthConfig = { authId: string; authSecret: Uint8Array; seed?: never }
-type SeedConfig = { authId?: never; authSecret?: never; seed: Uint8Array }
+type SeedConfig = { authId?: never; authSecret?: never; seed: Uint8Array; did?: string }
+// type SeedDidConfig = { authId?: never; authSecret?: never; seed: Uint8Array, did: string }
 
 type IDWConfig = {
   getPermission: GetPermissionFn
@@ -82,7 +83,11 @@ export default class ThreeIdProvider {
     let keychain
     if (config.seed) {
       if (typeof config.seed === 'string') throw new Error('seed needs to be Uint8Array')
-      keychain = await Keychain.create(threeIdx, makeTmpProvider, config.seed, config.v03ID)
+      if (config.did) {
+        keychain = await Keychain.loadFromSeed(threeIdx, config.seed, config.did, makeTmpProvider)
+      } else {
+        keychain = await Keychain.create(threeIdx, makeTmpProvider, config.seed, config.v03ID)
+      }
     } else if (config.authSecret) {
       keychain = await Keychain.load(threeIdx, config.authSecret, makeTmpProvider)
     }
