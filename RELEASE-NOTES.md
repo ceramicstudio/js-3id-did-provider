@@ -1,5 +1,9 @@
 # Release Notes
 
+## v1.0.2 - 2021-05-28
+
+feat: deterministic DID with seed
+
 ## v1.0.1 - 2021-05-27
 
 - fix: 3IDv1 without deterministic flag
