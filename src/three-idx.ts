@@ -1,4 +1,5 @@
 import type { CeramicApi, CeramicCommit } from '@ceramicnetwork/common'
+import { SubscriptionSet } from '@ceramicnetwork/common'
 import { TileDocument } from '@ceramicnetwork/stream-tile'
 import CeramicClient from '@ceramicnetwork/http-client'
 import { definitions, schemas } from '@ceramicstudio/idx-constants'
@@ -59,10 +60,12 @@ export class ThreeIDX {
   public docs: Record<string, TileDocument>
   public ceramic: CeramicApi
   protected _v03ID?: string
+  protected _subscriptionSet: SubscriptionSet
 
   constructor(ceramic?: CeramicApi) {
     this.ceramic = ceramic || new CeramicClient()
     this.docs = {}
+    this._subscriptionSet = new SubscriptionSet()
   }
 
   async setDIDProvider(provider: DidProvider): Promise<void> {
@@ -95,6 +98,7 @@ export class ThreeIDX {
         publish: false,
       }
     )
+    this._subscriptionSet.add(this.docs.threeId.subscribe())
   }
 
   get3idVersion(): string {
@@ -111,6 +115,7 @@ export class ThreeIDX {
       { anchor: false, publish: false }
     )
     this.docs[name] = stream
+    this._subscriptionSet.add(stream.subscribe())
     return stream
   }
 
@@ -188,6 +193,7 @@ export class ThreeIDX {
       this._v03ID = did
     } else {
       this.docs.threeId = await this.ceramic.loadStream(id)
+      this._subscriptionSet.add(this.docs.threeId.subscribe())
     }
   }
 
