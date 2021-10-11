@@ -271,6 +271,7 @@ export class ThreeIDX {
             return target.createJWS(payload, Object.assign({}, options, { did: currentController }))
           }
         } else {
+          // Idiomatic way to fall back to the original method/property.
           return Reflect.get(target, prop, receiver)
         }
       },
