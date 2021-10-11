@@ -7,7 +7,7 @@ import CID from 'cids'
 import KeyDidResolver from 'key-did-resolver'
 import ThreeIdResolver from '@ceramicnetwork/3id-did-resolver'
 import { Resolver } from 'did-resolver'
-import { DID } from 'dids'
+import { CreateJWSOptions, DID } from 'dids'
 
 import type { DidProvider } from './did-provider'
 import type { ThreeIdState } from './keyring'
@@ -261,17 +261,31 @@ export class ThreeIDX {
     authMap: AuthMap
   ): Promise<void> {
     if (!threeIdState.content) throw new Error('Content has to be defined')
+    const currentController = this.docs.threeId.controllers[0]
+    // Sign an update to 3ID document with did:key
+    const didKey = new Proxy(this.ceramic.did!, {
+      get(target: DID, prop: string | symbol, receiver?: any): any {
+        // Only intercept ::createJWS function. Make it sign with the current controller.
+        if (prop === 'createJWS') {
+          return <T = any>(payload: T, options: CreateJWSOptions = {}) => {
+            return target.createJWS(payload, Object.assign({}, options, { did: currentController }))
+          }
+        } else {
+          return Reflect.get(target, prop, receiver)
+        }
+      },
+    })
+    const originalDid = this.ceramic.did
+    this.ceramic.did = didKey
     // Rotate keys in 3ID document and update keychain
-    await Promise.all([
-      this.docs.threeId.update(
-        {
-          ...this.docs.threeId.content,
-          publicKeys: threeIdState.content.publicKeys,
-        },
-        threeIdState.metadata
-      ),
-      this.updateKeychainDoc(authMap, pastSeeds),
-      this.pinAllDocs(),
-    ])
+    await this.docs.threeId.update(
+      {
+        ...this.docs.threeId.content,
+        publicKeys: threeIdState.content.publicKeys,
+      },
+      threeIdState.metadata
+    )
+    this.ceramic.did = originalDid
+    await Promise.all([this.updateKeychainDoc(authMap, pastSeeds), this.pinAllDocs()])
   }
 }
