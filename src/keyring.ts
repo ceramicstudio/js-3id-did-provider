@@ -12,8 +12,8 @@ import {
 } from 'did-jwt'
 import { randomBytes } from '@stablelib/random'
 import { prepareCleartext, decodeCleartext } from 'dag-jose-utils'
-import { encodeKey, hexToU8A, u8aToHex } from './utils'
 import type { StreamMetadata } from '@ceramicnetwork/common'
+import { encodeKey, hexToU8A, u8aToHex } from './utils.js'
 
 export const LATEST = 'latest'
 const GENESIS = 'genesis'

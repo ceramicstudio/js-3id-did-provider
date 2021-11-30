@@ -1,10 +1,10 @@
-import type { ThreeIDX, AuthEntry, NewAuthEntry, EncData } from './three-idx'
-import type { DidProvider } from './did-provider'
+import type { ThreeIDX, AuthEntry, NewAuthEntry, EncData } from './three-idx.js'
+import type { DidProvider } from './did-provider.js'
 import { DID } from 'dids'
 import { Ed25519Provider } from 'key-did-provider-ed25519'
 import KeyResolver from 'key-did-resolver'
-import Keyring, { LATEST } from './keyring'
-import { parseJWEKids } from './utils'
+import Keyring, { LATEST } from './keyring.js'
+import { parseJWEKids } from './utils.js'
 
 async function decryptAuthId(encrypted: EncData, keyring: Keyring): Promise<string> {
   if (!encrypted.jwe) throw new Error('Invalid encrypted block')

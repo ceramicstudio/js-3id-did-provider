@@ -9,8 +9,8 @@ import ThreeIdResolver from '@ceramicnetwork/3id-did-resolver'
 import { Resolver } from 'did-resolver'
 import { CreateJWSOptions, DID } from 'dids'
 
-import type { DidProvider } from './did-provider'
-import type { ThreeIdState } from './keyring'
+import type { DidProvider } from './did-provider.js'
+import type { ThreeIdState } from './keyring.js'
 import type { JWE } from 'did-jwt'
 import type { StreamID } from '@ceramicnetwork/streamid'
 

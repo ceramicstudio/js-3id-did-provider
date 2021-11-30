@@ -12,10 +12,10 @@ import type {
 import { HandlerMethods, RPCError, createHandler } from 'rpc-utils'
 import type { RPCRequest, RPCResponse } from 'rpc-utils'
 
-import Keyring from './keyring'
-import type { ThreeIDX } from './three-idx'
-import Permissions from './permissions'
-import { toStableObject, encodeBase64, parseJWEKids } from './utils'
+import Keyring from './keyring.js'
+import type { ThreeIDX } from './three-idx.js'
+import Permissions from './permissions.js'
+import { toStableObject, encodeBase64, parseJWEKids } from './utils.js'
 
 type Origin = string | null | undefined
 

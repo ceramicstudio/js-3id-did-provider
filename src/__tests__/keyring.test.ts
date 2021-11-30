@@ -1,6 +1,6 @@
 import * as u8a from 'uint8arrays'
 import { randomBytes } from '@stablelib/random'
-import Keyring from '../keyring'
+import Keyring from '../keyring.js'
 
 describe('Keyring', () => {
   const seed = u8a.fromString(

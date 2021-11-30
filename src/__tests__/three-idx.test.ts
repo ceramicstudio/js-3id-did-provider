@@ -10,16 +10,16 @@ import { publishIDXConfig } from '@ceramicstudio/idx-tools'
 import { randomBytes } from '@stablelib/random'
 import ThreeIdResolver from '@ceramicnetwork/3id-did-resolver'
 
-import { NewAuthEntry, ThreeIDX } from '../three-idx'
-import { DidProvider } from '../did-provider'
-import Keyring from '../keyring'
+import { NewAuthEntry, ThreeIDX } from '../three-idx.js'
+import { DidProvider } from '../did-provider.js'
+import Keyring from '../keyring.js'
 
 import dagJose from 'dag-jose'
 import { sha256 } from 'multiformats/hashes/sha2'
 import legacy from 'multiformats/legacy'
 import * as u8a from 'uint8arrays'
 import type { Hasher } from 'multiformats/hashes/hasher'
-import Permissions from '../permissions'
+import Permissions from '../permissions.js'
 import KeyDidResolver from 'key-did-resolver'
 
 const seed = u8a.fromString(
