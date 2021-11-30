@@ -13,7 +13,7 @@ import { HandlerMethods, RPCError, createHandler } from 'rpc-utils'
 import type { RPCRequest, RPCResponse } from 'rpc-utils'
 
 import Keyring from './keyring'
-import { ThreeIDX } from './three-idx'
+import type { ThreeIDX } from './three-idx'
 import Permissions from './permissions'
 import { toStableObject, encodeBase64, parseJWEKids } from './utils'
 
