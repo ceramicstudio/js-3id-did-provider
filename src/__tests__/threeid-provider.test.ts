@@ -6,11 +6,8 @@ import Ceramic from '@ceramicnetwork/core'
 import Ipfs from 'ipfs'
 import { publishIDXConfig } from '@ceramicstudio/idx-tools'
 
-import dagJose from 'dag-jose'
-import { sha256 } from 'multiformats/hashes/sha2'
-import legacy from 'multiformats/legacy'
+import * as dagJose from 'dag-jose'
 import * as u8a from 'uint8arrays'
-import { Hasher } from 'multiformats/hashes/hasher'
 import { DID } from 'dids'
 import KeyDidResolver from 'key-did-resolver'
 import ThreeIdResolver from '@ceramicnetwork/3id-did-resolver'
@@ -62,11 +59,8 @@ const didDocResult = (id: string) => ({
 })
 
 function genIpfsConf(folder: string) {
-  const hasher: Record<number, Hasher<string, number>> = {}
-  hasher[sha256.code] = sha256
-  const format = legacy(dagJose, { hashes: hasher })
   return {
-    ipld: { formats: [format] },
+    ipld: { codecs: [dagJose] },
     repo: `${folder}/ipfs/`,
     config: {
       Addresses: { Swarm: [] },

@@ -1,5 +1,5 @@
 import { Permissions, SELF_ORIGIN } from '../permissions.js'
-import store from 'store'
+import * as store from 'store'
 
 const getPermFn = () => Promise.resolve([])
 

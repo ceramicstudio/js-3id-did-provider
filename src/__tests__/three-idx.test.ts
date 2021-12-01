@@ -14,11 +14,8 @@ import { NewAuthEntry, ThreeIDX } from '../three-idx.js'
 import { DidProvider } from '../did-provider.js'
 import { Keyring } from '../keyring.js'
 
-import dagJose from 'dag-jose'
-import { sha256 } from 'multiformats/hashes/sha2'
-import legacy from 'multiformats/legacy'
+import * as dagJose from 'dag-jose'
 import * as u8a from 'uint8arrays'
-import type { Hasher } from 'multiformats/hashes/hasher'
 import { Permissions } from '../permissions.js'
 import KeyDidResolver from 'key-did-resolver'
 
@@ -29,11 +26,8 @@ const seed = u8a.fromString(
 const KEYCHAIN_DEF = definitions.threeIdKeychain
 
 const genIpfsConf = (folder: string): any => {
-  const hasher: Record<number, Hasher<string, number>> = {}
-  hasher[sha256.code] = sha256
-  const format = legacy(dagJose, { hashes: hasher })
   return {
-    ipld: { formats: [format] },
+    ipld: { codecs: [dagJose] },
     repo: `${folder}/ipfs/`,
     config: {
       Addresses: { Swarm: [] },

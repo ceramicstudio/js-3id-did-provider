@@ -173,7 +173,7 @@ describe('DidProvider', () => {
       u8a.fromString('f0e4c2f76c58916ec258f246851bea091d14d4247a2fc3e18694461b1816e13b', 'base16')
     )
     const encrypter = x25519Encrypter(keyring.getEncryptionPublicKey())
-    const cleartext = prepareCleartext({ asdf: 234 })
+    const cleartext = await prepareCleartext({ asdf: 234 })
     const jwe = await createJWE(cleartext, [encrypter])
     const config = {
       permissions: { has: jest.fn(() => true) },
@@ -192,8 +192,8 @@ describe('DidProvider', () => {
       u8a.fromString('f0e4c2f76c58916ec258f246851bea091d14d4247a2fc3e18694461b1816e13b', 'base16')
     )
     const encrypter = x25519Encrypter(keyring.getEncryptionPublicKey())
-    const cleartext1 = prepareCleartext({ paths: ['a'] })
-    const cleartext2 = prepareCleartext({ paths: ['b'] })
+    const cleartext1 = await prepareCleartext({ paths: ['a'] })
+    const cleartext2 = await prepareCleartext({ paths: ['b'] })
     const jwe1 = await createJWE(cleartext1, [encrypter])
     const jwe2 = await createJWE(cleartext2, [encrypter])
     const config = {
