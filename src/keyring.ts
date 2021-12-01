@@ -115,7 +115,8 @@ export class Keyring {
         delete decrypted.v03ID
         this._versionMap[GENESIS] = version
       }
-      this._keySets[version] = deriveKeySet(new Uint8Array(decrypted[version]), this._v03ID)
+      const currentKeySet = decrypted[version] as Array<number>
+      this._keySets[version] = deriveKeySet(new Uint8Array(currentKeySet), this._v03ID)
       this._updateVersionMap(version, this._keySets[version])
       jwe = pastSeeds.pop()
     }

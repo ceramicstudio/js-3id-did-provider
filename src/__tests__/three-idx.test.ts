@@ -101,6 +101,7 @@ describe('ThreeIDX', () => {
 
   beforeAll(async () => {
     tmpFolder = await tmp.dir({ unsafeCleanup: true })
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
     ipfs = await Ipfs.create(genIpfsConf(tmpFolder.path))
     ceramic = await Ceramic.create(ipfs, {
       stateStoreDirectory: tmpFolder.path + '/ceramic/',

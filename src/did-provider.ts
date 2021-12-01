@@ -89,9 +89,10 @@ export const didMethods: HandlerMethods<Context, DIDProviderMethods> = {
   ) => {
     if (!permissions.has(origin)) throw new RPCError(4100, 'Unauthorized')
     // TODO - if the requesting DID is our management key
+    const payload = params.payload as Record<string, any>
     // (did:key) we should request explicit permission.
     const jws = await sign(
-      params.payload,
+      payload,
       params.did,
       keyring,
       threeIdx,
@@ -112,7 +113,8 @@ export const didMethods: HandlerMethods<Context, DIDProviderMethods> = {
       // There was an error decoding, which means that this is not a cleartext encoded as a CID
       // TODO - We should explicitly ask for permission.
     }
-    if (obj && !permissions.has(origin, obj.paths)) throw new RPCError(4100, 'Unauthorized')
+    const paths = obj?.paths as Array<string> | undefined
+    if (obj && !permissions.has(origin, paths)) throw new RPCError(4100, 'Unauthorized')
     return { cleartext: encodeBase64(bytes) }
   },
 }

@@ -202,7 +202,9 @@ export class Keychain {
       try {
         const decrypted = await did.decryptDagJWE(authData.seed.jwe)
         // If we have a legacy seed v03ID will be defined
-        const keyring = new Keyring(new Uint8Array(decrypted.seed), decrypted.v03ID)
+        const seed = decrypted.seed as Array<number>
+        const v03ID = decrypted.v03ID as string
+        const keyring = new Keyring(new Uint8Array(seed), v03ID)
         await keyring.loadPastSeeds(authData.pastSeeds)
         // We might have the v03ID in the past seeds, if so we need to create the 3ID documents from the keys
         if (keyring.v03ID) await threeIdx.create3idDoc(keyring.get3idState(true))
