@@ -49,7 +49,7 @@
     "key-did-resolver": "^1.2.0",
     "rpc-utils": "^0.3.4",
     "store": "^2.0.12",
-    "uint8arrays": "^2.1.5"
+    "uint8arrays": "^3.0.0"
   },
   "devDependencies": {
     "@babel/cli": "^7.13.16",
