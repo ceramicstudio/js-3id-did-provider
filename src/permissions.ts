@@ -16,7 +16,7 @@ const storageKey = (origin: Origin, did: string) => {
   return `3id_permission_${did}_${origin}`
 }
 
-export default class Permissions {
+export class Permissions {
   public did: string | null = null
 
   /**

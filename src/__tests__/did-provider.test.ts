@@ -1,7 +1,7 @@
 import { DidProvider, ProviderConfig } from '../did-provider.js'
 import { createJWE, x25519Encrypter } from 'did-jwt'
 import { prepareCleartext } from 'dag-jose-utils'
-import Keyring from '../keyring.js'
+import { Keyring } from '../keyring.js'
 import * as u8a from 'uint8arrays'
 
 describe('DidProvider', () => {

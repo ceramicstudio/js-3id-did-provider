@@ -66,7 +66,7 @@ function deriveKeySet(seed: Uint8Array, v03ID?: string): FullKeySet {
   }
 }
 
-export default class Keyring {
+export class Keyring {
   // map from 3ID version to key set
   protected _keySets: Record<string, FullKeySet> = {}
   // map from kid to encryption key

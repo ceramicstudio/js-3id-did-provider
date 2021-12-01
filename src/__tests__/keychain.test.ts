@@ -2,7 +2,7 @@ import * as u8a from 'uint8arrays'
 import { randomBytes } from '@stablelib/random'
 
 import { Keychain, newAuthEntry } from '../keychain.js'
-import Keyring from '../keyring.js'
+import { Keyring } from '../keyring.js'
 import { AuthMap, NewAuthEntry, ThreeIDX } from '../three-idx.js'
 
 const seed = u8a.fromString(

@@ -1,4 +1,4 @@
-import ThreeIdProvider from '../threeid-provider.js'
+import { ThreeIdProvider } from '../threeid-provider.js'
 
 import { randomBytes } from '@stablelib/random'
 import tmp, { DirectoryResult } from 'tmp-promise'
