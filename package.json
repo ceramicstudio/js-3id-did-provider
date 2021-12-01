@@ -29,6 +29,7 @@
     "url": "https://github.com/ceramicstudio/js-3id-did-provider/issues"
   },
   "homepage": "https://github.com/ceramicstudio/js-3id-did-provider#readme",
+  "sideEffects": false,
   "dependencies": {
     "@babel/runtime": "^7.13.16",
     "@ceramicnetwork/3id-did-resolver": "^1.2.0",
