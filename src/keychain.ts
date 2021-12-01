@@ -210,7 +210,7 @@ export class Keychain {
         if (keyring.v03ID) await threeIdx.create3idDoc(keyring.get3idState(true))
         return new Keychain(keyring, threeIdx)
       } catch (e) {
-        if (e.message === 'Failed to decrypt') throw new Error('Auth not allowed')
+        if ((e as Error).message === 'Failed to decrypt') throw new Error('Auth not allowed')
         throw e
       }
     }
