@@ -1,4 +1,4 @@
-import * as store from 'store'
+import store from 'store'
 
 interface PermissionRequest {
   type: string

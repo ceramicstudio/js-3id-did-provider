@@ -3,7 +3,7 @@ import { ThreeIdProvider } from '../threeid-provider.js'
 import { randomBytes } from '@stablelib/random'
 import tmp, { DirectoryResult } from 'tmp-promise'
 import Ceramic from '@ceramicnetwork/core'
-import Ipfs from 'ipfs'
+import * as Ipfs from 'ipfs'
 import { publishIDXConfig } from '@ceramicstudio/idx-tools'
 
 import * as dagJose from 'dag-jose'

@@ -5,5 +5,9 @@
   "moduleNameMapper": {
     "^(\\.{1,2}/.*)\\.js$": "$1"
   },
-  "testRegex": "(/__tests__/.*(\\.|/)(test|spec))\\.tsx?$"
+  "testRegex": "(/__tests__/.*(\\.|/)(test|spec))\\.tsx?$",
+  "transformIgnorePatterns": ["node_modules/(?!(dag-jose-utils)/)"],
+  "transform": {
+    "^.+\\.(js|jsx|ts|tsx|mjs)$": "babel-jest"
+  }
 }
