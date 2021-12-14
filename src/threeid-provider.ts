@@ -1,10 +1,10 @@
 import type { CeramicApi } from '@ceramicnetwork/common'
 
-import { DidProvider } from './did-provider'
-import Keyring from './keyring'
-import { ThreeIDX } from './three-idx'
-import Permissions, { GetPermissionFn, SELF_ORIGIN } from './permissions'
-import { Keychain } from './keychain'
+import { DidProvider } from './did-provider.js'
+import { Keyring } from './keyring.js'
+import { ThreeIDX } from './three-idx.js'
+import { Permissions, GetPermissionFn, SELF_ORIGIN } from './permissions.js'
+import { Keychain } from './keychain.js'
 
 type AuthConfig = { authId: string; authSecret: Uint8Array; seed?: never }
 type SeedConfig = { authId?: never; authSecret?: never; seed: Uint8Array; did?: string }
@@ -17,7 +17,7 @@ type IDWConfig = {
   disableIDX?: boolean
 } & (AuthConfig | SeedConfig)
 
-export default class ThreeIdProvider {
+export class ThreeIdProvider {
   /**
    * Use ThreeIdProvider.create() to create an ThreeIdProvider instance
    */

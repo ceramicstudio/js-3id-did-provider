@@ -9,8 +9,8 @@ import ThreeIdResolver from '@ceramicnetwork/3id-did-resolver'
 import { Resolver } from 'did-resolver'
 import { CreateJWSOptions, DID } from 'dids'
 
-import type { DidProvider } from './did-provider'
-import type { ThreeIdState } from './keyring'
+import type { DidProvider } from './did-provider.js'
+import type { ThreeIdState } from './keyring.js'
 import type { JWE } from 'did-jwt'
 import type { StreamID } from '@ceramicnetwork/streamid'
 
@@ -169,7 +169,7 @@ export class ThreeIDX {
     await this.loadDoc(authDid, authDid, 'authLink')
     const { did } = this.docs[authDid].content
     if (!did) return null
-    await this.loadAllDocs(did)
+    await this.loadAllDocs(did as string)
     const { authMap, pastSeeds } = this.docs[KEYCHAIN_DEF].content
     return {
       seed: authMap[authDid]?.data,
@@ -208,7 +208,7 @@ export class ThreeIDX {
       {}
     )
     Object.assign(authMap, newAuthEntries)
-    await this.updateKeychainDoc(authMap, pastSeeds)
+    await this.updateKeychainDoc(authMap as AuthMap, pastSeeds as Array<JWE>)
     await Promise.all((await linkDocUpdatesPromise).map(this.applyAuthLinkUpdate.bind(this)))
   }
 
@@ -241,11 +241,10 @@ export class ThreeIDX {
 
   async updateKeychainDoc(authMap: AuthMap = {}, pastSeeds: Array<JWE> = []): Promise<void> {
     if (Object.keys(authMap).length !== 0) {
-      const update: Record<string, any> = { content: { authMap, pastSeeds } }
-      if (!this.docs[KEYCHAIN_DEF].metadata.schema) {
-        update.metadata = { schema: ThreeIdKeychain }
-      }
-      await this.docs[KEYCHAIN_DEF].update(update.content, update.metadata)
+      const content = { authMap, pastSeeds }
+      const isSchemaAvailable = Boolean(this.docs[KEYCHAIN_DEF].metadata.schema)
+      const metadata = isSchemaAvailable ? undefined : { schema: ThreeIdKeychain }
+      await this.docs[KEYCHAIN_DEF].update(content, metadata)
       await this.docs[KEYCHAIN_DEF].sync()
     }
   }

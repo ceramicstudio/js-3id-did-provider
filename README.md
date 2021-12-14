@@ -21,7 +21,7 @@ $ npm install 3id-did-provider
 #### Import ThreeIdProvider into your project
 Import the 3id-did-provider module
 ```js
-const ThreeIdProvider = require('3id-did-provider')
+import { ThreeIdProvider } from '3id-did-provider'
 ```
 Import using the dist build in your html code
 ```js

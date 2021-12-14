@@ -1,10 +1,10 @@
-import type { ThreeIDX, AuthEntry, NewAuthEntry, EncData } from './three-idx'
-import type { DidProvider } from './did-provider'
+import type { ThreeIDX, AuthEntry, NewAuthEntry, EncData } from './three-idx.js'
+import type { DidProvider } from './did-provider.js'
 import { DID } from 'dids'
 import { Ed25519Provider } from 'key-did-provider-ed25519'
 import KeyResolver from 'key-did-resolver'
-import Keyring, { LATEST } from './keyring'
-import { parseJWEKids } from './utils'
+import { Keyring, LATEST } from './keyring.js'
+import { parseJWEKids } from './utils.js'
 
 async function decryptAuthId(encrypted: EncData, keyring: Keyring): Promise<string> {
   if (!encrypted.jwe) throw new Error('Invalid encrypted block')
@@ -202,7 +202,9 @@ export class Keychain {
       try {
         const decrypted = await did.decryptDagJWE(authData.seed.jwe)
         // If we have a legacy seed v03ID will be defined
-        const keyring = new Keyring(new Uint8Array(decrypted.seed), decrypted.v03ID)
+        const seed = decrypted.seed as Array<number>
+        const v03ID = decrypted.v03ID as string
+        const keyring = new Keyring(new Uint8Array(seed), v03ID)
         await keyring.loadPastSeeds(authData.pastSeeds)
         // We might have the v03ID in the past seeds, if so we need to create the 3ID documents from the keys
         if (keyring.v03ID) await threeIdx.create3idDoc(keyring.get3idState(true))

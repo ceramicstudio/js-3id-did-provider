@@ -12,8 +12,8 @@ import {
 } from 'did-jwt'
 import { randomBytes } from '@stablelib/random'
 import { prepareCleartext, decodeCleartext } from 'dag-jose-utils'
-import { encodeKey, hexToU8A, u8aToHex } from './utils'
 import type { StreamMetadata } from '@ceramicnetwork/common'
+import { encodeKey, hexToU8A, u8aToHex } from './utils.js'
 
 export const LATEST = 'latest'
 const GENESIS = 'genesis'
@@ -66,7 +66,7 @@ function deriveKeySet(seed: Uint8Array, v03ID?: string): FullKeySet {
   }
 }
 
-export default class Keyring {
+export class Keyring {
   // map from 3ID version to key set
   protected _keySets: Record<string, FullKeySet> = {}
   // map from kid to encryption key
@@ -115,7 +115,8 @@ export default class Keyring {
         delete decrypted.v03ID
         this._versionMap[GENESIS] = version
       }
-      this._keySets[version] = deriveKeySet(new Uint8Array(decrypted[version]), this._v03ID)
+      const currentKeySet = decrypted[version] as Array<number>
+      this._keySets[version] = deriveKeySet(new Uint8Array(currentKeySet), this._v03ID)
       this._updateVersionMap(version, this._keySets[version])
       jwe = pastSeeds.pop()
     }

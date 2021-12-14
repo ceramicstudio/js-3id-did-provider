@@ -1,22 +1,15 @@
-version: 2
+version: 2.1
+orbs:
+  node: circleci/node@4.9.0
 jobs:
   build:
-    working_directory: ~/identity-wallet
-    docker:
-      - image: cimg/node:14.15
+    executor:
+      name: node/default
+      tag: 'lts'
     steps:
       - checkout
-
-      # Download and cache dependencies
-      - restore_cache:
-          keys:
-            - dependencies-cache-{{ checksum "package.json" }}
-
-      - run:
-          name: install dependencies
-          command: |
-            sudo npm i -g codecov node-gyp
-            npm ci
+      - node/install-packages:
+          override-ci-command: sudo npm i -g codecov node-gyp && npm ci
 
       - run:
           name: lint
@@ -29,11 +22,6 @@ jobs:
       - run:
           name: code-coverage
           command: bash <(curl -s https://codecov.io/bash)
-
-      - save_cache:
-          key: dependency-cache-{{ checksum "package.json" }}
-          paths:
-            - ./node_modules
 
 workflows:
   version: 2
