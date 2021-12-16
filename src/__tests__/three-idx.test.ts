@@ -3,7 +3,7 @@ import Ceramic from '@ceramicnetwork/core'
 import { DID } from 'dids'
 import { Ed25519Provider } from 'key-did-provider-ed25519'
 import KeyResolver from 'key-did-resolver'
-import Ipfs from 'ipfs'
+import * as Ipfs from 'ipfs-core'
 import all from 'it-all'
 import { schemas, definitions } from '@ceramicstudio/idx-constants'
 import { publishIDXConfig } from '@ceramicstudio/idx-tools'
@@ -15,12 +15,10 @@ import { DidProvider } from '../did-provider'
 import Keyring from '../keyring'
 
 import dagJose from 'dag-jose'
-import { sha256 } from 'multiformats/hashes/sha2'
-import legacy from 'multiformats/legacy'
 import * as u8a from 'uint8arrays'
-import type { Hasher } from 'multiformats/hashes/hasher'
-import Permissions from '../permissions'
+import { Permissions } from '../permissions'
 import KeyDidResolver from 'key-did-resolver'
+import { convert } from 'blockcodec-to-ipld-format'
 
 const seed = u8a.fromString(
   '8e641c0dc77f6916cc7f743dad774cdf9f6f7bcb880b11395149dd878377cd398650bbfd4607962b49953c87da4d7f3ff247ed734b06f96bdd69479377bc612b',
@@ -28,10 +26,8 @@ const seed = u8a.fromString(
 )
 const KEYCHAIN_DEF = definitions.threeIdKeychain
 
-const genIpfsConf = (folder: string): any => {
-  const hasher: Record<number, Hasher<string, number>> = {}
-  hasher[sha256.code] = sha256
-  const format = legacy(dagJose, { hashes: hasher })
+function genIpfsConf(folder: string) {
+  const format = convert(dagJose)
   return {
     ipld: { formats: [format] },
     repo: `${folder}/ipfs/`,
