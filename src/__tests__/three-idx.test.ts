@@ -143,24 +143,6 @@ describe('ThreeIDX', () => {
     expect(threeIdx.id).toEqual(v03ID)
   })
 
-  it('gets correct 3id version', async () => {
-    await setup3id(threeIdx, keyring)
-    // with no anchor
-    expect(threeIdx.get3idVersion()).toEqual('0')
-    // with anchor, createIDX to update 3id doc
-    await threeIdx.createIDX()
-    // update the 3id doc
-    await anchorService.anchor()
-    await pauseSeconds(1)
-    await threeIdx.docs.threeId.sync()
-    await threeIdx.docs.threeId.update({ asdf: 123 }, undefined, { anchor: true })
-    await anchorService.anchor()
-    await pauseSeconds(1)
-    await threeIdx.docs.threeId.sync()
-    const latestCommit = threeIdx.docs.threeId.commitId.commit
-    expect(threeIdx.get3idVersion()).toEqual(latestCommit.toString())
-  })
-
   it('creates authMapEntry', async () => {
     await setup3id(threeIdx, keyring)
     const newAuthEntry = await genAuthEntryCreate()
@@ -259,7 +241,7 @@ describe('ThreeIDX', () => {
     )
   })
 
-  it('rotateKeys', async () => {
+  it('rotateKeys and gets correct 3id version', async () => {
     await setup3id(threeIdx, keyring)
     const [nae1, nae2, nae3] = await Promise.all([
       genAuthEntryCreate(),
@@ -268,6 +250,12 @@ describe('ThreeIDX', () => {
     ])
     await threeIdx.createIDX(nae1)
     await threeIdx.addAuthEntries([nae2, nae3])
+
+    expect(threeIdx.get3idVersion()).toEqual('0')
+
+    await anchorService.anchor()
+    await pauseSeconds(2)
+    await threeIdx.docs.threeId.sync()
 
     // Rotate keys correctly
     await keyring.generateNewKeys(threeIdx.get3idVersion())
@@ -291,5 +279,8 @@ describe('ThreeIDX', () => {
       seed: updatedAuthMap[nae1.did.id].data,
       pastSeeds: keyring.pastSeeds,
     })
+
+    const latestCommit = threeIdx.docs.threeId.commitId.commit
+    expect(threeIdx.get3idVersion()).toEqual(latestCommit.toString())
   })
 })
