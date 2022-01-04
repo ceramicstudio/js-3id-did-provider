@@ -1,6 +1,5 @@
 import type { CeramicApi, CeramicCommit } from '@ceramicnetwork/common'
 import { SubscriptionSet } from '@ceramicnetwork/common'
-import { TileDocument } from '@ceramicnetwork/stream-tile'
 import CeramicClient from '@ceramicnetwork/http-client'
 import { definitions, schemas } from '@ceramicstudio/idx-constants'
 import CID from 'cids'
@@ -8,11 +7,13 @@ import KeyDidResolver from 'key-did-resolver'
 import ThreeIdResolver from '@ceramicnetwork/3id-did-resolver'
 import { Resolver } from 'did-resolver'
 import { CreateJWSOptions, DID } from 'dids'
+import { TileLoader } from '@glazed/tile-loader'
 
 import type { DidProvider } from './did-provider.js'
 import type { ThreeIdState } from './keyring.js'
 import type { JWE } from 'did-jwt'
 import type { StreamID } from '@ceramicnetwork/streamid'
+import type { TileDocument } from '@ceramicnetwork/stream-tile'
 
 const KEYCHAIN_DEF = definitions.threeIdKeychain
 const IDX = 'IDX'
@@ -59,13 +60,15 @@ interface AuthLinkDocUpdate {
 export class ThreeIDX {
   public docs: Record<string, TileDocument>
   public ceramic: CeramicApi
+  public loader: TileLoader
   protected _v03ID?: string
   protected _subscriptionSet: SubscriptionSet
 
-  constructor(ceramic?: CeramicApi) {
+  constructor(ceramic?: CeramicApi, loader?: TileLoader) {
     this.ceramic = ceramic || new CeramicClient()
     this.docs = {}
     this._subscriptionSet = new SubscriptionSet()
+    this.loader = loader || new TileLoader({ ceramic: this.ceramic, cache: true })
   }
 
   async setDIDProvider(provider: DidProvider): Promise<void> {
@@ -89,15 +92,18 @@ export class ThreeIDX {
   }
 
   async create3idDoc(docParams: ThreeIdState): Promise<void> {
-    this.docs.threeId = await TileDocument.create(
-      this.ceramic,
-      docParams.content,
-      docParams.metadata,
-      {
+    if (!docParams.content) {
+      this.docs.threeId = (await this.loader.deterministic(docParams.metadata, {
         anchor: false,
         publish: false,
-      }
-    )
+      })) as TileDocument<Record<string, any>>
+    } else {
+      this.docs.threeId = await this.loader.create(docParams.content, docParams.metadata, {
+        anchor: false,
+        publish: false,
+      })
+    }
+
     this._subscriptionSet.add(this.docs.threeId.subscribe())
   }
 
@@ -108,12 +114,11 @@ export class ThreeIDX {
   }
 
   async loadDoc(name: string, controller: string, family: string): Promise<TileDocument> {
-    const stream = await TileDocument.create<Record<string, any>>(
-      this.ceramic,
-      null,
+    const stream = (await this.loader.deterministic(
       { controllers: [controller], family: family, deterministic: true },
       { anchor: false, publish: false }
-    )
+    )) as TileDocument<Record<string, any>>
+
     this.docs[name] = stream
     this._subscriptionSet.add(stream.subscribe())
     return stream
