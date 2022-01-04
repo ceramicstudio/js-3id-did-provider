@@ -1,10 +1,11 @@
-import type { CeramicApi } from '@ceramicnetwork/common'
-
 import { DidProvider } from './did-provider'
 import Keyring from './keyring'
 import { ThreeIDX } from './three-idx'
 import Permissions, { GetPermissionFn, SELF_ORIGIN } from './permissions'
 import { Keychain } from './keychain'
+
+import type { TileLoader } from '@glazed/tile-loader'
+import type { CeramicApi } from '@ceramicnetwork/common'
 
 type AuthConfig = { authId: string; authSecret: Uint8Array; seed?: never }
 type SeedConfig = { authId?: never; authSecret?: never; seed: Uint8Array; did?: string }
@@ -14,6 +15,7 @@ type IDWConfig = {
   getPermission: GetPermissionFn
   v03ID?: string
   ceramic: CeramicApi
+  loader?: TileLoader
   disableIDX?: boolean
 } & (AuthConfig | SeedConfig)
 
@@ -53,6 +55,7 @@ export default class ThreeIdProvider {
    * @param     {Object}        config                  The configuration to be used
    * @param     {Function}      config.getPermission    The function that is called to ask the user for permission
    * @param     {CeramicApi}    config.ceramic          The ceramic instance to use
+   * @param     {TileLoader}    config.loader           An optional TileLoader instance to use
    * @param     {Uint8Array}    config.seed             The seed of the 3ID, 32 bytes
    * @param     {Uint8Array}    config.authSecret       The authSecret to use, 32 bytes
    * @param     {String}        config.authId           The authId is used to identify the authSecret
@@ -69,7 +72,7 @@ export default class ThreeIdProvider {
     if (config.authId && config.disableIDX) {
       throw new Error('AuthId cannot be used with disableIDX')
     }
-    const threeIdx = new ThreeIDX(config.ceramic)
+    const threeIdx = new ThreeIDX(config.ceramic, config.loader)
     const permissions = new Permissions(config.getPermission)
     const makeTmpProvider = (keyring: Keyring, forcedDID: string): DidProvider => {
       return new DidProvider({
