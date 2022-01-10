@@ -279,6 +279,7 @@ Creates an instance of ThreeIdProvider
 | config | <code>Object</code> | The configuration to be used |
 | config.getPermission | <code>function</code> | The function that is called to ask the user for permission |
 | config.ceramic | <code>CeramicApi</code> | The ceramic instance to use |
+| config.loader | <code>TileLoader</code> | An optional TileLoader instance to use |
 | config.seed | <code>Uint8Array</code> | The seed of the 3ID, 32 bytes |
 | config.authSecret | <code>Uint8Array</code> | The authSecret to use, 32 bytes |
 | config.authId | <code>String</code> | The authId is used to identify the authSecret |

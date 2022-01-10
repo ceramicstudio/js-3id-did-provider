@@ -16,7 +16,7 @@ import Keyring from '../keyring'
 
 import dagJose from 'dag-jose'
 import * as u8a from 'uint8arrays'
-import  Permissions from '../permissions'
+import Permissions from '../permissions'
 import KeyDidResolver from 'key-did-resolver'
 import { convert } from 'blockcodec-to-ipld-format'
 
