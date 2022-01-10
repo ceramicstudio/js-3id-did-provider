@@ -1,6 +1,6 @@
 {
   "name": "3id-did-provider",
-  "version": "1.1.1",
+  "version": "1.2.0-beta.1",
   "description": "Create and manage 3IDs",
   "main": "./lib/threeid-provider.js",
   "types": "./lib/threeid-provider.d.ts",

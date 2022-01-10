@@ -65,3 +65,7 @@ export function decodeBase64(s: string): Uint8Array {
 export function toStableObject(obj: Record<string, any>): Record<string, any> {
   return JSON.parse(stringify(obj)) as Record<string, any>
 }
+
+export function isDefined<T>(val: T | undefined | null): val is T {
+  return val !== undefined && val !== null
+}

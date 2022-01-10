@@ -8,6 +8,7 @@ import ThreeIdResolver from '@ceramicnetwork/3id-did-resolver'
 import { Resolver } from 'did-resolver'
 import { CreateJWSOptions, DID } from 'dids'
 import { TileLoader } from '@glazed/tile-loader'
+import { isDefined } from './utils'
 
 import type { DidProvider } from './did-provider.js'
 import type { ThreeIdState } from './keyring.js'
@@ -58,7 +59,7 @@ interface AuthLinkDocUpdate {
 }
 
 export class ThreeIDX {
-  public docs: Record<string, TileDocument>
+  public docs: Record<string, TileDocument<Record<string, any> | null | undefined>>
   public ceramic: CeramicApi
   public loader: TileLoader
   protected _v03ID?: string
@@ -93,10 +94,10 @@ export class ThreeIDX {
 
   async create3idDoc(docParams: ThreeIdState): Promise<void> {
     if (!docParams.content) {
-      this.docs.threeId = (await this.loader.deterministic(docParams.metadata, {
+      this.docs.threeId = await this.loader.deterministic(docParams.metadata, {
         anchor: false,
         publish: false,
-      })) as TileDocument<Record<string, any>>
+      })
     } else {
       this.docs.threeId = await this.loader.create(docParams.content, docParams.metadata, {
         anchor: false,
@@ -113,11 +114,15 @@ export class ThreeIDX {
     return docId ? docId.commit.toString() : '0'
   }
 
-  async loadDoc(name: string, controller: string, family: string): Promise<TileDocument> {
-    const stream = (await this.loader.deterministic(
+  async loadDoc(
+    name: string,
+    controller: string,
+    family: string
+  ): Promise<TileDocument<Record<string, any> | null | undefined>> {
+    const stream = await this.loader.deterministic(
       { controllers: [controller], family: family, deterministic: true },
       { anchor: false, publish: false }
-    )) as TileDocument<Record<string, any>>
+    )
 
     this.docs[name] = stream
     this._subscriptionSet.add(stream.subscribe())
@@ -172,10 +177,14 @@ export class ThreeIDX {
    */
   async loadIDX(authDid: string): Promise<EncKeyMaterial | null> {
     await this.loadDoc(authDid, authDid, 'authLink')
-    const { did } = this.docs[authDid].content
-    if (!did) return null
+    if (!isDefined<Record<string, any>>(this.docs[authDid].content)) return null
+    const didContent = this.docs[authDid].content
+    if (!isDefined(didContent) || !didContent.did) return null
+    const { did } = didContent
     await this.loadAllDocs(did as string)
-    const { authMap, pastSeeds } = this.docs[KEYCHAIN_DEF].content
+    const keyContent = this.docs[KEYCHAIN_DEF].content
+    if (!isDefined(keyContent)) return null
+    const { authMap, pastSeeds } = keyContent
     return {
       seed: authMap[authDid]?.data,
       pastSeeds,
@@ -207,7 +216,9 @@ export class ThreeIDX {
    */
   async addAuthEntries(newEntries: Array<NewAuthEntry>): Promise<void> {
     const linkDocUpdatesPromise = Promise.all(newEntries.map(this.createAuthLinkUpdate.bind(this)))
-    const { authMap, pastSeeds } = this.docs[KEYCHAIN_DEF].content
+    const keyContent = this.docs[KEYCHAIN_DEF].content
+    if (!isDefined(keyContent)) throw new Error('Expect keychain to be defined')
+    const { authMap, pastSeeds } = keyContent
     const newAuthEntries = newEntries.reduce(
       (acc, { mapEntry }) => Object.assign(acc, mapEntry),
       {}
@@ -221,8 +232,10 @@ export class ThreeIDX {
    * Returns all public keys that is in the auth keychain.
    */
   getAuthMap(): AuthMap {
-    if (!this.docs[KEYCHAIN_DEF] || !this.docs[KEYCHAIN_DEF].content.authMap) return {}
-    return this.docs[KEYCHAIN_DEF].content.authMap as AuthMap
+    if (!this.docs[KEYCHAIN_DEF]) return {}
+    const keyContent = this.docs[KEYCHAIN_DEF].content as Record<'authMap', AuthMap>
+    if (!isDefined(keyContent) || !keyContent.authMap) return {}
+    return keyContent.authMap
   }
 
   async pinAllDocs(): Promise<void> {
