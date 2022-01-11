@@ -36,7 +36,7 @@ function toGeneralJWS(jws: string): GeneralJWS {
 }
 
 async function sign(
-  payload: Record<string, any>,
+  payload: Record<string, any> | string,
   didWithFragment: string,
   keyring: Keyring,
   threeIdx: ThreeIDX,
@@ -57,7 +57,11 @@ async function sign(
     signer = keyring.getSigner(version)
   }
   const header = toStableObject(Object.assign(protectedHeader, { kid }))
-  const jws = await createJWS(toStableObject(payload), signer, header)
+  const jws = await createJWS(
+    typeof payload === 'string' ? payload : toStableObject(payload),
+    signer,
+    header
+  )
   return toGeneralJWS(jws)
 }
 

@@ -3,7 +3,7 @@ import Ceramic from '@ceramicnetwork/core'
 import { DID } from 'dids'
 import { Ed25519Provider } from 'key-did-provider-ed25519'
 import KeyResolver from 'key-did-resolver'
-import Ipfs from 'ipfs'
+import * as Ipfs from 'ipfs-core'
 import all from 'it-all'
 import { schemas, definitions } from '@ceramicstudio/idx-constants'
 import { publishIDXConfig } from '@ceramicstudio/idx-tools'
@@ -15,12 +15,10 @@ import { DidProvider } from '../did-provider.js'
 import { Keyring } from '../keyring.js'
 
 import dagJose from 'dag-jose'
-import { sha256 } from 'multiformats/hashes/sha2'
-import legacy from 'multiformats/legacy'
 import * as u8a from 'uint8arrays'
-import type { Hasher } from 'multiformats/hashes/hasher'
-import { Permissions } from '../permissions.js'
+import { Permissions } from '../permissions'
 import KeyDidResolver from 'key-did-resolver'
+import { convert } from 'blockcodec-to-ipld-format'
 
 const seed = u8a.fromString(
   '8e641c0dc77f6916cc7f743dad774cdf9f6f7bcb880b11395149dd878377cd398650bbfd4607962b49953c87da4d7f3ff247ed734b06f96bdd69479377bc612b',
@@ -28,10 +26,8 @@ const seed = u8a.fromString(
 )
 const KEYCHAIN_DEF = definitions.threeIdKeychain
 
-const genIpfsConf = (folder: string): any => {
-  const hasher: Record<number, Hasher<string, number>> = {}
-  hasher[sha256.code] = sha256
-  const format = legacy(dagJose, { hashes: hasher })
+function genIpfsConf(folder: string) {
+  const format = convert(dagJose)
   return {
     ipld: { formats: [format] },
     repo: `${folder}/ipfs/`,
@@ -148,24 +144,6 @@ describe('ThreeIDX', () => {
     expect(threeIdx.id).toEqual(v03ID)
   })
 
-  it('gets correct 3id version', async () => {
-    await setup3id(threeIdx, keyring)
-    // with no anchor
-    expect(threeIdx.get3idVersion()).toEqual('0')
-    // with anchor, createIDX to update 3id doc
-    await threeIdx.createIDX()
-    // update the 3id doc
-    await anchorService.anchor()
-    await pauseSeconds(1)
-    await threeIdx.docs.threeId.sync()
-    await threeIdx.docs.threeId.update({ asdf: 123 }, undefined, { anchor: true })
-    await anchorService.anchor()
-    await pauseSeconds(1)
-    await threeIdx.docs.threeId.sync()
-    const latestCommit = threeIdx.docs.threeId.commitId.commit
-    expect(threeIdx.get3idVersion()).toEqual(latestCommit.toString())
-  })
-
   it('creates authMapEntry', async () => {
     await setup3id(threeIdx, keyring)
     const newAuthEntry = await genAuthEntryCreate()
@@ -264,7 +242,7 @@ describe('ThreeIDX', () => {
     )
   })
 
-  it('rotateKeys', async () => {
+  it('rotateKeys and gets correct 3id version', async () => {
     await setup3id(threeIdx, keyring)
     const [nae1, nae2, nae3] = await Promise.all([
       genAuthEntryCreate(),
@@ -273,6 +251,12 @@ describe('ThreeIDX', () => {
     ])
     await threeIdx.createIDX(nae1)
     await threeIdx.addAuthEntries([nae2, nae3])
+
+    expect(threeIdx.get3idVersion()).toEqual('0')
+
+    await anchorService.anchor()
+    await pauseSeconds(2)
+    await threeIdx.docs.threeId.sync()
 
     // Rotate keys correctly
     await keyring.generateNewKeys(threeIdx.get3idVersion())
@@ -296,5 +280,8 @@ describe('ThreeIDX', () => {
       seed: updatedAuthMap[nae1.did.id].data,
       pastSeeds: keyring.pastSeeds,
     })
+
+    const latestCommit = threeIdx.docs.threeId.commitId.commit
+    expect(threeIdx.get3idVersion()).toEqual(latestCommit.toString())
   })
 })

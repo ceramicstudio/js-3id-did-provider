@@ -3,17 +3,15 @@ import { ThreeIdProvider } from '../threeid-provider.js'
 import { randomBytes } from '@stablelib/random'
 import tmp, { DirectoryResult } from 'tmp-promise'
 import Ceramic from '@ceramicnetwork/core'
-import Ipfs from 'ipfs'
+import * as Ipfs from 'ipfs-core'
 import { publishIDXConfig } from '@ceramicstudio/idx-tools'
 
 import dagJose from 'dag-jose'
-import { sha256 } from 'multiformats/hashes/sha2'
-import legacy from 'multiformats/legacy'
 import * as u8a from 'uint8arrays'
-import { Hasher } from 'multiformats/hashes/hasher'
 import { DID } from 'dids'
 import KeyDidResolver from 'key-did-resolver'
 import ThreeIdResolver from '@ceramicnetwork/3id-did-resolver'
+import { convert } from 'blockcodec-to-ipld-format'
 
 const seed = u8a.fromString(
   'af0253c646e3d6ccf93758154f55b6055ab5739e22d54fb0b3b6ad1819c73ffaaca52378afeda236f41755c59db9e8aeb30d4cefbd61327603ba6aee63a59b1d',
@@ -62,9 +60,7 @@ const didDocResult = (id: string) => ({
 })
 
 function genIpfsConf(folder: string) {
-  const hasher: Record<number, Hasher<string, number>> = {}
-  hasher[sha256.code] = sha256
-  const format = legacy(dagJose, { hashes: hasher })
+  const format = convert(dagJose)
   return {
     ipld: { formats: [format] },
     repo: `${folder}/ipfs/`,
@@ -115,7 +111,6 @@ describe('ThreeIdProvider', () => {
 
   beforeAll(async () => {
     tmpFolder = await tmp.dir({ unsafeCleanup: true })
-    // @ts-ignore
     ipfs = await Ipfs.create(genIpfsConf(tmpFolder.path))
     ceramic = await Ceramic.create(ipfs, {
       stateStoreDirectory: tmpFolder.path + '/ceramic/',
