@@ -1,9 +1,8 @@
-[![CircleCI](https://img.shields.io/circleci/project/github/ceramicstudio/js-3id-did-provider.svg?style=for-the-badge)](https://circleci.com/gh/ceramicstudio/js-3id-did-provider)
-[![Discord](https://img.shields.io/discord/484729862368526356.svg?style=for-the-badge)](https://discordapp.com/invite/Z3f3Cxy)
-[![npm](https://img.shields.io/npm/dt/3id-did-provider.svg?style=for-the-badge)](https://www.npmjs.com/package/3id-did-provider)
-[![npm](https://img.shields.io/npm/v/3id-did-provider.svg?style=for-the-badge)](https://www.npmjs.com/package/3id-did-provider)
-[![Codecov](https://img.shields.io/codecov/c/github/ceramicstudio/js-3id-did-provider.svg?style=for-the-badge)](https://codecov.io/gh/ceramicstudio/js-3id-did-provider)
-[![Twitter Follow](https://img.shields.io/twitter/follow/ceramicnetwork.svg?style=for-the-badge&label=Twitter)](https://twitter.com/ceramicnetwork)
+# ⚠️ Library moved
+
+The 3ID DID provider source has been moved to the [3ID repository](https://github.com/ceramicstudio/js-3id/tree/develop/packages/did-provider) and the package is now [available on npm as `@3id/did-provider`](https://www.npmjs.com/package/@3id/did-provider).
+
+The `3id-did-provider` package is no longer maintained.
 
 # ThreeIdProvider
 
